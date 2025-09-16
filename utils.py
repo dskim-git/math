@@ -6,7 +6,7 @@ def set_base_page(page_title: str, page_icon: str = "📘", layout: str = "wide"
         <style>
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
-        .block-container {padding-top: 1rem; padding-bottom: 2rem;}
+        .block-container {padding-top: 3rem; padding-bottom: 2rem;}
         </style>
     """
     st.markdown(_hide_streamlit_style, unsafe_allow_html=True)
