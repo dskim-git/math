@@ -79,4 +79,42 @@ def render():
     if mode == "동전 던지기(공정)":
         p_eff, label = 0.5, "앞면(성공)"
     elif mode == "주사위(특정 눈)":
-        p_eff, label = 1/6, f"{face
+        p_eff, label = 1/6, f"{face} 눈"
+    else:
+        p_eff, label = p_user, "성공"
+
+    # 그래프 앵커
+    anchor("graph")
+
+    st.write(f"**성공 조건:** {label} | **성공확률 p:** {p_eff:.3f}")
+
+    # 시뮬레이션
+    rng = np.random.default_rng()
+    sim = rng.binomial(n=n, p=p_eff, size=repeats)
+
+    counts = np.bincount(sim, minlength=n+1)
+    k_emp = np.nonzero(counts)[0]
+    emp_prob = counts[counts > 0] / repeats
+
+    k = np.arange(0, n + 1)
+    theo = binom.pmf(k, n, p_eff)
+
+    fig = go.Figure()
+    fig.add_bar(x=k_emp, y=emp_prob, name="시뮬레이션", opacity=0.7)
+    fig.add_scatter(x=k, y=theo, mode="lines+markers", name="이론(이항분포)", line=dict(width=2))
+    fig.update_layout(
+        title=f"이항분포 비교 (n={n}, p={p_eff:.3f})",
+        xaxis_title="성공 횟수",
+        yaxis_title="확률",
+        legend_title="범례",
+        bargap=0.05,
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander("📎 시뮬레이션 원자료 보기"):
+        st.dataframe({"성공횟수": sim[: min(1000, repeats)]})
+
+    # 위젯 변경 직후엔 그래프 위치로 점프
+    if st.session_state.get(JUMP_FLAG) == "graph":
+        scroll_to("graph")
+        st.session_state[JUMP_FLAG] = None
