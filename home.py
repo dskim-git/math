@@ -1,6 +1,6 @@
 # home.py
 import streamlit as st
-from nav_helper import CATEGORY_INFO, category_route, inject_sidebar
+from nav_helper import CATEGORY_INFO, category_main_page, inject_sidebar
 
 st.title("🧮 수학 시뮬레이션 허브")
 st.markdown(
@@ -11,16 +11,14 @@ st.markdown(
 """
 )
 
-# (카드형 버튼)
 cols = st.columns(4)
 for (key, label, icon), col in zip(CATEGORY_INFO, cols):
     with col:
         st.page_link(
-            category_route(key),          # ✅ 파일 경로 대신 라우트 사용
+            category_main_page(key),      # ✅ Page 객체를 직접 전달
             label=f"{icon} {label}",
             help=f"{label} 메인으로 이동",
             use_container_width=True,
         )
 
-# 사이드바 고정 표시
 inject_sidebar()
