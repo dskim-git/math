@@ -66,8 +66,12 @@ def render():
                             key=K_FACE, on_change=_mark_changed)
 
         if st.session_state[K_MODE] == "일반 베르누이(p)":
-            st.slider("성공확률 p", 0.0, 1.0,
-                      step=0.01, key=K_P, on_change=_mark_changed)
+            st.slider(
+                "성공확률 p", 0.0, 1.0,
+                value=float(st.session_state.get(K_P, DEFAULTS[K_P])),  # ← 기본 0.35 보장
+                step=0.01, format="%.3f",
+                key=K_P, on_change=_mark_changed
+            )
 
     # 현재 설정
     mode    = st.session_state[K_MODE]
