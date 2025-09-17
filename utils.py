@@ -2,12 +2,19 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 def page_header(title: str, subtitle: str = "", icon: str = ""):
-    if icon:
-        st.markdown(f"### {icon} {title}")
-    else:
-        st.markdown(f"### {title}")
-    if subtitle:
-        st.caption(subtitle)
+    icon_html = f"{icon} " if icon else ""
+    st.markdown(
+        f"""
+        <div style="margin-top:0; padding-top:0;">
+          <h3 style="margin:0.2rem 0 0.5rem 0; font-weight:600;">
+            {icon_html}{title}
+          </h3>
+          {f"<div style='color:var(--secondary-text-color); font-size:0.95rem; margin:0 0 0.6rem 0;'>{subtitle}</div>" if subtitle else ""}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 def anchor(name: str = "content"):
     st.markdown(f"<a id='{name}'></a>", unsafe_allow_html=True)
