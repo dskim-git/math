@@ -1,4 +1,4 @@
-# home.py
+# -*- coding: utf-8 -*-
 import streamlit as st
 from nav_helper import CATEGORY_INFO, category_main_page, inject_sidebar
 
@@ -15,7 +15,7 @@ cols = st.columns(4)
 for (key, label, icon), col in zip(CATEGORY_INFO, cols):
     with col:
         st.page_link(
-            category_main_page(key),      # ✅ Page 객체를 직접 전달
+            category_main_page(key),   # Page 객체 직접 전달
             label=f"{icon} {label}",
             help=f"{label} 메인으로 이동",
             use_container_width=True,
