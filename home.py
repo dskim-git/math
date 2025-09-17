@@ -240,10 +240,13 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
             set_route("home")
             _do_rerun()
 
-    st.title(f"🔬 {SUBJECTS.get(subject_key, subject_key)} · {act.title}")
-    st.caption(act.description)
+    # ⛔️ 여기서 더 이상 st.title / st.caption으로 META 제목·설명 출력하지 않음
+    # 제목/부제는 각 활동의 render()가 책임지도록 통일
     st.divider()
+
+    # 실제 렌더
     act.render()
+
 
 # ---------- 메인 ----------
 def main():
