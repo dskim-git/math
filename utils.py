@@ -22,15 +22,12 @@ def page_header(title: str, subtitle: str = ""):
 def goto(route: str):
     st.session_state["__ROUTE__"] = route
     try:
-        # 최신 버전 호환
-        st.query_params["page"] = route
+        st.query_params["page"] = route  # 최신
     except Exception:
-        # 구버전 호환
-        st.experimental_set_query_params(page=route)
+        st.experimental_set_query_params(page=route)  # 구버전
     st.rerun()
 
 def get_route(default: str = "home") -> str:
-    # 우선순위: 세션 → 쿼리 → 기본값
     if "__ROUTE__" in st.session_state:
         return st.session_state["__ROUTE__"]
     try:
