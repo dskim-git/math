@@ -25,6 +25,14 @@ def _humanize(name: str) -> str:
     name = name.replace("_", " ").replace("-", " ").strip()
     return name if name else "Untitled"
 
+# ---- URL 경로(라우트) 헬퍼 ----
+def category_route(category_key: str) -> str:
+    return f"/{category_key}"
+
+def activity_route(category_key: str, filename_stem: str) -> str:
+    return f"/{category_key}/{_slugify(filename_stem)}"
+
+# 활동 자동 탐색(라우트 포함)
 def _discover_activities(category_key: str):
     folder = SECTIONS_DIR / category_key
     pages = []
@@ -32,12 +40,12 @@ def _discover_activities(category_key: str):
         if fp.name == "__init__.py":
             continue
         title = _humanize(fp.stem)
-        url = f"/{category_key}/{_slugify(fp.stem)}"
+        url = activity_route(category_key, fp.stem)
         pages.append(st.Page(str(fp), title=title, icon="🔹", url_path=url))
     # 카테고리 메인
     main_path = folder / "__init__.py"
     label = next(lbl for k, lbl, _ in CATEGORY_INFO if k == category_key)
-    main_page = st.Page(str(main_path), title=f"{label} 메인", icon="🗂️", url_path=f"/{category_key}")
+    main_page = st.Page(str(main_path), title=f"{label} 메인", icon="🗂️", url_path=category_route(category_key))
     return main_page, pages
 
 def build_navigation():
@@ -52,11 +60,14 @@ def inject_sidebar():
     st.sidebar.markdown("### 교과별 탐색")
     for key, label, icon in CATEGORY_INFO:
         with st.sidebar.expander(f"{icon} {label}", expanded=False):
-            st.page_link(file_path_of_category_main(key), label=f"{label} 메인")
-            for fp in sorted((SECTIONS_DIR / key).glob("*.py")):
+            # 메인으로
+            st.page_link(category_route(key), label=f"{label} 메인")
+            # 활동들
+            folder = SECTIONS_DIR / key
+            for fp in sorted(folder.glob("*.py")):
                 if fp.name == "__init__.py":
                     continue
-                st.page_link(str(fp), label=_humanize(fp.stem))
-
-def file_path_of_category_main(category_key: str) -> str:
-    return str(SECTIONS_DIR / category_key / "__init__.py")
+                st.page_link(
+                    activity_route(key, fp.stem),
+                    label=_humanize(fp.stem)
+                )
