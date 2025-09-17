@@ -4,6 +4,31 @@ import importlib.util
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Any
 
+try:
+    from utils import keep_scroll
+except Exception:
+    import streamlit.components.v1 as components
+    def keep_scroll(key: str = "default"):
+        components.html(f"""
+        <script>
+        (function(){{
+          const KEY = 'st_scroll::' + '{'{'}key{'}'}' + '::' + location.pathname + location.search;
+          function restore() {{
+            const y = sessionStorage.getItem(KEY);
+            if (y !== null) {{
+              window.scrollTo(0, parseFloat(y));
+            }}
+          }}
+          restore(); setTimeout(restore, 50); setTimeout(restore, 250);
+          let t=false;
+          window.addEventListener('scroll', function(){{
+            if(!t){{ requestAnimationFrame(function(){{ sessionStorage.setItem(KEY, window.scrollY); t=false; }}); t=true; }}
+          }});
+          setInterval(function(){{ sessionStorage.setItem(KEY, window.scrollY); }}, 500);
+        }})();
+        </script>
+        """, height=0)
+
 # ---------- 전역 설정 ----------
 st.set_page_config(
     page_title="수학 수업 시뮬레이션 허브",
@@ -240,9 +265,10 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
             set_route("home")
             _do_rerun()
 
-    # ⛔️ 여기서 더 이상 st.title / st.caption으로 META 제목·설명 출력하지 않음
-    # 제목/부제는 각 활동의 render()가 책임지도록 통일
     st.divider()
+
+    # ✅ 여기서 스크롤 유지 스크립트 주입 (액티비티마다 고유 키로)
+    keep_scroll(key=f"{subject_key}/{slug}")
 
     # 실제 렌더
     act.render()
