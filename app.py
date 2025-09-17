@@ -9,9 +9,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# 공통 사이드바(접이식: 상위 클릭 시 하위 노출)
-inject_sidebar()
-
-# 상단 내비게이션(홈/과목/활동 자동 탐색)
-nav = build_navigation()
-nav.run()
+inject_sidebar()           # 사이드바
+nav = build_navigation()   # 네비 생성(모든 Page 등록)
+nav.run()                  # 실행
