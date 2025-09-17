@@ -265,18 +265,42 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
             set_route("home")
             _do_rerun()
 
-    # ✅ 스크롤 유지 스크립트는 회색 줄 *앞*에서 주입
+    # 스크롤 유지 스크립트
     keep_scroll(key=f"{subject_key}/{slug}")
 
-    # ✅ Streamlit 기본 divider 대신, 여백 최소화한 hr 사용
-    st.markdown(
-        "<hr style='margin: 0.25rem 0 0.35rem 0; border: none; "
-        "border-top: 1px solid var(--secondary-background-color);' />",
-        unsafe_allow_html=True,
-    )
+    # --- 여백 타이트하게 만드는 전용 CSS(한 번만 주입) ---
+    if "tight_css" not in st.session_state:
+        st.session_state["tight_css"] = True
+        st.markdown(
+            """
+            <style>
+              /* 회색줄 자체 마진 최소화 */
+              .block-container hr.activity-hr {
+                margin: 0.15rem 0 0.2rem 0 !important;
+                border: none;
+                border-top: 1px solid var(--secondary-background-color);
+              }
+              /* 회색줄 바로 아래 영역(제목 포함)의 상단 여백 제거 */
+              .block-container .after-hr h1,
+              .block-container .after-hr h2,
+              .block-container .after-hr h3,
+              .block-container .after-hr p,
+              .block-container .after-hr .stMarkdown {
+                margin-top: 0.2rem !important;
+              }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
 
-    # 제목은 각 액티비티의 render()에서만 출력 (중복X)
+    # 기본 divider 대신 마진을 거의 없앤 hr
+    st.markdown("<hr class='activity-hr' />", unsafe_allow_html=True)
+
+    # ▼ render 전체를 래핑해서, 제목 상단 여백을 강제로 억제
+    st.markdown("<div class='after-hr'>", unsafe_allow_html=True)
     act.render()
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 # ---------- 메인 ----------
