@@ -265,12 +265,17 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
             set_route("home")
             _do_rerun()
 
-    st.divider()
-
-    # ✅ 여기서 스크롤 유지 스크립트 주입 (액티비티마다 고유 키로)
+    # ✅ 스크롤 유지 스크립트는 회색 줄 *앞*에서 주입
     keep_scroll(key=f"{subject_key}/{slug}")
 
-    # 실제 렌더
+    # ✅ Streamlit 기본 divider 대신, 여백 최소화한 hr 사용
+    st.markdown(
+        "<hr style='margin: 0.25rem 0 0.35rem 0; border: none; "
+        "border-top: 1px solid var(--secondary-background-color);' />",
+        unsafe_allow_html=True,
+    )
+
+    # 제목은 각 액티비티의 render()에서만 출력 (중복X)
     act.render()
 
 
