@@ -34,34 +34,40 @@ def anchor(name: str = "content"):
 def scroll_to(name: str = "content"):
     components.html(f"<script>window.location.hash = '{name}'</script>", height=0)
 
-def keep_scroll(key: str = "default"):
-    components.html(
-        f"""
-        <script>
-        (function(){{
-          const KEY = 'st_scroll::{key}::' + location.pathname + location.search;
-          function restore(){{
-            const y = sessionStorage.getItem(KEY);
-            if (y !== null) window.scrollTo(0, parseFloat(y));
-          }}
-          restore(); setTimeout(restore, 50); setTimeout(restore, 250);
-          let ticking = false;
-          window.addEventListener('scroll', function(){{
-            if (!ticking) {{
-              window.requestAnimationFrame(function(){{
-                sessionStorage.setItem(KEY, window.scrollY);
-                ticking = false;
-              }}); ticking = true;
-            }}
-          }});
-          setInterval(function(){{
+def keep_scroll(key: str = "default", mount: str = "sidebar"):
+    """
+    rerun 후 직전 스크롤 위치 복원.
+    mount: 'sidebar' | 'main'  (여백을 없애려면 'sidebar' 권장)
+    """
+    html = f"""
+    <script>
+    (function(){{
+      const KEY = 'st_scroll::{key}::' + location.pathname + location.search;
+      function restore(){{
+        const y = sessionStorage.getItem(KEY);
+        if (y !== null) window.scrollTo(0, parseFloat(y));
+      }}
+      restore(); setTimeout(restore, 50); setTimeout(restore, 250);
+      let ticking = false;
+      window.addEventListener('scroll', function(){{
+        if (!ticking) {{
+          window.requestAnimationFrame(function(){{
             sessionStorage.setItem(KEY, window.scrollY);
-          }}, 500);
-        }})();
-        </script>
-        """,
-        height=0,
-    )
+            ticking = false;
+          }}); ticking = true;
+        }}
+      }});
+      setInterval(function(){{
+        sessionStorage.setItem(KEY, window.scrollY);
+      }}, 500);
+    }})();
+    </script>
+    """
+    if mount == "sidebar":
+        with st.sidebar:
+            components.html(html, height=0)
+    else:
+        components.html(html, height=0)
 
 # 레거시 호환(아무 것도 안 함)
 def set_base_page(title: str, icon: str = "📊"):
