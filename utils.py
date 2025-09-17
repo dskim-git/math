@@ -2,7 +2,6 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 def page_header(title: str, subtitle: str = "", icon: str = ""):
-    """페이지 상단 제목/부제. render에서만 호출해 '제목 1회 출력' 원칙 유지."""
     if icon:
         st.markdown(f"### {icon} {title}")
     else:
@@ -11,9 +10,47 @@ def page_header(title: str, subtitle: str = "", icon: str = ""):
         st.caption(subtitle)
 
 def anchor(name: str = "content"):
-    """현재 위치에 스크롤 앵커를 심습니다."""
     st.markdown(f"<a id='{name}'></a>", unsafe_allow_html=True)
 
 def scroll_to(name: str = "content"):
-    """앵커 이름으로 즉시 스크롤."""
     components.html(f"<script>window.location.hash = '{name}'</script>", height=0)
+
+def keep_scroll(key: str = "default"):
+    """
+    위젯 변경으로 rerun이 발생해도 직전의 스크롤 위치를 복원합니다.
+    key: 액티비티/페이지별로 구분 저장하고 싶을 때 식별자.
+    """
+    components.html(f"""
+    <script>
+    (function(){{
+      const KEY = 'st_scroll::{key}::' + location.pathname + location.search;
+      function restore() {{
+        const y = sessionStorage.getItem(KEY);
+        if (y !== null) {{
+          window.scrollTo(0, parseFloat(y));
+        }}
+      }}
+      // 복원: 즉시 + 약간 지연 2회 (DOM 렌더 이후도 커버)
+      restore();
+      setTimeout(restore, 50);
+      setTimeout(restore, 250);
+
+      // 저장: 스크롤 시 requestAnimationFrame으로 쓰로틀
+      let ticking = false;
+      window.addEventListener('scroll', function(){{
+        if (!ticking) {{
+          window.requestAnimationFrame(function(){{
+            sessionStorage.setItem(KEY, window.scrollY);
+            ticking = false;
+          }});
+          ticking = true;
+        }}
+      }});
+
+      // 혹시 값을 못 저장한 경우 대비, 주기적으로도 백업
+      setInterval(function(){{
+        sessionStorage.setItem(KEY, window.scrollY);
+      }}, 500);
+    }})();
+    </script>
+    """, height=0)
