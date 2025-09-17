@@ -258,19 +258,16 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
     cols = st.columns([1, 2, 1])
     with cols[0]:
         if st.button("← 교과 메인", type="secondary", use_container_width=True):
-            set_route("subject", subject=subject_key)
-            _do_rerun()
+            set_route("subject", subject=subject_key); _do_rerun()
     with cols[2]:
         if st.button("🏠 홈", type="secondary", use_container_width=True):
-            set_route("home")
-            _do_rerun()
+            set_route("home"); _do_rerun()
 
-    # 스크롤 유지 (유지)
-    keep_scroll(key=f"{subject_key}/{slug}")
+    # ✅ 스크롤 유지 스크립트를 사이드바에 주입 → 본문에 '빈 공간' 생성 안 됨
+    keep_scroll(key=f"{subject_key}/{slug}", mount="sidebar")
 
-    # ✅ 아무 구분선/마크다운/래핑 없이 곧바로 렌더
+    # ⚠️ 여기에는 어떤 divider/빈 마크다운도 넣지 마세요 (여백 원인)
     act.render()
-
 
 
 
