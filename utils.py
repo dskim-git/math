@@ -1,41 +1,26 @@
+# home.py
 import streamlit as st
+from nav_helper import CATEGORY_INFO, file_path_of_category_main, inject_sidebar
 
-def set_base_page(page_title: str, page_icon: str = "📘", layout: str = "wide"):
-    st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
-    _css = """
-        <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        /* 제목 잘림 방지: 상단 여백 확보 */
-        .block-container {padding-top: 3rem; padding-bottom: 2rem;}
-        </style>
+st.title("🧮 수학 시뮬레이션 허브")
+st.markdown(
     """
-    st.markdown(_css, unsafe_allow_html=True)
+**수학 수업에서 바로 쓰는 시뮬레이션 모음집**  
+- 상단/사이드바에서 과목을 선택해 활동으로 이동하세요.  
+- 새 활동은 해당 과목 폴더에 `.py` 파일 추가만 하면 자동 반영됩니다.  
+"""
+)
 
-def page_header(title: str, subtitle: str = ""):
-    st.markdown(f"### {title}")
-    if subtitle:
-        st.caption(subtitle)
-    st.markdown("---")
+# (보기 좋은 카드형 버튼)
+cols = st.columns(4)
+for (key, label, icon), col in zip(CATEGORY_INFO, cols):
+    with col:
+        st.page_link(
+            file_path_of_category_main(key),
+            label=f"{icon} {label}",
+            help=f"{label} 메인으로 이동",
+            use_container_width=True,
+        )
 
-# --- 간단 라우팅 유틸 (세션/쿼리파라미터 호환) ---
-def goto(route: str):
-    st.session_state["__ROUTE__"] = route
-    try:
-        st.query_params["page"] = route  # 최신
-    except Exception:
-        st.experimental_set_query_params(page=route)  # 구버전
-    st.rerun()
-
-def get_route(default: str = "home") -> str:
-    if "__ROUTE__" in st.session_state:
-        return st.session_state["__ROUTE__"]
-    try:
-        qp = st.query_params
-        if "page" in qp and qp["page"]:
-            return qp["page"]
-    except Exception:
-        qp = st.experimental_get_query_params()
-        if "page" in qp and len(qp["page"]) > 0:
-            return qp["page"][0]
-    return default
+# 사이드바 고정 표시
+inject_sidebar()
