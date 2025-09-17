@@ -82,7 +82,7 @@ def keep_scroll(key: str = "default", mount: str = "sidebar"):
     # height=1 로 지정(0은 일부 빌드에서 기본값으로 치환되어 큰 빈칸이 생김)
     if mount == "sidebar":
         with st.sidebar:
-            components.html(html, height=0, scrolling=False)
+            components.html(html, height=1, scrolling=False)
             # 사이드바 쪽 components 외곽 여백도 0으로(한 번만 주입)
             if "_side_comp_tight" not in st.session_state:
                 st.session_state["_side_comp_tight"] = True
