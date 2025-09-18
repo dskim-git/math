@@ -42,6 +42,7 @@ SUBJECTS = {
     "calculus": "미적분학",
     "probability": "확률과통계",
     "geometry": "기하학",
+    "etc" : "기타"
 }
 
 # home.py와 같은 디렉터리 기준
