@@ -4,6 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from scipy.stats import norm
 
+# utils
 try:
     from utils import page_header, anchor, scroll_to
 except Exception:
@@ -21,7 +22,7 @@ META = {
     "description": "모분포가 달라도 n이 커지면 표본평균 분포가 정규에 가까워지는 현상을 시각화합니다.",
 }
 
-# 세션 키
+# ---- 세션 키 ----
 K_DIST   = "clt_dist"
 K_N      = "clt_n"
 K_M      = "clt_m"
@@ -34,6 +35,7 @@ K_LMBDA  = "clt_exp_lambda"
 K_P      = "clt_bern_p"
 JUMP     = "clt_jump"
 
+# ---- 기본값 ----
 DEFAULTS = {
     K_DIST:  "정규",
     K_N:     30,
@@ -55,6 +57,33 @@ def _ensure_defaults():
 def _mark_changed():
     st.session_state[JUMP] = "graph"
 
+def _on_dist_change():
+    """모분포가 바뀌면 해당 분포의 모수를 기본값으로 즉시 리셋."""
+    d = st.session_state[K_DIST]
+    st.session_state[JUMP] = "graph"
+    if d == "정규":
+        st.session_state[K_MU]    = DEFAULTS[K_MU]
+        st.session_state[K_SIGMA] = DEFAULTS[K_SIGMA]
+    elif d == "균등":
+        st.session_state[K_A] = DEFAULTS[K_A]
+        st.session_state[K_B] = DEFAULTS[K_B]
+    elif d == "지수":
+        st.session_state[K_LMBDA] = DEFAULTS[K_LMBDA]
+    else:  # 베르누이
+        st.session_state[K_P] = DEFAULTS[K_P]
+
+def _on_unif_a_change():
+    """균등분포 a 조정 시 b>a 유지."""
+    st.session_state[JUMP] = "graph"
+    if st.session_state[K_B] <= st.session_state[K_A]:
+        st.session_state[K_B] = float(st.session_state[K_A]) + 0.1
+
+def _on_unif_b_change():
+    """균등분포 b 조정 시 b>a 유지."""
+    st.session_state[JUMP] = "graph"
+    if st.session_state[K_B] <= st.session_state[K_A]:
+        st.session_state[K_B] = float(st.session_state[K_A]) + 0.1
+
 def _draw_hist_with_normal(x, mu, sigma, bins, title):
     hist_y, hist_x = np.histogram(x, bins=bins, density=True)
     centers = 0.5 * (hist_x[:-1] + hist_x[1:])
@@ -70,56 +99,41 @@ def render():
     _ensure_defaults()
     page_header("중심극한정리 (CLT) 데모", "표본평균의 분포가 정규로 수렴하는 모습을 관찰합니다.", icon="📈", top_rule=True)
 
-    # ---------- 사이드바 (value 인자 없이 key만 사용) ----------
+    # ---- 사이드바 ----
     with st.sidebar:
         st.subheader("⚙️ 설정")
 
-        st.selectbox("모분포", ["정규", "균등", "지수", "베르누이"],
-                     key=K_DIST, on_change=_mark_changed)
+        # 분포 선택: 바뀌면 모수 기본값으로 리셋
+        st.selectbox("모분포", ["정규", "균등", "지수", "베르누이"], key=K_DIST, on_change=_on_dist_change)
 
-        st.slider("표본 크기 n", 1, 200,
-                  key=K_N, on_change=_mark_changed)
+        st.slider("표본 크기 n", 1, 200, key=K_N, on_change=_mark_changed)
+        st.slider("표본 개수 M (시행 수)", 200, 20000, step=200, key=K_M, on_change=_mark_changed)
+        st.slider("히스토그램 구간 수", 10, 120, key=K_BINS, on_change=_mark_changed)
 
-        st.slider("표본 개수 M (시행 수)", 200, 20000,
-                  step=200, key=K_M, on_change=_mark_changed)
-
-        st.slider("히스토그램 구간 수", 10, 120,
-                  key=K_BINS, on_change=_mark_changed)
-
-        # 분포별 모수(모두 슬라이더/컨트롤 값은 세션에 저장됨)
+        # 분포별 모수(모두 value 없이 key만 사용 → 세션이 단일 원본)
         if st.session_state[K_DIST] == "정규":
-            st.slider("μ (정규)", -10.0, 10.0,
-                      step=0.1, key=K_MU, on_change=_mark_changed)
-            st.slider("σ > 0 (정규)", 0.05, 5.0,
-                      step=0.05, key=K_SIGMA, on_change=_mark_changed)
+            st.slider("μ (정규)", -10.0, 10.0, step=0.1, key=K_MU, on_change=_mark_changed)
+            st.slider("σ > 0 (정규)", 0.05, 5.0, step=0.05, key=K_SIGMA, on_change=_mark_changed)
 
         elif st.session_state[K_DIST] == "균등":
-            st.slider("a (하한)", -10.0, 9.9,
-                      step=0.1, key=K_A, on_change=_mark_changed)
-            st.slider("b (상한, a<b)", -9.9, 10.0,
-                      step=0.1, key=K_B, on_change=_mark_changed)
-            # 즉시 보정(세션 값 직접 수정)
-            if st.session_state[K_B] <= st.session_state[K_A]:
-                st.session_state[K_B] = float(st.session_state[K_A]) + 0.1
+            st.slider("a (하한)", -10.0, 9.9, step=0.1, key=K_A, on_change=_on_unif_a_change)
+            st.slider("b (상한, a<b)", -9.9, 10.0, step=0.1, key=K_B, on_change=_on_unif_b_change)
 
         elif st.session_state[K_DIST] == "지수":
-            st.slider("λ > 0 (지수, 평균=1/λ)", 0.05, 5.0,
-                      step=0.05, key=K_LMBDA, on_change=_mark_changed)
+            st.slider("λ > 0 (지수, 평균=1/λ)", 0.05, 5.0, step=0.05, key=K_LMBDA, on_change=_mark_changed)
 
         else:  # 베르누이
-            st.slider("p (베르누이 성공확률)", 0.0, 1.0,
-                      step=0.01, key=K_P, on_change=_mark_changed)
+            st.slider("p (베르누이 성공확률)", 0.0, 1.0, step=0.01, key=K_P, on_change=_mark_changed)
 
-    # ---------- 현재 설정(세션에서 단일 소스로 읽음) ----------
+    # ---- 현재 설정 (세션에서만 읽음) ----
     dist  = st.session_state[K_DIST]
     n     = int(st.session_state[K_N])
     M     = int(st.session_state[K_M])
     bins  = int(st.session_state[K_BINS])
 
-    # 앵커
     anchor("graph")
 
-    # ---------- 표본평균 생성 & 이론값 계산 ----------
+    # ---- 표본평균 생성 & 수식 표기 ----
     rng = np.random.default_rng()
 
     if dist == "정규":
@@ -132,7 +146,9 @@ def render():
 
     elif dist == "균등":
         a = float(st.session_state[K_A]); b = float(st.session_state[K_B])
-        if b <= a: b = a + 1e-6
+        if b <= a:  # 안전장치
+            b = a + 1e-6
+            st.session_state[K_B] = b
         mu_u, var_u = (a + b) / 2.0, (b - a) ** 2 / 12.0
         theo_mu, theo_sd = mu_u, np.sqrt(var_u / n)
         xbar = rng.uniform(a, b, size=(M, n)).mean(axis=1)
@@ -158,11 +174,11 @@ def render():
         st.markdown("**모분포 PMF**")
         st.latex(rf"P(X=k)={p:.3f}^k(1-{p:.3f})^{{1-k}},\quad k\in\{{0,1\}}")
 
-    # 표본평균의 정규근사 수식
+    # 표본평균 정규근사
     st.markdown("**표본평균의 정규근사**")
     st.latex(rf"\bar X\ \approx\ \mathcal{{N}}\!\left({theo_mu:.3f},\, {theo_sd:.3f}^2\right)")
 
-    # 시각화
+    # ---- 시각화 ----
     fig = _draw_hist_with_normal(
         xbar, mu=theo_mu, sigma=theo_sd, bins=bins,
         title=f"표본평균 분포 vs 정규 근사 (n={n}, M={M})"
@@ -174,7 +190,7 @@ def render():
         f"시뮬: 평균 **{np.mean(xbar):.4f}**, 표준편차 **{np.std(xbar, ddof=1):.4f}**"
     )
 
-    # 변경 직후 그래프 위치로 복귀
+    # ---- 스크롤 복귀 ----
     if st.session_state.get(JUMP) == "graph":
         scroll_to("graph")
         st.session_state[JUMP] = None
