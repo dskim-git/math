@@ -23,29 +23,22 @@ META = {
 }
 
 # ---- 세션 키 ----
-K_NMAX   = "sier_nmax"      # 목표(최대) 점 개수
-K_CUR    = "sier_cur"       # 현재 그릴 점 개수
-K_WARMUP = "sier_warmup"    # 버릴 단계 수
-K_SIZE   = "sier_dot_size"  # 점 크기
-K_SEED   = "sier_seed"      # 난수 시드
-
-K_AUTO   = "sier_auto"      # 자동재생 on/off
-K_SPEED  = "sier_speed"     # 자동재생 속도(초/스텝)
-
-# 가중치(정점 선택 확률의 원시 가중치 → 내부에서 정규화)
-K_W1 = "sier_w1"
-K_W2 = "sier_w2"
-K_W3 = "sier_w3"
-
-# 삼각형 표시 토글
+K_NMAX   = "sier_nmax"
+K_CUR    = "sier_cur"
+K_WARMUP = "sier_warmup"
+K_SIZE   = "sier_dot_size"
+K_SEED   = "sier_seed"
+K_AUTO   = "sier_auto"
+K_SPEED  = "sier_speed"
+K_W1 = "sier_w1"; K_W2 = "sier_w2"; K_W3 = "sier_w3"
 K_TRI_ON = "sier_triangle_on"
 
-# 내부 상태(캐시)
-K_SIG     = "sier_signature"  # 파라미터 서명값 → 바뀌면 시퀀스 리셋
-K_IDX     = "sier_idx"        # 미리 뽑아둔 꼭짓점 선택 인덱스
-K_PTS     = "sier_pts"        # 점 좌표 캐시 (Nmax, 2)
-K_DONE    = "sier_done"       # 현재까지 계산된 점 개수
-K_P_LAST  = "sier_plast"      # 마지막 점 좌표
+# 내부 상태
+K_SIG  = "sier_signature"
+K_IDX  = "sier_idx"
+K_PTS  = "sier_pts"
+K_DONE = "sier_done"
+K_P_LAST = "sier_plast"
 
 DEFAULTS = {
     K_NMAX:   50_000,
@@ -55,9 +48,7 @@ DEFAULTS = {
     K_SEED:   42,
     K_AUTO:   False,
     K_SPEED:  0.10,
-    K_W1:     1.0,
-    K_W2:     1.0,
-    K_W3:     1.0,
+    K_W1:     1.0, K_W2: 1.0, K_W3: 1.0,
     K_TRI_ON: False,
 }
 
@@ -147,7 +138,7 @@ def render():
         tri_label = "△ ABC 숨기기" if st.session_state[K_TRI_ON] else "△ ABC 보이기"
         st.button(tri_label, key="sier_tri_btn", on_click=_toggle_tri, use_container_width=True)
 
-    # ---- 파라미터 & 서명 확인 (변경 시 리셋) ----
+    # ---- 파라미터 & 서명(변경 시 리셋) ----
     Nmax   = int(st.session_state[K_NMAX])
     warmup = int(st.session_state[K_WARMUP])
     seed   = int(st.session_state[K_SEED])
@@ -165,41 +156,33 @@ def render():
     anchor("graph")
 
     if not st.session_state[K_AUTO]:
-        # 수동 모드: 우측에 − / + 버튼 배치 (한 번 클릭할 때마다 1씩 조정)
-        # 먼저 현재값을 경계 내로 보정
+        # 수동 모드: − / ＋ 버튼으로 1씩 조정
         st.session_state[K_CUR] = max(1, min(int(st.session_state[K_CUR]), Nmax))
-
         c_slider, c_minus, c_plus = st.columns([8, 1, 1])
         with c_minus:
             dec_clicked = st.button("−", key="sier_dec", help="점 1개 감소", use_container_width=True)
         with c_plus:
-            inc_clicked = st.button("+", key="sier_inc", help="점 1개 증가", use_container_width=True)
-
-        # 버튼 결과를 슬라이더 렌더 이전에 반영
+            inc_clicked = st.button("＋", key="sier_inc", help="점 1개 증가", use_container_width=True)  # ← 전각 플러스
         if dec_clicked:
             st.session_state[K_CUR] = max(1, int(st.session_state[K_CUR]) - 1)
         if inc_clicked:
             st.session_state[K_CUR] = min(Nmax, int(st.session_state[K_CUR]) + 1)
-
         with c_slider:
             st.slider("현재 점 개수 (수동)", 1, Nmax, key=K_CUR, step=1)
     else:
-        # 자동 모드: 100 스텝 내외로 Nmax 도달
         steps_target = 100
         inc = max(1, math.ceil(Nmax / steps_target))
         st.session_state[K_CUR] = min(Nmax, int(st.session_state[K_CUR]) + inc)
 
-    # 계산을 target까지 확장
     target = int(st.session_state[K_CUR])
     _extend_points_to(target)
 
     # ---- 시각화 ----
     pts = st.session_state[K_PTS][:target]
     sz  = int(st.session_state[K_SIZE])
-
     fig = go.Figure()
 
-    # (옵션) 배경 삼각형 ABC
+    # (옵션) 배경 삼각형 + 라벨(겹치지 않도록 x/yshift 적용)
     if st.session_state[K_TRI_ON]:
         V = np.array([[0.0, 0.0],
                       [1.0, 0.0],
@@ -213,9 +196,13 @@ def render():
                  line=dict(width=2, color="rgba(60,60,60,0.7)"), layer="below"),
         ]
         fig.update_layout(shapes=shapes)
-        fig.add_annotation(x=V[0,0], y=V[0,1], text="A", showarrow=False, font=dict(size=14))
-        fig.add_annotation(x=V[1,0], y=V[1,1], text="B", showarrow=False, font=dict(size=14))
-        fig.add_annotation(x=V[2,0], y=V[2,1], text="C", showarrow=False, font=dict(size=14))
+        # 점 이름이 선과 겹치지 않도록 픽셀 단위로 살짝 띄우기
+        fig.add_annotation(x=V[0,0], y=V[0,1], text="A", showarrow=False,
+                           font=dict(size=14), xshift=-14, yshift=-12)
+        fig.add_annotation(x=V[1,0], y=V[1,1], text="B", showarrow=False,
+                           font=dict(size=14), xshift=14, yshift=-12)
+        fig.add_annotation(x=V[2,0], y=V[2,1], text="C", showarrow=False,
+                           font=dict(size=14), yshift=14)
 
     fig.add_scattergl(
         x=pts[:, 0], y=pts[:, 1],
@@ -234,7 +221,7 @@ def render():
 
     st.progress(target / Nmax if Nmax > 0 else 0.0, text=f"{target:,} / {Nmax:,}")
 
-    # ---- 자동재생 제어 ----
+    # 자동재생 제어
     if st.session_state[K_AUTO]:
         if target >= Nmax:
             st.session_state[K_AUTO] = False
