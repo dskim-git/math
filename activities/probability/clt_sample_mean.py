@@ -26,7 +26,6 @@ K_DIST   = "clt_dist"
 K_N      = "clt_n"
 K_M      = "clt_m"
 K_BINS   = "clt_bins"
-# 분포별 모수
 K_MU     = "clt_norm_mu"
 K_SIGMA  = "clt_norm_sigma"
 K_A      = "clt_unif_a"
@@ -71,7 +70,7 @@ def render():
     _ensure_defaults()
     page_header("중심극한정리 (CLT) 데모", "표본평균의 분포가 정규로 수렴하는 모습을 관찰합니다.", icon="📈", top_rule=True)
 
-    # ---- 사이드바: 즉시 반영되는 슬라이더 기반 컨트롤 ----
+    # ---- 사이드바 (위젯 '반환값'을 바로 사용) ----
     with st.sidebar:
         st.subheader("⚙️ 설정")
 
@@ -80,33 +79,37 @@ def render():
             index=["정규", "균등", "지수", "베르누이"].index(st.session_state[K_DIST]),
             key=K_DIST, on_change=_mark_changed
         )
-        n = st.slider("표본 크기 n", 1, 200, value=int(st.session_state[K_N]),
-                      key=K_N, on_change=_mark_changed)
-        M = st.slider("표본 개수 M (시행 수)", 200, 20000, value=int(st.session_state[K_M]),
-                      step=200, key=K_M, on_change=_mark_changed)
-        bins = st.slider("히스토그램 구간 수", 10, 120, value=int(st.session_state[K_BINS]),
-                         key=K_BINS, on_change=_mark_changed)
+        n = st.slider("표본 크기 n", 1, 200,
+                      value=int(st.session_state[K_N]), key=K_N, on_change=_mark_changed)
+        M = st.slider("표본 개수 M (시행 수)", 200, 20000,
+                      value=int(st.session_state[K_M]), step=200, key=K_M, on_change=_mark_changed)
+        bins = st.slider("히스토그램 구간 수", 10, 120,
+                         value=int(st.session_state[K_BINS]), key=K_BINS, on_change=_mark_changed)
 
-        # 분포별 모수 (모두 슬라이더 → 변경 즉시 반영)
-        # 범위는 수업용으로 무난한 값으로 설정. 필요시 조정 가능.
+        # 분포별 모수 — 모두 '슬라이더 반환값'을 변수로 저장
+        mu = sigma = a = b = lmbda = p = None
+
         if dist == "정규":
-            mu = st.slider("μ (정규)", -10.0, 10.0, value=float(st.session_state[K_MU]),
-                           step=0.1, key=K_MU, on_change=_mark_changed)
-            sigma = st.slider("σ > 0 (정규)", 0.05, 5.0, value=float(st.session_state[K_SIGMA]),
-                              step=0.05, key=K_SIGMA, on_change=_mark_changed)
+            mu = st.slider("μ (정규)", -10.0, 10.0,
+                           value=float(st.session_state[K_MU]), step=0.1,
+                           key=K_MU, on_change=_mark_changed)
+            sigma = st.slider("σ > 0 (정규)", 0.05, 5.0,
+                              value=float(st.session_state[K_SIGMA]), step=0.05,
+                              key=K_SIGMA, on_change=_mark_changed)
         elif dist == "균등":
-            a = st.slider("a (하한)", -10.0, 9.9, value=float(st.session_state[K_A]),
-                          step=0.1, key=K_A, on_change=_mark_changed)
-            b = st.slider("b (상한, a<b)", -9.9, 10.0, value=float(st.session_state[K_B]),
-                          step=0.1, key=K_B, on_change=_mark_changed)
-            # 안전장치: a < b 보장
-            if b <= a:
+            a = st.slider("a (하한)", -10.0, 9.9,
+                          value=float(st.session_state[K_A]), step=0.1,
+                          key=K_A, on_change=_mark_changed)
+            b = st.slider("b (상한, a<b)", -9.9, 10.0,
+                          value=float(st.session_state[K_B]), step=0.1,
+                          key=K_B, on_change=_mark_changed)
+            if b <= a:   # 즉시 보정(로컬 변수 + 세션 동기화)
                 b = a + 0.1
                 st.session_state[K_B] = b
         elif dist == "지수":
             lmbda = st.slider("λ > 0 (지수, 평균=1/λ)", 0.05, 5.0,
-                              value=float(st.session_state[K_LMBDA]),
-                              step=0.05, key=K_LMBDA, on_change=_mark_changed)
+                              value=float(st.session_state[K_LMBDA]), step=0.05,
+                              key=K_LMBDA, on_change=_mark_changed)
         else:  # 베르누이
             p = st.slider("p (베르누이 성공확률)", 0.0, 1.0,
                           value=float(st.session_state[K_P]), step=0.01,
@@ -115,18 +118,19 @@ def render():
     # ---- 그래프 위치 앵커 ----
     anchor("graph")
 
-    # ---- 표본평균 생성 + 이론값 ----
+    # ---- 표본평균 생성: 반드시 '위젯 반환값' 변수로 계산 ----
     rng = np.random.default_rng()
+
     if dist == "정규":
-        mu = float(st.session_state[K_MU]); sigma = float(st.session_state[K_SIGMA])
+        mu = float(mu); sigma = float(sigma)
         theo_mu, theo_sd = mu, sigma / np.sqrt(n)
         xbar = rng.normal(mu, sigma, size=(M, n)).mean(axis=1)
         desc = f"모분포: N({mu:.2f}, {sigma:.2f}²)"
-        # 확률밀도 함수
         st.markdown("**모분포 PDF**")
         st.latex(rf"f_X(x)=\frac{{1}}{{{sigma:.3f}\sqrt{{2\pi}}}}\exp\!\left(-\frac{{(x-{mu:.3f})^2}}{{2\,{sigma:.3f}^2}}\right)")
+
     elif dist == "균등":
-        a = float(st.session_state[K_A]); b = float(st.session_state[K_B])
+        a = float(a); b = float(b)
         if b <= a: b = a + 1e-6
         mu_u, var_u = (a + b) / 2.0, (b - a) ** 2 / 12.0
         theo_mu, theo_sd = mu_u, np.sqrt(var_u / n)
@@ -134,16 +138,18 @@ def render():
         desc = f"모분포: U({a:.2f}, {b:.2f})"
         st.markdown("**모분포 PDF**")
         st.latex(rf"f_X(x)=\begin{{cases}}\dfrac{{1}}{{{b:.3f}-{a:.3f}}}, & {a:.3f}\le x\le {b:.3f} \\[4pt] 0, & \text{{else}}\end{{cases}}")
+
     elif dist == "지수":
-        l = float(st.session_state[K_LMBDA])
+        l = float(lmbda)
         mu_e, var_e = 1.0 / l, 1.0 / (l * l)
         theo_mu, theo_sd = mu_e, np.sqrt(var_e / n)
         xbar = rng.exponential(1.0 / l, size=(M, n)).mean(axis=1)
         desc = f"모분포: Exp(λ={l:.2f})"
         st.markdown("**모분포 PDF**")
         st.latex(rf"f_X(x)={l:.3f}\,e^{{-{l:.3f}x}},\quad x\ge 0")
+
     else:  # 베르누이
-        p_ = float(st.session_state[K_P])
+        p_ = float(p)
         mu_b, var_b = p_, p_ * (1 - p_)
         theo_mu, theo_sd = mu_b, np.sqrt(var_b / n)
         xbar = rng.binomial(n=n, p=p_, size=M) / n
