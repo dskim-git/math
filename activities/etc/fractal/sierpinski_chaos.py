@@ -19,7 +19,7 @@ except Exception:
 
 META = {
     "title": "시에르핀스키 삼각형 (Chaos Game)",
-    "description": "무작위로 꼭짓점을 선택해 중점으로 이동하는 과정을 점점 늘려가며 애니메이션으로 관찰합니다.",
+    "description": "무작위 꼭짓점으로 중점을 반복 이동하며, 점이 하나씩 쌓이는 과정을 애니메이션으로 관찰합니다.",
 }
 
 # ---- 세션 키 ----
@@ -28,6 +28,7 @@ K_CUR    = "sier_cur"       # 현재 그릴 점 개수
 K_WARMUP = "sier_warmup"    # 버릴 단계 수
 K_SIZE   = "sier_dot_size"  # 점 크기
 K_SEED   = "sier_seed"      # 난수 시드
+
 K_AUTO   = "sier_auto"      # 자동재생 on/off
 K_SPEED  = "sier_speed"     # 자동재생 속도(초/스텝)
 
@@ -35,6 +36,9 @@ K_SPEED  = "sier_speed"     # 자동재생 속도(초/스텝)
 K_W1 = "sier_w1"
 K_W2 = "sier_w2"
 K_W3 = "sier_w3"
+
+# 삼각형 표시 토글
+K_TRI_ON = "sier_triangle_on"
 
 # 내부 상태(캐시)
 K_SIG     = "sier_signature"  # 파라미터 서명값 → 바뀌면 시퀀스 리셋
@@ -54,6 +58,7 @@ DEFAULTS = {
     K_W1:     1.0,
     K_W2:     1.0,
     K_W3:     1.0,
+    K_TRI_ON: False,   # 기본은 숨김
 }
 
 def _ensure_defaults():
@@ -67,7 +72,6 @@ def _signature(nmax, warmup, seed, w1, w2, w3):
 
 def _reset_sequence(nmax, warmup, seed, p_vec):
     """선택 인덱스/점 배열/초기점 등을 리셋."""
-    # 정삼각형 꼭짓점 (정규화 좌표)
     V = np.array([[0.0, 0.0],
                   [1.0, 0.0],
                   [0.5, np.sqrt(3)/2.0]], dtype=np.float32)
@@ -78,7 +82,7 @@ def _reset_sequence(nmax, warmup, seed, p_vec):
     # 시작점: 무게중심 근처
     p = V.mean(axis=0) + rng.normal(0, 0.01, size=2).astype(np.float32)
 
-    # 워밍업(버리기) 먼저 진행
+    # 워밍업(버리기)
     for i in range(int(warmup)):
         v = V[idx[i]]
         p = (p + v) / 2.0
@@ -91,7 +95,6 @@ def _reset_sequence(nmax, warmup, seed, p_vec):
 
 def _extend_points_to(target_n):
     """캐시에 들어있는 점을 target_n개까지 확장 계산."""
-    # 정삼각형 꼭짓점
     V = np.array([[0.0, 0.0],
                   [1.0, 0.0],
                   [0.5, np.sqrt(3)/2.0]], dtype=np.float32)
@@ -105,14 +108,12 @@ def _extend_points_to(target_n):
     pts = st.session_state[K_PTS]
     p   = st.session_state[K_P_LAST]
 
-    # 한 번에 너무 큰 루프를 돌면 프레임이 길어질 수 있으므로, 적당히 나눠서 처리
-    # (여기서는 최대 10_000개씩 확장)
-    CHUNK = 10_000
+    CHUNK = 10_000  # 너무 큰 루프 방지
     cur = done
     while cur < target:
         end = min(target, cur + CHUNK)
         for i in range(cur, end):
-            v = V[idx[i + st.session_state[K_WARMUP]]]  # 워밍업 뒤의 인덱스를 사용
+            v = V[idx[i + st.session_state[K_WARMUP]]]  # 워밍업 뒤의 인덱스 사용
             p = (p + v) / 2.0
             pts[i] = p
         cur = end
@@ -127,7 +128,6 @@ def render():
     # ---- 사이드바 ----
     with st.sidebar:
         st.subheader("⚙️ 설정")
-        # 목표(최대) 점 개수: 1부터 시작 가능하도록
         st.slider("최대 점 개수 Nₘₐₓ", 1, 300_000, key=K_NMAX, step=1)
         st.slider("워밍업 단계(버리기)", 0, 500, key=K_WARMUP, step=5)
         st.slider("점 크기(px)", 1, 6, key=K_SIZE, step=1)
@@ -151,9 +151,20 @@ def render():
 
         st.divider()
         st.subheader("▶ 자동 재생")
-        st.toggle("자동재생 켜기", value=st.session_state[K_AUTO], key=K_AUTO)
         st.slider("⏱️ 속도 (초/스텝)", 0.03, 0.60, key=K_SPEED, step=0.01)
-        st.caption("작을수록 빠르게 그려집니다.")
+        # ▶/⏸ 토글 버튼 (한 개 버튼으로 시작/정지 전환)
+        def _toggle_auto():
+            st.session_state[K_AUTO] = not st.session_state[K_AUTO]
+        play_label = "⏸ 자동재생 정지" if st.session_state[K_AUTO] else "▶ 자동재생 시작"
+        st.button(play_label, key="sier_play_btn", on_click=_toggle_auto, use_container_width=True)
+
+        st.divider()
+        st.subheader("🟦 표시 옵션")
+        # △ ABC 표시/숨김 토글 버튼
+        def _toggle_tri():
+            st.session_state[K_TRI_ON] = not st.session_state[K_TRI_ON]
+        tri_label = "△ ABC 숨기기" if st.session_state[K_TRI_ON] else "△ ABC 보이기"
+        st.button(tri_label, key="sier_tri_btn", on_click=_toggle_tri, use_container_width=True)
 
     # ---- 파라미터 읽기 & 서명 확인 (변경 시 시퀀스 리셋) ----
     Nmax   = int(st.session_state[K_NMAX])
@@ -168,26 +179,23 @@ def render():
 
     sig = _signature(Nmax, warmup, seed, w1, w2, w3)
     if st.session_state.get(K_SIG) != sig:
-        # 새 파라미터에 맞춰 전체 시퀀스 초기화
         _reset_sequence(Nmax, warmup, seed, p_vec)
         st.session_state[K_SIG] = sig
-        # 현재 점 개수가 목표 초과 중이면 줄이고, 최소 1 보장
         st.session_state[K_CUR] = max(1, min(int(st.session_state[K_CUR]), Nmax))
 
     # ---- 현재 점 개수 업데이트 ----
-    # 자동재생이면 프레임마다 증가, 아니면 수동 슬라이더 제공
     anchor("graph")
 
     if not st.session_state[K_AUTO]:
-        # 수동 모드: 현재 점 개수 직접 조절 (1부터)
+        # 수동 모드
         st.slider("현재 점 개수 (수동)", 1, Nmax, key=K_CUR, step=1)
     else:
-        # 자동 모드: 한 스텝에서 얼마나 늘릴지 → Nmax를 100 스텝 정도에 도달하도록 증가량 설정
+        # 자동 모드: 100스텝 내외로 Nmax에 도달하도록 증가량 설정
         steps_target = 100
         inc = max(1, math.ceil(Nmax / steps_target))
         st.session_state[K_CUR] = min(Nmax, int(st.session_state[K_CUR]) + inc)
 
-    # 캐시를 target까지 확장 계산
+    # 캐시를 target까지 확장
     target = int(st.session_state[K_CUR])
     _extend_points_to(target)
 
@@ -196,6 +204,25 @@ def render():
     sz  = int(st.session_state[K_SIZE])
 
     fig = go.Figure()
+    # (옵션) 배경 삼각형 ABC
+    if st.session_state[K_TRI_ON]:
+        V = np.array([[0.0, 0.0],
+                      [1.0, 0.0],
+                      [0.5, np.sqrt(3)/2.0]], dtype=float)
+        shapes = [
+            dict(type="line", x0=V[0,0], y0=V[0,1], x1=V[1,0], y1=V[1,1],
+                 line=dict(width=2, color="rgba(60,60,60,0.7)"), layer="below"),
+            dict(type="line", x0=V[1,0], y0=V[1,1], x1=V[2,0], y1=V[2,1],
+                 line=dict(width=2, color="rgba(60,60,60,0.7)"), layer="below"),
+            dict(type="line", x0=V[2,0], y0=V[2,1], x1=V[0,0], y1=V[0,1],
+                 line=dict(width=2, color="rgba(60,60,60,0.7)"), layer="below"),
+        ]
+        fig.update_layout(shapes=shapes)
+        # 꼭짓점 라벨
+        fig.add_annotation(x=V[0,0], y=V[0,1], text="A", showarrow=False, font=dict(size=14))
+        fig.add_annotation(x=V[1,0], y=V[1,1], text="B", showarrow=False, font=dict(size=14))
+        fig.add_annotation(x=V[2,0], y=V[2,1], text="C", showarrow=False, font=dict(size=14))
+
     fig.add_scattergl(
         x=pts[:, 0], y=pts[:, 1],
         mode="markers",
@@ -211,11 +238,14 @@ def render():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # 진행 바 & 상태 표시
     st.progress(target / Nmax if Nmax > 0 else 0.0, text=f"{target:,} / {Nmax:,}")
 
-    # 자동재생 프레임 딜레이 + 리런
-    if st.session_state[K_AUTO] and target < Nmax:
-        time.sleep(float(st.session_state[K_SPEED]))
-        scroll_to("graph")
-        st.rerun()  # 최신 API (호환은 상단 _do_rerun 없이 여기서 직접)
+    # ---- 자동재생 진행/정지 제어 ----
+    if st.session_state[K_AUTO]:
+        if target >= Nmax:
+            # 끝까지 갔으면 자동으로 멈춤(반복 X)
+            st.session_state[K_AUTO] = False
+        else:
+            time.sleep(float(st.session_state[K_SPEED]))
+            scroll_to("graph")
+            st.rerun()
