@@ -24,17 +24,15 @@ META = {
 # --- 세션 키 & 기본값 ---
 K_N       = "bna_n"
 K_P       = "bna_p"
-K_BINS    = "bna_bins"
 K_CC      = "bna_cc"      # continuity correction 사용 여부
-K_SHOWPMF = "bna_showpmf" # 근사 pmf도선 보일지
+K_SHOWPMF = "bna_showpmf" # 근사 pmf 곡선 표시
 K_A       = "bna_a"
 K_B       = "bna_b"
 JUMP      = "bna_jump"
 
 DEFAULTS = {
     K_N:  50,
-    K_P:  0.3,
-    K_BINS: 0,   # 사용 안함(호환용)
+    K_P:  0.30,
     K_CC: True,
     K_SHOWPMF: True,
     K_A: 15,
@@ -50,12 +48,12 @@ def _mark_changed():
     st.session_state[JUMP] = "graph"
 
 def _normal_pmf_approx(k_vals, mu, sd, cc=True):
-    # 각 정수 k에 대해 근사 확률: Φ((k+0.5-μ)/σ) - Φ((k-0.5-μ)/σ)
+    """정수 k에서의 '확률질량'을 정규분포 면적으로 근사."""
     if cc:
         lo = (k_vals - 0.5 - mu) / sd
         hi = (k_vals + 0.5 - mu) / sd
         return norm.cdf(hi) - norm.cdf(lo)
-    # 연속성 보정 X: 밀도*폭(≈1)으로 근사
+    # 연속성 보정 X: 밀도*폭(≈1)
     return norm.pdf((k_vals - mu) / sd) * 1.0
 
 def render():
@@ -70,7 +68,6 @@ def render():
         st.checkbox("연속성 보정 사용", value=bool(st.session_state[K_CC]), key=K_CC, on_change=_mark_changed)
         st.checkbox("근사 pmf 곡선도 표시", value=bool(st.session_state[K_SHOWPMF]), key=K_SHOWPMF, on_change=_mark_changed)
 
-        # 구간 확률 입력
         st.markdown("**🎯 구간확률 P(a ≤ X ≤ b)**")
         st.number_input("a (정수)", value=int(st.session_state[K_A]), step=1, key=K_A, on_change=_mark_changed)
         st.number_input("b (정수, a≤b)", value=int(st.session_state[K_B]), step=1, key=K_B, on_change=_mark_changed)
@@ -86,7 +83,7 @@ def render():
     mu = n * p
     sd = np.sqrt(n * p * (1 - p))
 
-    # 합리적 표시 구간
+    # 표시 구간
     k_min = max(0, int(np.floor(mu - 4 * sd)))
     k_max = min(n, int(np.ceil(mu + 4 * sd)))
     k = np.arange(k_min, k_max + 1)
@@ -94,13 +91,11 @@ def render():
     # ---- 앵커 ----
     anchor("graph")
 
-    # pmf (정확)
+    # 정확 pmf & 정규 근사 pmf
     pmf = binom.pmf(k, n, p)
-
-    # 정규 근사 pmf (cc 여부)
     approx_pmf = _normal_pmf_approx(k, mu, sd, cc=cc)
 
-    # 시각화
+    # ---- 시각화 ----
     fig = go.Figure()
     fig.add_bar(x=k, y=pmf, name="이항 pmf(정확)", opacity=0.65)
 
@@ -120,14 +115,14 @@ def render():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # ---- 구간확률 계산: 정확값 vs 정규근사 ----
-    if a > b: a, b = b, a
+    # ---- 구간확률: 정확 vs 근사 ----
+    if a > b:
+        a, b = b, a
     a_clip = max(0, min(n, a))
     b_clip = max(0, min(n, b))
 
     exact = float(binom.cdf(b_clip, n, p) - (binom.cdf(a_clip - 1, n, p) if a_clip > 0 else 0.0))
 
-    # 근사 (연속성 보정 적용/미적용)
     if cc:
         z_hi = (b_clip + 0.5 - mu) / sd
         z_lo = (a_clip - 0.5 - mu) / sd
@@ -143,7 +138,47 @@ def render():
         f"오차: **{(approx - exact):+.6f}**"
     )
 
-    # 점프
+    # ---- 📘 개념 설명 (연속성 보정) ----
+    with st.expander("📘 개념 설명: 연속성 보정(continuity correction)", expanded=False):
+        st.markdown(
+            """
+            **왜 보정이 필요한가?**  
+            이항분포는 *이산* 분포(정수 k), 정규분포는 *연속* 분포이기 때문에,
+            이항의 “막대 하나(폭=1)”를 정규의 “면적”으로 바꿔야 합니다.
+
+            **핵심 공식(정규근사 \(Y\sim \mathcal N(\mu,\sigma)\))**
+            """
+        )
+        st.latex(r"P(X=k)\ \approx\ P(k-\tfrac{1}{2}\ \le\ Y\ \le\ k+\tfrac{1}{2})")
+        st.latex(r"P(X\le b)\ \approx\ P(Y \le b+\tfrac{1}{2}),\quad P(X\ge a)\ \approx\ P(Y \ge a-\tfrac{1}{2})")
+        st.latex(r"P(a\le X\le b)\ \approx\ P(a-\tfrac{1}{2}\ \le\ Y\ \le\ b+\tfrac{1}{2})")
+
+        st.markdown(
+            f"""
+            **현재 설정**: \(n={n}\), \(p={p:.3f}\) → \(\mu=np={mu:.2f}\), \(\sigma=\sqrt{{np(1-p)}}={sd:.2f}\)  
+            위의 구간확률 예에서  
+            • **연속성 보정 적용**: \([a-0.5,\ b+0.5]\) 사용  
+            • **보정 미적용**: 경계 \([a,\ b]\) 그대로 사용  
+            일반적으로 보정을 켜면 정확한 값에 **더 가까워집니다.**
+            """
+        )
+        # 정밀도 규칙
+        st.info(
+            f"정규 근사가 타당하려면 보통 **np ≥ 10**, **n(1−p) ≥ 10** 정도가 권장됩니다. "
+            f"(현재: np = {n*p:.1f}, n(1−p) = {n*(1-p):.1f})"
+        )
+
+        # 수업용 질문
+        st.markdown(
+            """
+            **수업용 질문(토론거리)**  
+            1) 보정을 켤수록 왜 꼬리 확률(작은 k, 큰 k)에서 효과가 더 커질까요?  
+            2) \(p\)가 0.5에서 멀어질수록 근사 정밀도는 어떻게 변하나요?  
+            3) 비율 \(\hat p=X/n\)을 정규로 근사한다면, 경계 보정은 왜 **±0.5/n**이 되는지 설명해보세요.
+            """
+        )
+
+    # ---- 점프 ----
     if st.session_state.get(JUMP) == "graph":
         scroll_to("graph")
         st.session_state[JUMP] = None
