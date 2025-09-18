@@ -42,23 +42,23 @@ K_TRI_ON = "sier_triangle_on"
 
 # 내부 상태(캐시)
 K_SIG     = "sier_signature"  # 파라미터 서명값 → 바뀌면 시퀀스 리셋
-K_IDX     = "sier_idx"        # 미리 뽑아둔 꼭짓점 선택 인덱스 (길이 = Nmax + warmup)
-K_PTS     = "sier_pts"        # 점 좌표 캐시 (shape = [Nmax, 2])
-K_DONE    = "sier_done"       # 현재까지 계산된 점 개수 (캐시에 저장된 개수)
-K_P_LAST  = "sier_plast"      # 마지막 점 좌표(다음 스텝 시작점)
+K_IDX     = "sier_idx"        # 미리 뽑아둔 꼭짓점 선택 인덱스
+K_PTS     = "sier_pts"        # 점 좌표 캐시 (Nmax, 2)
+K_DONE    = "sier_done"       # 현재까지 계산된 점 개수
+K_P_LAST  = "sier_plast"      # 마지막 점 좌표
 
 DEFAULTS = {
-    K_NMAX:   50_000,  # 목표 점 개수(최대치)
-    K_CUR:    1,       # 시작은 1점부터
+    K_NMAX:   50_000,
+    K_CUR:    1,
     K_WARMUP: 20,
     K_SIZE:   2,
     K_SEED:   42,
     K_AUTO:   False,
-    K_SPEED:  0.10,    # 초/스텝 (작을수록 빠름)
+    K_SPEED:  0.10,
     K_W1:     1.0,
     K_W2:     1.0,
     K_W3:     1.0,
-    K_TRI_ON: False,   # 기본은 숨김
+    K_TRI_ON: False,
 }
 
 def _ensure_defaults():
@@ -67,57 +67,43 @@ def _ensure_defaults():
             st.session_state[k] = v
 
 def _signature(nmax, warmup, seed, w1, w2, w3):
-    # 파라미터 기반 서명(변하면 시퀀스 재생성)
     return (int(nmax), int(warmup), int(seed), float(w1), float(w2), float(w3))
 
 def _reset_sequence(nmax, warmup, seed, p_vec):
-    """선택 인덱스/점 배열/초기점 등을 리셋."""
     V = np.array([[0.0, 0.0],
                   [1.0, 0.0],
                   [0.5, np.sqrt(3)/2.0]], dtype=np.float32)
-
     rng = np.random.default_rng(int(seed))
-    # 미리 꼭짓점 선택 시퀀스를 한 번에 뽑아둠
     idx = rng.choice(3, size=int(nmax) + int(warmup), p=p_vec)
-    # 시작점: 무게중심 근처
     p = V.mean(axis=0) + rng.normal(0, 0.01, size=2).astype(np.float32)
-
-    # 워밍업(버리기)
     for i in range(int(warmup)):
         v = V[idx[i]]
         p = (p + v) / 2.0
-
-    # 캐시 초기화
     st.session_state[K_IDX] = idx
     st.session_state[K_PTS] = np.empty((int(nmax), 2), dtype=np.float32)
     st.session_state[K_DONE] = 0
     st.session_state[K_P_LAST] = p
 
 def _extend_points_to(target_n):
-    """캐시에 들어있는 점을 target_n개까지 확장 계산."""
     V = np.array([[0.0, 0.0],
                   [1.0, 0.0],
                   [0.5, np.sqrt(3)/2.0]], dtype=np.float32)
-
     done = int(st.session_state[K_DONE])
     target = int(target_n)
     if target <= done:
         return
-
     idx = st.session_state[K_IDX]
     pts = st.session_state[K_PTS]
     p   = st.session_state[K_P_LAST]
-
-    CHUNK = 10_000  # 너무 큰 루프 방지
+    CHUNK = 10_000
     cur = done
     while cur < target:
         end = min(target, cur + CHUNK)
         for i in range(cur, end):
-            v = V[idx[i + st.session_state[K_WARMUP]]]  # 워밍업 뒤의 인덱스 사용
+            v = V[idx[i + st.session_state[K_WARMUP]]]
             p = (p + v) / 2.0
             pts[i] = p
         cur = end
-
     st.session_state[K_P_LAST] = p
     st.session_state[K_DONE] = target
 
@@ -143,16 +129,12 @@ def render():
         # 정규화된 확률 표시
         w1, w2, w3 = float(st.session_state[K_W1]), float(st.session_state[K_W2]), float(st.session_state[K_W3])
         s = w1 + w2 + w3
-        if s <= 0:
-            p_vec = np.array([1/3, 1/3, 1/3], dtype=float)
-        else:
-            p_vec = np.array([w1/s, w2/s, w3/s], dtype=float)
+        p_vec = np.array([1/3, 1/3, 1/3], dtype=float) if s <= 0 else np.array([w1/s, w2/s, w3/s], dtype=float)
         st.caption(f"선택 확률: p(A)={p_vec[0]:.3f}, p(B)={p_vec[1]:.3f}, p(C)={p_vec[2]:.3f}")
 
         st.divider()
         st.subheader("▶ 자동 재생")
         st.slider("⏱️ 속도 (초/스텝)", 0.03, 0.60, key=K_SPEED, step=0.01)
-        # ▶/⏸ 토글 버튼 (한 개 버튼으로 시작/정지 전환)
         def _toggle_auto():
             st.session_state[K_AUTO] = not st.session_state[K_AUTO]
         play_label = "⏸ 자동재생 정지" if st.session_state[K_AUTO] else "▶ 자동재생 시작"
@@ -160,22 +142,18 @@ def render():
 
         st.divider()
         st.subheader("🟦 표시 옵션")
-        # △ ABC 표시/숨김 토글 버튼
         def _toggle_tri():
             st.session_state[K_TRI_ON] = not st.session_state[K_TRI_ON]
         tri_label = "△ ABC 숨기기" if st.session_state[K_TRI_ON] else "△ ABC 보이기"
         st.button(tri_label, key="sier_tri_btn", on_click=_toggle_tri, use_container_width=True)
 
-    # ---- 파라미터 읽기 & 서명 확인 (변경 시 시퀀스 리셋) ----
+    # ---- 파라미터 & 서명 확인 (변경 시 리셋) ----
     Nmax   = int(st.session_state[K_NMAX])
     warmup = int(st.session_state[K_WARMUP])
     seed   = int(st.session_state[K_SEED])
     w1, w2, w3 = float(st.session_state[K_W1]), float(st.session_state[K_W2]), float(st.session_state[K_W3])
     s = w1 + w2 + w3
-    if s <= 0:
-        p_vec = np.array([1/3, 1/3, 1/3], dtype=float)
-    else:
-        p_vec = np.array([w1/s, w2/s, w3/s], dtype=float)
+    p_vec = np.array([1/3, 1/3, 1/3], dtype=float) if s <= 0 else np.array([w1/s, w2/s, w3/s], dtype=float)
 
     sig = _signature(Nmax, warmup, seed, w1, w2, w3)
     if st.session_state.get(K_SIG) != sig:
@@ -187,15 +165,31 @@ def render():
     anchor("graph")
 
     if not st.session_state[K_AUTO]:
-        # 수동 모드
-        st.slider("현재 점 개수 (수동)", 1, Nmax, key=K_CUR, step=1)
+        # 수동 모드: 우측에 − / + 버튼 배치 (한 번 클릭할 때마다 1씩 조정)
+        # 먼저 현재값을 경계 내로 보정
+        st.session_state[K_CUR] = max(1, min(int(st.session_state[K_CUR]), Nmax))
+
+        c_slider, c_minus, c_plus = st.columns([8, 1, 1])
+        with c_minus:
+            dec_clicked = st.button("−", key="sier_dec", help="점 1개 감소", use_container_width=True)
+        with c_plus:
+            inc_clicked = st.button("+", key="sier_inc", help="점 1개 증가", use_container_width=True)
+
+        # 버튼 결과를 슬라이더 렌더 이전에 반영
+        if dec_clicked:
+            st.session_state[K_CUR] = max(1, int(st.session_state[K_CUR]) - 1)
+        if inc_clicked:
+            st.session_state[K_CUR] = min(Nmax, int(st.session_state[K_CUR]) + 1)
+
+        with c_slider:
+            st.slider("현재 점 개수 (수동)", 1, Nmax, key=K_CUR, step=1)
     else:
-        # 자동 모드: 100스텝 내외로 Nmax에 도달하도록 증가량 설정
+        # 자동 모드: 100 스텝 내외로 Nmax 도달
         steps_target = 100
         inc = max(1, math.ceil(Nmax / steps_target))
         st.session_state[K_CUR] = min(Nmax, int(st.session_state[K_CUR]) + inc)
 
-    # 캐시를 target까지 확장
+    # 계산을 target까지 확장
     target = int(st.session_state[K_CUR])
     _extend_points_to(target)
 
@@ -204,6 +198,7 @@ def render():
     sz  = int(st.session_state[K_SIZE])
 
     fig = go.Figure()
+
     # (옵션) 배경 삼각형 ABC
     if st.session_state[K_TRI_ON]:
         V = np.array([[0.0, 0.0],
@@ -218,7 +213,6 @@ def render():
                  line=dict(width=2, color="rgba(60,60,60,0.7)"), layer="below"),
         ]
         fig.update_layout(shapes=shapes)
-        # 꼭짓점 라벨
         fig.add_annotation(x=V[0,0], y=V[0,1], text="A", showarrow=False, font=dict(size=14))
         fig.add_annotation(x=V[1,0], y=V[1,1], text="B", showarrow=False, font=dict(size=14))
         fig.add_annotation(x=V[2,0], y=V[2,1], text="C", showarrow=False, font=dict(size=14))
@@ -240,10 +234,9 @@ def render():
 
     st.progress(target / Nmax if Nmax > 0 else 0.0, text=f"{target:,} / {Nmax:,}")
 
-    # ---- 자동재생 진행/정지 제어 ----
+    # ---- 자동재생 제어 ----
     if st.session_state[K_AUTO]:
         if target >= Nmax:
-            # 끝까지 갔으면 자동으로 멈춤(반복 X)
             st.session_state[K_AUTO] = False
         else:
             time.sleep(float(st.session_state[K_SPEED]))
