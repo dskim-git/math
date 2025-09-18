@@ -17,7 +17,7 @@ except Exception:
         components.html(f"<script>window.location.hash='{name}'</script>", height=0)
 
 META = {
-    "title": "확률 시뮬레이터 (이항분포 비교)",
+    "title": "확률 시뮬레이터     (이항분포 비교)",
     "description": "베르누이/동전/주사위 실험을 반복 시뮬레이션하고 이론 이항분포와 비교합니다.",
 }
 
