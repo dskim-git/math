@@ -140,42 +140,33 @@ def render():
 
     # ---- 📘 개념 설명 (연속성 보정) ----
     with st.expander("📘 개념 설명: 연속성 보정(continuity correction)", expanded=False):
+        # 설명은 텍스트로, 수식은 모두 st.latex로 따로 렌더
         st.markdown(
-            """
-            **왜 보정이 필요한가?**  
-            이항분포는 *이산* 분포(정수 k), 정규분포는 *연속* 분포이기 때문에,
-            이항의 “막대 하나(폭=1)”를 정규의 “면적”으로 바꿔야 합니다.
-
-            **핵심 공식(정규근사 \(Y\sim \mathcal N(\mu,\sigma)\))**
-            """
+            "**왜 보정이 필요한가?**  \n"
+            "이항분포는 *이산* 분포(정수 k), 정규분포는 *연속* 분포이기 때문에, "
+            "이항의 “막대 하나(폭=1)”를 정규의 “면적”으로 바꿔야 합니다."
         )
-        st.latex(r"P(X=k)\ \approx\ P(k-\tfrac{1}{2}\ \le\ Y\ \le\ k+\tfrac{1}{2})")
+
+        st.markdown("**핵심 공식(정규근사)**")
+        st.latex(r"Y \sim \mathcal{N}(\mu,\sigma)")
+        st.latex(r"P(X=k)\ \approx\ P\!\left(k-\tfrac{1}{2}\ \le\ Y\ \le\ k+\tfrac{1}{2}\right)")
         st.latex(r"P(X\le b)\ \approx\ P(Y \le b+\tfrac{1}{2}),\quad P(X\ge a)\ \approx\ P(Y \ge a-\tfrac{1}{2})")
-        st.latex(r"P(a\le X\le b)\ \approx\ P(a-\tfrac{1}{2}\ \le\ Y\ \le\ b+\tfrac{1}{2})")
+        st.latex(r"P(a\le X\le b)\ \approx\ P\!\left(a-\tfrac{1}{2}\ \le\ Y\ \le\ b+\tfrac{1}{2}\right)")
 
-        st.markdown(
-            f"""
-            **현재 설정**: \(n={n}\), \(p={p:.3f}\) → \(\mu=np={mu:.2f}\), \(\sigma=\sqrt{{np(1-p)}}={sd:.2f}\)  
-            위의 구간확률 예에서  
-            • **연속성 보정 적용**: \([a-0.5,\ b+0.5]\) 사용  
-            • **보정 미적용**: 경계 \([a,\ b]\) 그대로 사용  
-            일반적으로 보정을 켜면 정확한 값에 **더 가까워집니다.**
-            """
-        )
-        # 정밀도 규칙
+        # 현재 설정을 수식으로 한 번에
+        st.markdown("**현재 설정**:")
+        st.latex(fr"n={n},\ p={p:.3f}\ \Rightarrow\ \mu=np={mu:.2f},\ \sigma=\sqrt{{np(1-p)}}={sd:.2f}")
+
         st.info(
             f"정규 근사가 타당하려면 보통 **np ≥ 10**, **n(1−p) ≥ 10** 정도가 권장됩니다. "
             f"(현재: np = {n*p:.1f}, n(1−p) = {n*(1-p):.1f})"
         )
 
-        # 수업용 질문
         #st.markdown(
-        #    """
-        #    **수업용 질문(토론거리)**  
-        #    1) 보정을 켤수록 왜 꼬리 확률(작은 k, 큰 k)에서 효과가 더 커질까요?  
-        #    2) \(p\)가 0.5에서 멀어질수록 근사 정밀도는 어떻게 변하나요?  
-        #    3) 비율 \(\hat p=X/n\)을 정규로 근사한다면, 경계 보정은 왜 **±0.5/n**이 되는지 설명해보세요.
-        #    """
+        #    "**수업용 질문(토론거리)**  \n"
+        #    "1) 보정을 켤수록 왜 꼬리 확률(작은 k, 큰 k)에서 효과가 더 커질까요?  \n"
+        #    "2) p가 0.5에서 멀어질수록 근사 정밀도는 어떻게 변하나요?  \n"
+        #    "3) 비율 $\\hat p=X/n$을 정규로 근사한다면, 경계 보정은 왜 **±0.5/n**이 되는지 설명해보세요."
         #)
 
     # ---- 점프 ----
