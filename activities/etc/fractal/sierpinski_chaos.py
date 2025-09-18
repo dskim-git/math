@@ -44,10 +44,10 @@ DEFAULTS = {
     K_NMAX:   50_000,
     K_CUR:    1,
     K_WARMUP: 20,
-    K_SIZE:   2,
+    K_SIZE:   6,
     K_SEED:   42,
     K_AUTO:   False,
-    K_SPEED:  0.10,
+    K_SPEED:  1.00,
     K_W1:     1.0, K_W2: 1.0, K_W3: 1.0,
     K_TRI_ON: False,
 }
@@ -125,7 +125,7 @@ def render():
 
         st.divider()
         st.subheader("▶ 자동 재생")
-        st.slider("⏱️ 속도 (초/스텝)", 0.03, 0.60, key=K_SPEED, step=0.01)
+        st.slider("⏱️ 속도 (초/스텝)", 0.03, 1.00, key=K_SPEED, step=0.01)
         def _toggle_auto():
             st.session_state[K_AUTO] = not st.session_state[K_AUTO]
         play_label = "⏸ 자동재생 정지" if st.session_state[K_AUTO] else "▶ 자동재생 시작"
