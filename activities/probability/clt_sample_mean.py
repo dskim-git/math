@@ -26,6 +26,7 @@ K_DIST   = "clt_dist"
 K_N      = "clt_n"
 K_M      = "clt_m"
 K_BINS   = "clt_bins"
+# 분포별 모수
 K_MU     = "clt_norm_mu"
 K_SIGMA  = "clt_norm_sigma"
 K_A      = "clt_unif_a"
@@ -70,7 +71,7 @@ def render():
     _ensure_defaults()
     page_header("중심극한정리 (CLT) 데모", "표본평균의 분포가 정규로 수렴하는 모습을 관찰합니다.", icon="📈", top_rule=True)
 
-    # ---- 사이드바: 위젯 반환값을 '즉시' 변수로 사용 ----
+    # ---- 사이드바: 즉시 반영되는 슬라이더 기반 컨트롤 ----
     with st.sidebar:
         st.subheader("⚙️ 설정")
 
@@ -79,76 +80,11 @@ def render():
             index=["정규", "균등", "지수", "베르누이"].index(st.session_state[K_DIST]),
             key=K_DIST, on_change=_mark_changed
         )
-        n = st.slider("표본 크기 n", 1, 200,
-                      value=int(st.session_state[K_N]), key=K_N, on_change=_mark_changed)
-        M = st.slider("표본 개수 M (시행 수)", 200, 20000,
-                      value=int(st.session_state[K_M]), step=200, key=K_M, on_change=_mark_changed)
-        bins = st.slider("히스토그램 구간 수", 10, 120,
-                         value=int(st.session_state[K_BINS]), key=K_BINS, on_change=_mark_changed)
+        n = st.slider("표본 크기 n", 1, 200, value=int(st.session_state[K_N]),
+                      key=K_N, on_change=_mark_changed)
+        M = st.slider("표본 개수 M (시행 수)", 200, 20000, value=int(st.session_state[K_M]),
+                      step=200, key=K_M, on_change=_mark_changed)
+        bins = st.slider("히스토그램 구간 수", 10, 120, value=int(st.session_state[K_BINS]),
+                         key=K_BINS, on_change=_mark_changed)
 
-        # 분포별 파라미터(반환값을 바로 변수로 받음)
-        mu = sigma = a = b = lmbda = p = None
-        if dist == "정규":
-            mu = st.number_input("μ (정규)", value=float(st.session_state[K_MU]),
-                                 step=0.1, format="%.3f", key=K_MU, on_change=_mark_changed)
-            sigma = st.number_input("σ > 0 (정규)", min_value=0.01,
-                                    value=float(st.session_state[K_SIGMA]),
-                                    step=0.1, format="%.3f", key=K_SIGMA, on_change=_mark_changed)
-        elif dist == "균등":
-            a = st.number_input("a (하한)", value=float(st.session_state[K_A]),
-                                step=0.1, format="%.3f", key=K_A, on_change=_mark_changed)
-            b = st.number_input("b (상한, a<b)", value=float(st.session_state[K_B]),
-                                step=0.1, format="%.3f", key=K_B, on_change=_mark_changed)
-        elif dist == "지수":
-            lmbda = st.number_input("λ > 0 (지수, 평균=1/λ)", min_value=0.001,
-                                    value=float(st.session_state[K_LMBDA]),
-                                    step=0.1, format="%.3f", key=K_LMBDA, on_change=_mark_changed)
-        else:  # 베르누이
-            p = st.slider("p (베르누이 성공확률)", 0.0, 1.0,
-                          value=float(st.session_state[K_P]), step=0.01, key=K_P, on_change=_mark_changed)
-
-    # ---- 그래프 위치 앵커 ----
-    anchor("graph")
-
-    # ---- 표본평균 생성 ----
-    rng = np.random.default_rng()
-    if dist == "정규":
-        theo_mu, theo_sd = float(mu), float(sigma) / np.sqrt(n)
-        xbar = rng.normal(float(mu), float(sigma), size=(M, n)).mean(axis=1)
-        desc = f"모분포: N({float(mu):.2f}, {float(sigma):.2f}²)"
-    elif dist == "균등":
-        a2, b2 = float(a), float(b)
-        if b2 <= a2: b2 = a2 + 1e-9
-        mu_u, var_u = (a2 + b2) / 2.0, (b2 - a2) ** 2 / 12.0
-        theo_mu, theo_sd = mu_u, np.sqrt(var_u / n)
-        xbar = rng.uniform(a2, b2, size=(M, n)).mean(axis=1)
-        desc = f"모분포: U({a2:.2f}, {b2:.2f})"
-    elif dist == "지수":
-        l = float(lmbda)
-        mu_e, var_e = 1.0 / l, 1.0 / (l * l)
-        theo_mu, theo_sd = mu_e, np.sqrt(var_e / n)
-        xbar = rng.exponential(1.0 / l, size=(M, n)).mean(axis=1)
-        desc = f"모분포: Exp(λ={l:.2f})"
-    else:  # 베르누이
-        p_ = float(p)
-        mu_b, var_b = p_, p_ * (1 - p_)
-        theo_mu, theo_sd = mu_b, np.sqrt(var_b / n)
-        xbar = rng.binomial(n=n, p=p_, size=M) / n
-        desc = f"모분포: Bernoulli(p={p_:.2f})"
-
-    # ---- 시각화 ----
-    fig = _draw_hist_with_normal(
-        xbar, mu=theo_mu, sigma=theo_sd, bins=bins,
-        title=f"표본평균 분포 vs 정규 근사 (n={n}, M={M})"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.write(
-        f"{desc} → 이론값: 𝔼[ȳ]={theo_mu:.4f}, sd(ȳ)≈{theo_sd:.4f}  |  "
-        f"시뮬: 평균 **{np.mean(xbar):.4f}**, 표준편차 **{np.std(xbar, ddof=1):.4f}**"
-    )
-
-    # ---- 위젯 변경 직후 그래프 위치로 복귀 ----
-    if st.session_state.get(JUMP) == "graph":
-        scroll_to("graph")
-        st.session_state[JUMP] = None
+        # 분포별 모수
