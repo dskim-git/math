@@ -1,323 +1,293 @@
-# home.py  — 메인 라우터 & 레지스트리 (etc 토픽 단계 포함)
-from dataclasses import dataclass
-import importlib
 import streamlit as st
+from pathlib import Path
+import importlib.util
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional, Any
 
-# 공통 UI 유틸 (없어도 최소 동작하도록 폴백 제공)
 try:
-    from utils import page_header, keep_scroll
+    from utils import keep_scroll
 except Exception:
-    def page_header(title: str, subtitle: str = "", icon: str = "", top_rule: bool = True):
-        if top_rule:
-            st.markdown("---")
-        st.markdown(f"### {icon + ' ' if icon else ''}{title}")
-        if subtitle:
-            st.caption(subtitle)
-    def keep_scroll(key: str = "default", mount: str = "sidebar"):
-        # 최소 폴백: 아무 동작 안 함
-        pass
+    import streamlit.components.v1 as components
+    def keep_scroll(key: str = "default"):
+        components.html(f"""
+        <script>
+        (function(){{
+          const KEY = 'st_scroll::' + '{'{'}key{'}'}' + '::' + location.pathname + location.search;
+          function restore() {{
+            const y = sessionStorage.getItem(KEY);
+            if (y !== null) {{
+              window.scrollTo(0, parseFloat(y));
+            }}
+          }}
+          restore(); setTimeout(restore, 50); setTimeout(restore, 250);
+          let t=false;
+          window.addEventListener('scroll', function(){{
+            if(!t){{ requestAnimationFrame(function(){{ sessionStorage.setItem(KEY, window.scrollY); t=false; }}); t=true; }}
+          }});
+          setInterval(function(){{ sessionStorage.setItem(KEY, window.scrollY); }}, 500);
+        }})();
+        </script>
+        """, height=0)
 
+# ---------- 전역 설정 ----------
+st.set_page_config(
+    page_title="수학 수업 시뮬레이션 허브",
+    page_icon="🧮",
+    layout="wide"
+)
 
-# ----------------------------
-# 데이터 모델
-# ----------------------------
+# 교과 카테고리 정의(폴더명 ↔ 표시명)
+SUBJECTS = {
+    "common": "공통수학",
+    "calculus": "미적분학",
+    "probability": "확률과통계",
+    "geometry": "기하학",
+    "etc" : "기타"
+}
+
+# home.py와 같은 디렉터리 기준
+ACTIVITIES_ROOT = Path(__file__).parent / "activities"
+
+# ---------- 데이터 모델 ----------
 @dataclass
 class Activity:
-    """일반 교과(공통/미적/확통/기하) 및 etc-토픽 하위에서 공통으로 쓰는 액티비티 스펙"""
-    slug: str         # URL 세그먼트 (교과/토픽 내부에서 유일)
-    title: str        # 버튼에 보일 이름
-    module: str       # importlib로 불러올 모듈 경로: e.g. 'activities.probability.binomial_simulator'
-
-
-@dataclass
-class TopicMeta:
-    """etc(기타) 전용 토픽 메타"""
+    subject_key: str
     slug: str
     title: str
-    icon: str = "🧩"
-    description: str = ""
+    description: str
+    render: Callable[[], None]
 
+# ---------- 유틸: 동적 모듈 로딩 ----------
+def load_module_from_path(py_path: Path):
+    spec = importlib.util.spec_from_file_location(py_path.stem, py_path)
+    if spec is None or spec.loader is None:
+        return None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore
+    return module
 
-# ----------------------------
-# 교과 표시용(홈 카드 라벨/아이콘)
-# 필요 시 여기에 교과를 더 추가하세요.
-# ----------------------------
-SUBJECT_UI = {
-    "common":      {"title": "공통수학",   "icon": "📚"},
-    "calculus":    {"title": "미적분학",   "icon": "∫"},
-    "probability": {"title": "확률과통계", "icon": "🎲"},
-    "geometry":    {"title": "기하학",     "icon": "📐"},
-    "etc":         {"title": "기타",       "icon": "🧭"},  # ✅ 새 최상위 교과
-}
+# ---------- Streamlit 버전 호환 라우팅 유틸 ----------
+def _qp_get() -> Dict[str, List[str]]:
+    """
+    Query params를 버전 상관없이 표준화된 dict[str, list[str]]로 반환.
+    - 최신: st.query_params -> dict[str, str] 또는 dict[str, list[str]]
+    - 구버전: st.experimental_get_query_params()
+    """
+    try:
+        qp: Any = st.query_params  # 최신 API
+        # st.query_params가 dict-like
+        norm: Dict[str, List[str]] = {}
+        for k, v in dict(qp).items():
+            if isinstance(v, list):
+                norm[k] = v
+            else:
+                norm[k] = [v]
+        return norm
+    except Exception:
+        # 구버전 experimental API
+        try:
+            return st.experimental_get_query_params()  # type: ignore[attr-defined]
+        except Exception:
+            return {}
 
-# 홈에서 보일 교과 순서 (원하는 대로 바꾸세요)
-SUBJECT_ORDER = ["common", "calculus", "probability", "geometry", "etc"]
-
-
-# ----------------------------
-# 레지스트리: 일반 교과(바로 액티비티 나열)
-# - 여기엔 '기타'를 비워둡니다(etc는 토픽 단계가 있으니까)
-# - 네가 이미 갖고 있는 액티비티들만 예시로 넣어둠. 더 추가/삭제해도 됨.
-# ----------------------------
-SUBJECTS = {
-    "common":      [
-        # Activity(slug="...", title="...", module="activities.common. ..."),
-    ],
-    "calculus":    [
-        # Activity(slug="...", title="...", module="activities.calculus. ..."),
-    ],
-    "probability": [
-        # ✅ 이미 만든 확률 액티비티들 (원하는 것만 남기세요)
-        Activity(slug="binomial",   title="확률 시뮬레이터 (이항)", module="activities.probability.binomial_simulator"),
-        Activity(slug="normal-samp",title="정규분포 표본추출",     module="activities.probability.normal_sampling"),
-        Activity(slug="clt",        title="CLT: 표본평균의 분포",  module="activities.probability.clt_sample_mean"),
-        Activity(slug="bino-norm",  title="이항→정규 근사",        module="activities.probability.binomial_normal_approx"),
-        Activity(slug="pascal-mod", title="파스칼 삼각형 (mod m)", module="activities.probability.pascal_modulo_view"),
-    ],
-    "geometry":    [
-        # Activity(slug="...", title="...", module="activities.geometry. ..."),
-    ],
-    "etc":         [],  # ✅ 기타는 여기서 액티비티를 직접 나열하지 않습니다 (토픽 단계가 따로 있음)
-}
-
-
-# ----------------------------
-# 레지스트리: 기타(etc) — 토픽 메타 & 토픽별 액티비티
-# - 여기에 토픽을 계속 추가하면 됩니다.
-# ----------------------------
-ETC_TOPICS_META = {
-    # ✅ 예시 토픽: 프랙털
-    "fractal": TopicMeta(
-        slug="fractal",
-        title="프랙털",
-        icon="🌀",
-        description="자기유사성과 반복 규칙으로 만들어지는 도형을 탐구합니다.",
-    ),
-    # "number-theory": TopicMeta(slug="number-theory", title="수론", icon="🔢", description="합동/소수/잔여계..."),
-}
-
-ETC_TOPICS = {
-    # ✅ 프랙털 토픽의 액티비티 예시
-    "fractal": [
-        Activity(
-            slug="sierpinski-chaos",
-            title="시에르핀스키 삼각형 (Chaos Game)",
-            module="activities.etc.fractal.sierpinski_chaos",
-        ),
-        # Activity(... 추가 가능 ...)
-    ],
-    # "number-theory": [Activity(...), ...],
-}
-
-
-# ----------------------------
-# 라우팅 헬퍼
-# ----------------------------
-def set_route(name: str, **params):
-    st.session_state["route"] = name
+def _qp_set(params: Dict[str, Any]) -> None:
+    """
+    Query params 설정(버전 호환). 값은 str 또는 list[str] 허용.
+    """
+    # 모두 문자열/리스트 문자열로 normalize
+    normalized = {}
     for k, v in params.items():
-        st.session_state[k] = v
+        if v is None:
+            continue
+        if isinstance(v, list):
+            normalized[k] = [str(x) for x in v]
+        else:
+            normalized[k] = str(v)
 
+    try:
+        # 최신 API: 직접 할당/업데이트
+        st.query_params.clear()
+        st.query_params.update(normalized)
+    except Exception:
+        # 구버전 experimental API
+        st.experimental_set_query_params(**normalized)  # type: ignore[attr-defined]
 
 def _do_rerun():
-    st.experimental_rerun()
+    # 버전에 맞춰 rerun 호출
+    try:
+        st.rerun()
+    except Exception:
+        st.experimental_rerun()  # type: ignore[attr-defined]
 
+# ---------- 활동 자동 탐색 ----------
+def discover_activities() -> Dict[str, List[Activity]]:
+    registry: Dict[str, List[Activity]] = {k: [] for k in SUBJECTS.keys()}
+    if not ACTIVITIES_ROOT.exists():
+        return registry
 
-def _init_route():
-    if "route" not in st.session_state:
-        st.session_state["route"] = "home"
-
-
-# ----------------------------
-# 뷰: 홈
-# ----------------------------
-def home_view():
-    page_header("수학 시뮬레이션 허브", "교과나 주제를 선택해서 들어가세요.", icon="🏠", top_rule=False)
-
-    # 2~3열 그리드로 교과 카드 배치
-    cols = st.columns(3)
-    for i, key in enumerate(SUBJECT_ORDER):
-        if key not in SUBJECT_UI:
+    for subject_dir in ACTIVITIES_ROOT.iterdir():
+        if not subject_dir.is_dir():
             continue
-        title = SUBJECT_UI[key]["title"]
-        icon  = SUBJECT_UI[key]["icon"]
-        with cols[i % len(cols)]:
-            st.markdown(f"#### {icon} {title}")
-            if st.button("열기", key=f"open-subject-{key}", use_container_width=True):
+        subject_key = subject_dir.name
+        if subject_key not in SUBJECTS:
+            continue
+
+        for py_file in subject_dir.glob("*.py"):
+            if py_file.name.startswith("_"):
+                continue
+            module = load_module_from_path(py_file)
+            if module is None:
+                continue
+
+            meta = getattr(module, "META", {})
+            title = meta.get("title") or py_file.stem.replace("_", " ").title()
+            description = meta.get("description") or "활동 소개가 아직 없습니다."
+            render_fn = getattr(module, "render", None)
+
+            if callable(render_fn):
+                registry[subject_key].append(
+                    Activity(
+                        subject_key=subject_key,
+                        slug=py_file.stem,
+                        title=title,
+                        description=description,
+                        render=render_fn,
+                    )
+                )
+
+        registry[subject_key].sort(key=lambda a: a.title)
+
+    return registry
+
+# ---------- 라우팅 ----------
+# 구조: view=home|subject|activity  & subject=probability & activity=random_walk_demo
+def get_route():
+    qp = _qp_get()
+    def first(key: str, default: Optional[str]=None) -> Optional[str]:
+        vals = qp.get(key)
+        if not vals:
+            return default
+        return vals[0]
+    view = first("view", "home")
+    subject = first("subject", None)
+    activity = first("activity", None)
+    return view, subject, activity
+
+def set_route(view: str, subject: Optional[str] = None, activity: Optional[str] = None):
+    params = {"view": view}
+    if subject:
+        params["subject"] = subject
+    if activity:
+        params["activity"] = activity
+    _qp_set(params)
+
+# ---------- 공통 UI ----------
+def sidebar_navigation(registry: Dict[str, List[Activity]]):
+    st.sidebar.header("📂 교과별 페이지")
+    for key, label in SUBJECTS.items():
+        with st.sidebar.expander(f"{label}", expanded=False):
+            # 교과 메인
+            if st.button("교과 메인 열기", key=f"open_{key}_index", use_container_width=True):
                 set_route("subject", subject=key)
                 _do_rerun()
 
+            # 하위 활동
+            acts = registry.get(key, [])
+            if not acts:
+                st.caption("아직 활동이 없습니다. 파일을 추가하면 자동 등록됩니다.")
+            else:
+                for act in acts:
+                    if st.button(f"• {act.title}", key=f"open_{key}_{act.slug}", use_container_width=True):
+                        set_route("activity", subject=key, activity=act.slug)
+                        _do_rerun()
 
-# ----------------------------
-# 뷰: 일반 교과 메인 (공통/미적/확통/기하)
-# ----------------------------
-def subject_view(subject_key: str):
-    meta = SUBJECT_UI.get(subject_key, {"title": subject_key, "icon": "📁"})
-    title, icon = meta["title"], meta["icon"]
+    st.sidebar.divider()
+    if st.button("🏠 홈으로", type="secondary", use_container_width=True):
+        set_route("home")
+        _do_rerun()
 
-    # 상단 내비
-    c1, c2 = st.columns([1, 1])
-    with c1:
-        if st.button("🏠 홈", use_container_width=True):
-            set_route("home"); _do_rerun()
+def home_view():
+    st.title("🧮 수학 수업 시뮬레이션 허브")
+    st.markdown(
+        """
+        이 웹앱은 **수학 수업에서 바로 활용**할 수 있는 시뮬레이션과 활동을 한 곳에 모은 허브입니다.  
+        아래에서 교과를 고르고, 교과별 메인 페이지에서 구체 활동으로 들어가세요.
 
-    page_header(f"{title}", "이 교과의 활동들을 선택하세요.", icon=icon, top_rule=True)
+        - **공통수학**: 수와 연산, 함수 기초, 수열 등
+        - **미적분학**: 극한/연속, 미분/적분의 핵심 개념 시각화
+        - **확률과통계**: 난수, 분포, 추정·검정 체험형 시뮬
+        - **기하학**: 도형 성질, 변환, 작도 아이디어
+        """
+    )
+    st.subheader("교과로 이동")
+    cols = st.columns(4)
+    for i, (key, label) in enumerate(SUBJECTS.items()):
+        with cols[i]:
+            if st.button(f"{label} 이동", use_container_width=True):
+                set_route("subject", subject=key)
+                _do_rerun()
 
-    acts = SUBJECTS.get(subject_key, [])
+def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
+    label = SUBJECTS.get(subject_key, subject_key)
+    st.title(f"📘 {label} 메인")
+    st.markdown("이 교과에 포함된 활동들을 한눈에 보고 바로 실행할 수 있습니다.")
+
+    acts = registry.get(subject_key, [])
     if not acts:
-        st.info("아직 등록된 액티비티가 없습니다.")
+        st.info(f"아직 등록된 활동이 없습니다. `activities/{subject_key}/` 폴더에 .py 파일을 추가하세요.")
         return
 
     for act in acts:
-        if st.button(f"▶ {act.title}", key=f"{subject_key}-{act.slug}", use_container_width=True):
-            set_route("activity", subject=subject_key, slug=act.slug)
-            _do_rerun()
+        with st.container(border=True):
+            st.subheader(act.title)
+            st.caption(act.description)
+            c1, c2 = st.columns([1, 3])
+            with c1:
+                if st.button("열기", key=f"open_{subject_key}_{act.slug}_in_index", use_container_width=True):
+                    set_route("activity", subject=subject_key, activity=act.slug)
+                    _do_rerun()
+            with c2:
+                st.code(f"{act.subject_key}/{act.slug}.py", language="text")
 
-
-# ----------------------------
-# 뷰: 일반 교과 액티비티
-# ----------------------------
-def activity_view(subject_key: str, slug: str):
-    acts = SUBJECTS.get(subject_key, [])
+def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity]]):
+    acts = registry.get(subject_key, [])
     act = next((a for a in acts if a.slug == slug), None)
     if not act:
-        st.error("해당 활동을 찾을 수 없습니다."); return
+        st.error("해당 활동을 찾을 수 없습니다. 파일명이 바뀌었는지 확인하세요.")
+        return
 
-    # 상단 내비 (여백 최소)
-    c1, c2 = st.columns([1, 1])
-    with c1:
+    cols = st.columns([1, 2, 1])
+    with cols[0]:
         if st.button("← 교과 메인", type="secondary", use_container_width=True):
             set_route("subject", subject=subject_key); _do_rerun()
-    with c2:
+    with cols[2]:
         if st.button("🏠 홈", type="secondary", use_container_width=True):
             set_route("home"); _do_rerun()
 
-    # 스크롤 유지 스크립트(사이드바 주입 → 본문 여백 X)
+    # ✅ 스크롤 유지 스크립트를 사이드바에 주입 → 본문에 '빈 공간' 생성 안 됨
     keep_scroll(key=f"{subject_key}/{slug}", mount="sidebar")
 
-    # 액티비티 모듈 렌더
-    try:
-        mod = importlib.import_module(act.module)
-        mod.render()
-    except Exception as e:
-        st.exception(e)
+    # ⚠️ 여기에는 어떤 divider/빈 마크다운도 넣지 마세요 (여백 원인)
+    act.render()
 
 
-# ----------------------------
-# 뷰: 기타(etc) 메인 — 토픽 리스트
-# ----------------------------
-def etc_subject_view():
-    page_header("기타", "주제(토픽) 페이지를 먼저 선택하세요.", icon="🧭", top_rule=True)
 
-    metas = list(ETC_TOPICS_META.values())
-    if not metas:
-        st.info("아직 등록된 주제(토픽)가 없습니다."); return
-
-    cols = st.columns(3)
-    for i, meta in enumerate(metas):
-        with cols[i % len(cols)]:
-            st.markdown(f"### {meta.icon} {meta.title}")
-            if meta.description:
-                st.caption(meta.description)
-            if st.button("열기", key=f"open-topic-{meta.slug}", use_container_width=True):
-                set_route("topic", subject="etc", topic=meta.slug); _do_rerun()
-
-
-# ----------------------------
-# 뷰: 특정 토픽 메인 — 해당 토픽의 액티비티 리스트
-# ----------------------------
-def topic_view(topic_slug: str):
-    meta = ETC_TOPICS_META.get(topic_slug)
-    if not meta:
-        st.error("해당 토픽을 찾을 수 없습니다."); return
-
-    # 상단 내비
-    c1, c2 = st.columns([1, 1])
-    with c1:
-        if st.button("← 기타 메인", use_container_width=True):
-            set_route("subject", subject="etc"); _do_rerun()
-    with c2:
-        if st.button("🏠 홈", use_container_width=True):
-            set_route("home"); _do_rerun()
-
-    page_header(f"{meta.title}", meta.description, icon=meta.icon, top_rule=True)
-
-    acts = ETC_TOPICS.get(topic_slug, [])
-    if not acts:
-        st.info("아직 등록된 액티비티가 없습니다."); return
-
-    for act in acts:
-        if st.button(f"▶ {act.title}", key=f"act-{topic_slug}-{act.slug}", use_container_width=True):
-            set_route("activity", subject="etc", topic=topic_slug, slug=act.slug)
-            _do_rerun()
-
-
-# ----------------------------
-# 뷰: 토픽 하위 액티비티 (etc 전용)
-# ----------------------------
-def activity_view_topic(topic_slug: str, slug: str):
-    acts = ETC_TOPICS.get(topic_slug, [])
-    act = next((a for a in acts if a.slug == slug), None)
-    if not act:
-        st.error("해당 활동을 찾을 수 없습니다."); return
-
-    # 상단 내비
-    c1, c2, c3 = st.columns([1, 1, 1])
-    with c1:
-        if st.button("← 토픽 메인", type="secondary", use_container_width=True):
-            set_route("topic", subject="etc", topic=topic_slug); _do_rerun()
-    with c2:
-        if st.button("← 기타 메인", type="secondary", use_container_width=True):
-            set_route("subject", subject="etc"); _do_rerun()
-    with c3:
-        if st.button("🏠 홈", type="secondary", use_container_width=True):
-            set_route("home"); _do_rerun()
-
-    # 스크롤 유지(사이드바 주입)
-    keep_scroll(key=f"etc/{topic_slug}/{slug}", mount="sidebar")
-
-    # 액티비티 모듈 렌더
-    try:
-        mod = importlib.import_module(act.module)
-        mod.render()
-    except Exception as e:
-        st.exception(e)
-
-
-# ----------------------------
-# 엔트리 포인트
-# ----------------------------
+# ---------- 메인 ----------
 def main():
-    _init_route()
+    registry = discover_activities()
+    sidebar_navigation(registry)
 
-    # 라우터
-    route = st.session_state.get("route", "home")
-
-    if route == "home":
+    view, subject, activity = get_route()
+    if view == "home":
         home_view()
-
-    elif route == "subject":
-        subject_key = st.session_state.get("subject")
-        if subject_key == "etc":
-            etc_subject_view()          # ✅ 기타는 토픽 리스트로 진입
-        else:
-            subject_view(subject_key)   # 공통/미적/확통/기하
-
-    elif route == "topic":
-        topic_slug = st.session_state.get("topic")
-        topic_view(topic_slug)          # ✅ etc 전용
-
-    elif route == "activity":
-        if st.session_state.get("subject") == "etc" and st.session_state.get("topic"):
-            activity_view_topic(st.session_state["topic"], st.session_state.get("slug"))  # ✅ etc 전용 액티비티
-        else:
-            activity_view(st.session_state.get("subject"), st.session_state.get("slug"))  # 일반 교과 액티비티
-
+    elif view == "subject" and subject in SUBJECTS:
+        subject_index_view(subject, registry)
+    elif view == "activity" and subject in SUBJECTS and activity:
+        activity_view(subject, activity, registry)
     else:
-        # 알 수 없는 라우트면 홈으로
+        # 예외 시 홈으로
         set_route("home")
-        home_view()
+        _do_rerun()
 
-
-# 스트림릿 실행 시 진입
-main()
+if __name__ == "__main__":
+    main()
