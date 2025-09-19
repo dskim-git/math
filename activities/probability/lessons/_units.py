@@ -63,6 +63,12 @@ CURRICULUM = [
                     "title": "파스칼의 삼각형",
                     "src": "https://www.canva.com/design/DAGNlypGJuM/dZGjjww0s4Ix0bH_wUY5nQ/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "gsheet",
+                    "title": "엑셀로 만든 파스칼의 삼각형",
+                    "src": "https://docs.google.com/spreadsheets/d/17F8RhpLp8XNhiOICfUlxnFFjDEQCCjLVAQyUADkUjz8/pubhtml?widget=true&headers=false&gid=0",
+                    "height": 800
                 }
                 # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
