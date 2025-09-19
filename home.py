@@ -122,6 +122,32 @@ def load_curriculum(subject_key: str) -> Optional[List[Dict[str, Any]]]:
         return cur
     return None
 
+def _has_lessons(subject_key: str) -> bool:
+    """해당 교과에 lessons/_units.py가 있는지 확인."""
+    return (ACTIVITIES_ROOT / subject_key / "lessons" / "_units.py").exists()
+
+def _inject_subject_styles():
+    """교과 메인에서 쓸 '수업 카드' 전용 스타일을 한 번만 주입."""
+    if "_subject_styles" in st.session_state:
+        return
+    st.session_state["_subject_styles"] = True
+    st.markdown(
+        """
+        <style>
+          .lesson-card{
+            background: linear-gradient(180deg, rgba(240,244,255,.9), rgba(235,248,255,.9));
+            border: 1px solid rgba(0,90,200,.22);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin: 0.25rem 0 1rem 0;
+          }
+          .lesson-card h4{ margin: 0 0 .35rem 0; font-weight: 700; }
+          .lesson-card p{ margin: .15rem 0 .5rem 0; color: var(--secondary-text-color); }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -317,8 +343,33 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
     st.title(f"📘 {label} 메인")
     st.markdown("이 교과에 포함된 활동들을 한눈에 보고 바로 실행할 수 있습니다.")
 
+    # ✅ 수업 카드 스타일 주입
+    _inject_subject_styles()
+
+    # ✅ lessons/_units.py가 있으면 상단에 '수업' 카드 노출
+    if _has_lessons(subject_key):
+        with st.container():
+            st.markdown(
+                f"""
+                <div class="lesson-card">
+                  <h4>🔖 {label} 수업 (단원별 자료 모음)</h4>
+                  <p>슬라이드/시트/Canva/액티비티를 단원 순서대로 한 화면에서 볼 수 있어요. (왼쪽에서 단원 선택)</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            c1, c2 = st.columns([1, 3])
+            with c1:
+                if st.button("수업 열기", key=f"open_lessons_card_{subject_key}", use_container_width=True):
+                    set_route("lessons", subject=subject_key)
+                    _do_rerun()
+            with c2:
+                st.caption("단원 선택은 좌측 사이드바의 대→중→소 드롭다운으로 진행합니다.")
+
+    # ▼ 활동 카드들
     acts = registry.get(subject_key, [])
     if not acts:
+        # 활동이 없어도 '수업' 카드가 위에서 먼저 보여졌으므로 여기서는 정보만 표시
         st.info(f"아직 등록된 활동이 없습니다. `activities/{subject_key}/` 폴더에 .py 파일을 추가하세요.")
         return
 
@@ -333,6 +384,7 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
                     _do_rerun()
             with c2:
                 st.code(f"{act.subject_key}/{act.slug}.py", language="text")
+
 
 def lessons_view(subject_key: str):
     """교과별 '수업(lessons)' 허브: (1) CURRICULUM 계층형 또는 (2) UNITS 평면형을 지원"""
