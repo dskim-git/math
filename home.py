@@ -476,15 +476,19 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
             with c2:
                 st.code(f"{act.subject_key}/{act.slug}.py", language="text")
 
-
+LESSON_HEADER_VISIBLE = False
 
 def lessons_view(subject_key: str):
     """교과별 '수업(lessons)' 허브: (1) CURRICULUM 계층형 또는 (2) UNITS 평면형을 지원"""
     keep_scroll(key=f"{subject_key}/lessons", mount="sidebar")
 
     label = SUBJECTS.get(subject_key, subject_key)
-    st.title(f"🔖 {label} 수업")
-    st.caption("왼쪽 선택에서 단원을 고르면, 해당 단원의 수업 자료가 순서대로 나타납니다.")
+
+    # ⬇️⬇️ 여기만 변경: 기본은 숨김(원하면 True로 켜서 다시 보이게 가능)
+    if LESSON_HEADER_VISIBLE:
+        st.title(f"🔖 {label} 수업")
+        st.caption("왼쪽 선택에서 단원을 고르면, 해당 단원의 수업 자료가 순서대로 나타납니다.")
+    # ⬆️⬆️
 
     curriculum = load_curriculum(subject_key)  # list or None
     units = load_units(subject_key)            # dict or {}
