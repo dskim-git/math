@@ -111,6 +111,18 @@ def load_activity_order(subject_key: str) -> List[str]:
     m = load_module_from_path(p)
     return list(getattr(m, "ORDER", []) or [])
 
+def load_curriculum(subject_key: str) -> Optional[List[Dict[str, Any]]]:
+    """activities/<subject>/lessons/_units.py 의 CURRICULUM(list)을 읽습니다."""
+    units_py = ACTIVITIES_ROOT / subject_key / "lessons" / "_units.py"
+    if not units_py.exists():
+        return None
+    mod = load_module_from_path(units_py)
+    cur = getattr(mod, "CURRICULUM", None)
+    if isinstance(cur, list) and cur:
+        return cur
+    return None
+
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Streamlit 버전 호환 라우팅 유틸
@@ -323,96 +335,172 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
                 st.code(f"{act.subject_key}/{act.slug}.py", language="text")
 
 def lessons_view(subject_key: str):
-    """교과별 '수업(lessons)' 허브: 단원 선택 → 자료 임베드 → 액티비티로 이동/복귀"""
-    # 스크롤 복원 스크립트(사이드바에 주입)
-    keep_scroll(key=f"{subject_key}/lessons", mount="sidebar")  # utils.keep_scroll이 mount 지원
+    """교과별 '수업(lessons)' 허브: (1) CURRICULUM 계층형 또는 (2) UNITS 평면형을 지원"""
+    keep_scroll(key=f"{subject_key}/lessons", mount="sidebar")
 
     label = SUBJECTS.get(subject_key, subject_key)
     st.title(f"🔖 {label} 수업")
-    st.caption("왼쪽 드롭다운에서 단원을 고르면, 해당 단원의 수업 자료가 순서대로 나타납니다.")
+    st.caption("왼쪽 선택에서 단원을 고르면, 해당 단원의 수업 자료가 순서대로 나타납니다.")
 
-    units = load_units(subject_key)
-    if not units:
-        st.info(f"`activities/{subject_key}/lessons/_units.py` 를 만들고 UNITS 사전을 정의하세요.")
-        st.code(f"""
-UNITS = {{
-  "intro": {{
-    "label": "1단원: 도입",
-    "items": [
-      {{"type":"gslides","title":"도입 PPT","src":"https://docs.google.com/presentation/d/슬라이드ID/embed","height":480}},
-      {{"type":"activity","title":"확률 시뮬레이터(이항)","subject":"probability","slug":"binomial_simulator"}},
-      {{"type":"url","title":"참고 링크","src":"https://example.com"}},
-    ],
-  }},
-}}
-        """, language="python")
-        return
+    curriculum = load_curriculum(subject_key)  # list or None
+    units = load_units(subject_key)            # dict or {}
 
-    # 단원 선택(쿼리파라미터 unit이 오면 그걸 우선)
-    view, subject, activity, unit_qp = get_route()
-    unit_keys = list(units.keys())
-    default_idx = 0 if unit_qp not in unit_keys else unit_keys.index(unit_qp)
+    if curriculum:
+        # ── 계층형: 대단원 → 중단원 → 소단원 ─────────────────────────────
+        # helper: children 안전 접근
+        def children(node): return node.get("children", []) if isinstance(node, dict) else []
 
-    def _on_select():
-        idx = st.session_state.get("_lesson_sel_idx", 0)
-        set_route("lessons", subject=subject_key, unit=unit_keys[idx])
-        _do_rerun()
+        # 사이드바 3단 선택
+        with st.sidebar:
+            st.subheader("📚 단원 선택")
 
-    with st.sidebar:
-        st.subheader("📚 단원 선택")
-        st.selectbox(
-            "단원",
-            options=range(len(unit_keys)),
-            format_func=lambda i: units[unit_keys[i]]["label"],
-            index=default_idx,
-            key="_lesson_sel_idx",
-            on_change=_on_select
-        )
+            # 대단원
+            major_opts = [c["label"] for c in curriculum]
+            major_idx = st.selectbox("대단원", range(len(major_opts)),
+                                     format_func=lambda i: major_opts[i],
+                                     key=f"_{subject_key}_major")
+            major = curriculum[major_idx]
 
-    cur_key = unit_keys[default_idx]
-    data = units[cur_key]
-    st.subheader(f"단원: {data.get('label','')}")
-    st.divider()
+            # 중단원
+            mids = children(major)
+            if mids:
+                mid_opts = [m["label"] for m in mids]
+                mid_idx = st.selectbox("중단원", range(len(mid_opts)),
+                                       format_func=lambda i: mid_opts[i],
+                                       key=f"_{subject_key}_mid")
+                middle = mids[mid_idx]
+            else:
+                middle = None
 
-    # 아이템 순서대로 렌더
-    for i, item in enumerate(data.get("items", []), start=1):
-        typ = item.get("type")
-        title = item.get("title", "")
-        st.markdown(f"### {i}. {title}")
+            # 소단원(있을 때만)
+            minor = None
+            if middle:
+                mins = children(middle)
+                if mins:
+                    min_opts = [m["label"] for m in mins]
+                    min_idx = st.selectbox("소단원", range(len(min_opts)),
+                                           format_func=lambda i: min_opts[i],
+                                           key=f"_{subject_key}_min")
+                    minor = mins[min_idx]
 
-        if typ == "gslides":
-            embed_iframe(item["src"], height=item.get("height", 480))
-        elif typ == "gsheet":
-            embed_iframe(item["src"], height=item.get("height", 700))
-        elif typ == "canva":
-            components.html(
-                f'''
-                <iframe loading="lazy" style="border:0; width:100%; height:{item.get("height",600)}px;"
-                        allowfullscreen src="{item["src"]}"></iframe>
-                ''',
-                height=item.get("height", 600)
-            )
-        elif typ == "url":
-            st.link_button("문서 열기", url=item["src"], use_container_width=True)
-        elif typ == "activity":
-            subj = item.get("subject"); slug = item.get("slug")
-            # 수업 → 액티비티로 갈 때 현재 단원 key를 쿼리로 넘겨둠 (복귀용)
-            if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{cur_key}_{slug}", use_container_width=True):
-                set_route("activity", subject=subj, activity=slug, unit=cur_key)
-                _do_rerun()
-        else:
-            st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
+        # 렌더할 items 찾기: 소단원 > 중단원 > 대단원 순으로 존재 확인
+        items_node = None
+        for node in [minor, middle, major]:
+            if isinstance(node, dict) and "items" in node:
+                items_node = node
+                break
 
+        if not items_node:
+            st.info("이 단원에는 아직 자료(items)가 없습니다. `_units.py`의 해당 지점에 items를 추가해 주세요.")
+            return
+
+        st.subheader(items_node.get("label", "선택한 단원"))
         st.divider()
 
-    # 하단 네비
-    cols = st.columns([1, 1])
-    with cols[0]:
-        if st.button("← 교과 메인", type="secondary", use_container_width=True):
-            set_route("subject", subject=subject_key); _do_rerun()
-    with cols[1]:
-        if st.button("🏠 홈", type="secondary", use_container_width=True):
-            set_route("home"); _do_rerun()
+        # 아이템 순서대로 렌더
+        for i, item in enumerate(items_node.get("items", []), start=1):
+            typ = item.get("type")
+            title = item.get("title", "")
+            st.markdown(f"### {i}. {title}")
+
+            if typ == "gslides":
+                embed_iframe(item["src"], height=item.get("height", 480))
+            elif typ == "gsheet":
+                embed_iframe(item["src"], height=item.get("height", 700))
+            elif typ == "canva":
+                components.html(
+                    f'''
+                    <iframe loading="lazy" style="border:0; width:100%; height:{item.get("height",600)}px;"
+                            allowfullscreen src="{item["src"]}"></iframe>
+                    ''',
+                    height=item.get("height", 600)
+                )
+            elif typ == "url":
+                st.link_button("문서 열기", url=item["src"], use_container_width=True)
+            elif typ == "activity":
+                subj = item.get("subject"); slug = item.get("slug")
+                if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{subj}_{slug}", use_container_width=True):
+                    # 수업으로 돌아올 때를 대비해, leaf key(가능하면 소단원 key)를 unit으로 전달
+                    back_key = (minor or middle or major).get("key")
+                    set_route("activity", subject=subj, activity=slug, unit=back_key)
+                    _do_rerun()
+            else:
+                st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
+
+            st.divider()
+
+        # 하단 네비
+        cols = st.columns([1, 1])
+        with cols[0]:
+            if st.button("← 교과 메인", type="secondary", use_container_width=True):
+                set_route("subject", subject=subject_key); _do_rerun()
+        with cols[1]:
+            if st.button("🏠 홈", type="secondary", use_container_width=True):
+                set_route("home"); _do_rerun()
+
+    else:
+        # ── 평면형 UNITS 지원(이전 방식 호환) ────────────────────────────
+        if not units:
+            st.info(f"`activities/{subject_key}/lessons/_units.py` 에 CURRICULUM 또는 UNITS를 정의해 주세요.")
+            return
+
+        view, subject, activity, unit_qp = get_route()
+        unit_keys = list(units.keys())
+        default_idx = 0 if unit_qp not in unit_keys else unit_keys.index(unit_qp)
+
+        def _on_select():
+            idx = st.session_state.get("_lesson_sel_idx", 0)
+            set_route("lessons", subject=subject_key, unit=unit_keys[idx])
+            _do_rerun()
+
+        with st.sidebar:
+            st.subheader("📚 단원 선택")
+            st.selectbox("단원", options=range(len(unit_keys)),
+                         format_func=lambda i: units[unit_keys[i]]["label"],
+                         index=default_idx, key="_lesson_sel_idx",
+                         on_change=_on_select)
+
+        cur_key = unit_keys[default_idx]
+        data = units[cur_key]
+        st.subheader(f"단원: {data.get('label','')}")
+        st.divider()
+
+        for i, item in enumerate(data.get("items", []), start=1):
+            typ = item.get("type")
+            title = item.get("title", "")
+            st.markdown(f"### {i}. {title}")
+
+            if typ == "gslides":
+                embed_iframe(item["src"], height=item.get("height", 480))
+            elif typ == "gsheet":
+                embed_iframe(item["src"], height=item.get("height", 700))
+            elif typ == "canva":
+                components.html(
+                    f'''
+                    <iframe loading="lazy" style="border:0; width:100%; height:{item.get("height",600)}px;"
+                            allowfullscreen src="{item["src"]}"></iframe>
+                    ''',
+                    height=item.get("height", 600)
+                )
+            elif typ == "url":
+                st.link_button("문서 열기", url=item["src"], use_container_width=True)
+            elif typ == "activity":
+                subj = item.get("subject"); slug = item.get("slug")
+                if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{cur_key}_{slug}", use_container_width=True):
+                    set_route("activity", subject=subj, activity=slug, unit=cur_key)
+                    _do_rerun()
+            else:
+                st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
+
+            st.divider()
+
+        cols = st.columns([1, 1])
+        with cols[0]:
+            if st.button("← 교과 메인", type="secondary", use_container_width=True):
+                set_route("subject", subject=subject_key); _do_rerun()
+        with cols[1]:
+            if st.button("🏠 홈", type="secondary", use_container_width=True):
+                set_route("home"); _do_rerun()
 
 def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity]], unit: Optional[str] = None):
     acts = registry.get(subject_key, [])
