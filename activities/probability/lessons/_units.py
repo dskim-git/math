@@ -15,9 +15,9 @@ CURRICULUM = [
            "items": [
                 {
                     "type": "canva",
-                    "title": "원순열 도입(PPT)",
+                    "title": "원순열",
                     "src": "https://www.canva.com/design/DAGNlyGJNp8/56f2EaBXpwemyaLtixXk8A/view?embed",
-                    "height": 600
+                    "height": 800
                 },
                 # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
