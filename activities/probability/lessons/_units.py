@@ -67,7 +67,7 @@ CURRICULUM = [
                 {
                     "type": "gsheet",
                     "title": "엑셀로 만든 파스칼의 삼각형",
-                    "src": "https://docs.google.com/spreadsheets/d/17F8RhpLp8XNhiOICfUlxnFFjDEQCCjLVAQyUADkUjz8/pubhtml?widget=true&headers=false&gid=0",
+                    "src": "https://docs.google.com/spreadsheets/d/17F8RhpLp8XNhiOICfUlxnFFjDEQCCjLVAQyUADkUjz8/edit?usp=drivesdk",
                     "height": 800
                 }
                 # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
