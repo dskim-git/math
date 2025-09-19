@@ -157,6 +157,29 @@ def discover_activities() -> Dict[str, List[Activity]]:
     if not ACTIVITIES_ROOT.exists():
         return registry
 
+    def add_from_dir(dir_path: Path, subject_key: str, slug_prefix: str = ""):
+        for py_file in dir_path.glob("*.py"):
+            name = py_file.name
+            if name.startswith("_") or name == "__init__.py":
+                continue
+            module = load_module_from_path(py_file)
+            if module is None:
+                continue
+            meta = getattr(module, "META", {})
+            title = meta.get("title") or py_file.stem.replace("_", " ").title()
+            description = meta.get("description") or "활동 소개가 아직 없습니다."
+            render_fn = getattr(module, "render", None)
+            if callable(render_fn):
+                registry[subject_key].append(
+                    Activity(
+                        subject_key=subject_key,
+                        slug=(slug_prefix + py_file.stem),  # 예: "fractal/sierpinski_chaos"
+                        title=title,
+                        description=description,
+                        render=render_fn,
+                    )
+                )
+
     for subject_dir in ACTIVITIES_ROOT.iterdir():
         if not subject_dir.is_dir():
             continue
@@ -164,32 +187,22 @@ def discover_activities() -> Dict[str, List[Activity]]:
         if subject_key not in SUBJECTS:
             continue
 
-        for py_file in subject_dir.glob("*.py"):
-            if py_file.name.startswith("_"):
+        # 1) 교과 폴더 바로 아래의 활동 파일
+        add_from_dir(subject_dir, subject_key, slug_prefix="")
+
+        # 2) 교과 폴더의 하위 폴더(1단계) 안의 활동 파일도 포함 (lessons 등은 제외)
+        for subdir in subject_dir.iterdir():
+            if not subdir.is_dir():
                 continue
-            module = load_module_from_path(py_file)
-            if module is None:
+            if subdir.name in ("lessons", "__pycache__") or subdir.name.startswith("_"):
                 continue
+            add_from_dir(subdir, subject_key, slug_prefix=f"{subdir.name}/")
 
-            meta = getattr(module, "META", {})
-            title = meta.get("title") or py_file.stem.replace("_", " ").title()
-            description = meta.get("description") or "활동 소개가 아직 없습니다."
-            render_fn = getattr(module, "render", None)
-
-            if callable(render_fn):
-                registry[subject_key].append(
-                    Activity(
-                        subject_key=subject_key,
-                        slug=py_file.stem,
-                        title=title,
-                        description=description,
-                        render=render_fn,
-                    )
-                )
-
+        # 제목 기준 정렬
         registry[subject_key].sort(key=lambda a: a.title)
 
     return registry
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 라우팅
