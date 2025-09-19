@@ -343,33 +343,74 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
     st.title(f"📘 {label} 메인")
     st.markdown("이 교과에 포함된 활동들을 한눈에 보고 바로 실행할 수 있습니다.")
 
-    # ✅ 수업 카드 스타일 주입
+    # 스타일
     _inject_subject_styles()
 
-    # ✅ lessons/_units.py가 있으면 상단에 '수업' 카드 노출
+    # ---- 수업 카드 + 바로가기 드롭다운 ----
     if _has_lessons(subject_key):
         with st.container():
             st.markdown(
                 f"""
                 <div class="lesson-card">
                   <h4>🔖 {label} 수업 (단원별 자료 모음)</h4>
-                  <p>슬라이드/시트/Canva/액티비티를 단원 순서대로 한 화면에서 볼 수 있어요. (왼쪽에서 단원 선택)</p>
+                  <p>슬라이드/시트/Canva/액티비티를 단원 순서대로 한 화면에서 볼 수 있어요.</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            c1, c2 = st.columns([1, 3])
-            with c1:
-                if st.button("수업 열기", key=f"open_lessons_card_{subject_key}", use_container_width=True):
-                    set_route("lessons", subject=subject_key)
-                    _do_rerun()
-            with c2:
-                st.caption("단원 선택은 좌측 사이드바의 대→중→소 드롭다운으로 진행합니다.")
 
-    # ▼ 활동 카드들
+            # ▼ 여기서 바로 단원 선택(대/중/소) → [수업 열기]
+            from typing import Any
+            curriculum = load_curriculum(subject_key)
+            units_dict = load_units(subject_key)
+
+            if curriculum:
+                # helper
+                def ch(node: dict[str, Any]): return node.get("children", []) if isinstance(node, dict) else []
+
+                maj_key = f"subj_{subject_key}_pick_major"
+                mid_key = f"subj_{subject_key}_pick_mid"
+                min_key = f"subj_{subject_key}_pick_min"
+
+                majors = curriculum
+                maj_idx = st.selectbox("대단원", range(len(majors)),
+                                       format_func=lambda i: majors[i]["label"],
+                                       key=maj_key)
+                mids = ch(majors[maj_idx])
+                if mids:
+                    mid_idx = st.selectbox("중단원", range(len(mids)),
+                                           format_func=lambda i: mids[i]["label"],
+                                           key=mid_key)
+                    mins = ch(mids[mid_idx])
+                    if mins:
+                        min_idx = st.selectbox("소단원", range(len(mins)),
+                                               format_func=lambda i: mins[i]["label"],
+                                               key=min_key)
+                        sel_node = mins[min_idx]
+                    else:
+                        sel_node = mids[mid_idx]
+                else:
+                    sel_node = majors[maj_idx]
+
+                unit_key = sel_node.get("key")
+                if st.button("수업 열기", key=f"open_lessons_card_direct_{subject_key}", use_container_width=True):
+                    set_route("lessons", subject=subject_key, unit=unit_key)
+                    _do_rerun()
+
+            elif units_dict:
+                unit_keys = list(units_dict.keys())
+                idx = st.selectbox("단원", range(len(unit_keys)),
+                                   format_func=lambda i: units_dict[unit_keys[i]]["label"],
+                                   key=f"subj_{subject_key}_units_sel")
+                if st.button("수업 열기", key=f"open_lessons_card_units_{subject_key}", use_container_width=True):
+                    set_route("lessons", subject=subject_key, unit=unit_keys[idx])
+                    _do_rerun()
+            else:
+                st.caption(f"`activities/{subject_key}/lessons/_units.py`에 CURRICULUM 또는 UNITS를 정의하면 여기서 바로 이동할 수 있어요.")
+
+    # ---- 활동 카드들 ----
     acts = registry.get(subject_key, [])
     if not acts:
-        # 활동이 없어도 '수업' 카드가 위에서 먼저 보여졌으므로 여기서는 정보만 표시
         st.info(f"아직 등록된 활동이 없습니다. `activities/{subject_key}/` 폴더에 .py 파일을 추가하세요.")
         return
 
@@ -399,48 +440,83 @@ def lessons_view(subject_key: str):
 
     if curriculum:
         # ── 계층형: 대단원 → 중단원 → 소단원 ─────────────────────────────
-        # helper: children 안전 접근
         def children(node): return node.get("children", []) if isinstance(node, dict) else []
+
+        # ✅ URL의 unit 쿼리를 사용해 기본 선택(대/중/소) 자동 설정
+        _, _, _, unit_qp = get_route()
+        flag_key = f"_{subject_key}_lesson_idx_initialized"
+        if unit_qp and st.session_state.get(flag_key) != unit_qp:
+            maj_idx = mid_idx = min_idx = None
+            # path 탐색
+            for i, maj in enumerate(curriculum):
+                if maj.get("key") == unit_qp:
+                    maj_idx = i; break
+                mids = children(maj)
+                for j, mid in enumerate(mids):
+                    if mid.get("key") == unit_qp:
+                        maj_idx = i; mid_idx = j; break
+                    mins = children(mid)
+                    for k, mnr in enumerate(mins):
+                        if mnr.get("key") == unit_qp:
+                            maj_idx = i; mid_idx = j; min_idx = k; break
+                    if min_idx is not None or (maj_idx is not None and mid_idx is not None):
+                        break
+                if maj_idx is not None and (mid_idx is None or min_idx is not None):
+                    break
+
+            # state에 주입
+            if maj_idx is not None:
+                st.session_state[f"_{subject_key}_major"] = maj_idx
+                if mid_idx is not None:
+                    st.session_state[f"_{subject_key}_mid"] = mid_idx
+                else:
+                    st.session_state.pop(f"_{subject_key}_mid", None)
+                if min_idx is not None:
+                    st.session_state[f"_{subject_key}_min"] = min_idx
+                else:
+                    st.session_state.pop(f"_{subject_key}_min", None)
+                st.session_state[flag_key] = unit_qp
 
         # 사이드바 3단 선택
         with st.sidebar:
             st.subheader("📚 단원 선택")
 
             # 대단원
-            major_opts = [c["label"] for c in curriculum]
-            major_idx = st.selectbox("대단원", range(len(major_opts)),
-                                     format_func=lambda i: major_opts[i],
-                                     key=f"_{subject_key}_major")
-            major = curriculum[major_idx]
+            majors = curriculum
+            maj_state_key = f"_{subject_key}_major"
+            maj_idx = st.session_state.get(maj_state_key, 0)
+            maj_idx = st.selectbox("대단원", range(len(majors)),
+                                   format_func=lambda i: majors[i]["label"],
+                                   key=maj_state_key)
 
             # 중단원
-            mids = children(major)
+            mids = children(majors[maj_idx])
+            middle = None
             if mids:
-                mid_opts = [m["label"] for m in mids]
-                mid_idx = st.selectbox("중단원", range(len(mid_opts)),
-                                       format_func=lambda i: mid_opts[i],
-                                       key=f"_{subject_key}_mid")
+                mid_state_key = f"_{subject_key}_mid"
+                mid_idx = st.session_state.get(mid_state_key, 0)
+                mid_idx = st.selectbox("중단원", range(len(mids)),
+                                       format_func=lambda i: mids[i]["label"],
+                                       key=mid_state_key)
                 middle = mids[mid_idx]
-            else:
-                middle = None
 
-            # 소단원(있을 때만)
+            # 소단원
             minor = None
             if middle:
                 mins = children(middle)
                 if mins:
-                    min_opts = [m["label"] for m in mins]
-                    min_idx = st.selectbox("소단원", range(len(min_opts)),
-                                           format_func=lambda i: min_opts[i],
-                                           key=f"_{subject_key}_min")
+                    min_state_key = f"_{subject_key}_min"
+                    min_idx = st.session_state.get(min_state_key, 0)
+                    min_idx = st.selectbox("소단원", range(len(mins)),
+                                           format_func=lambda i: mins[i]["label"],
+                                           key=min_state_key)
                     minor = mins[min_idx]
 
-        # 렌더할 items 찾기: 소단원 > 중단원 > 대단원 순으로 존재 확인
+        # 렌더할 items: 소단원 > 중단원 > 대단원 순
         items_node = None
-        for node in [minor, middle, major]:
+        for node in [minor, middle, majors[maj_idx]]:
             if isinstance(node, dict) and "items" in node:
-                items_node = node
-                break
+                items_node = node; break
 
         if not items_node:
             st.info("이 단원에는 아직 자료(items)가 없습니다. `_units.py`의 해당 지점에 items를 추가해 주세요.")
@@ -449,10 +525,9 @@ def lessons_view(subject_key: str):
         st.subheader(items_node.get("label", "선택한 단원"))
         st.divider()
 
-        # 아이템 순서대로 렌더
+        # 아이템 렌더
         for i, item in enumerate(items_node.get("items", []), start=1):
-            typ = item.get("type")
-            title = item.get("title", "")
+            typ = item.get("type"); title = item.get("title", "")
             st.markdown(f"### {i}. {title}")
 
             if typ == "gslides":
@@ -472,8 +547,7 @@ def lessons_view(subject_key: str):
             elif typ == "activity":
                 subj = item.get("subject"); slug = item.get("slug")
                 if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{subj}_{slug}", use_container_width=True):
-                    # 수업으로 돌아올 때를 대비해, leaf key(가능하면 소단원 key)를 unit으로 전달
-                    back_key = (minor or middle or major).get("key")
+                    back_key = (minor or middle or majors[maj_idx]).get("key")
                     set_route("activity", subject=subj, activity=slug, unit=back_key)
                     _do_rerun()
             else:
@@ -481,7 +555,6 @@ def lessons_view(subject_key: str):
 
             st.divider()
 
-        # 하단 네비
         cols = st.columns([1, 1])
         with cols[0]:
             if st.button("← 교과 메인", type="secondary", use_container_width=True):
@@ -491,7 +564,7 @@ def lessons_view(subject_key: str):
                 set_route("home"); _do_rerun()
 
     else:
-        # ── 평면형 UNITS 지원(이전 방식 호환) ────────────────────────────
+        # ── 평면형 UNITS (기존 방식) ──
         if not units:
             st.info(f"`activities/{subject_key}/lessons/_units.py` 에 CURRICULUM 또는 UNITS를 정의해 주세요.")
             return
@@ -518,8 +591,7 @@ def lessons_view(subject_key: str):
         st.divider()
 
         for i, item in enumerate(data.get("items", []), start=1):
-            typ = item.get("type")
-            title = item.get("title", "")
+            typ = item.get("type"); title = item.get("title", "")
             st.markdown(f"### {i}. {title}")
 
             if typ == "gslides":
