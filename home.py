@@ -148,6 +148,16 @@ def _inject_subject_styles():
         unsafe_allow_html=True,
     )
 
+def _lessons_top_nav(subject_key: str):
+    """수업 페이지 상단(제목 바로 아래)에 들어갈 네비게이션 버튼들."""
+    cols = st.columns([1, 1], gap="small")
+    with cols[0]:
+        if st.button("← 교과 메인", type="secondary", use_container_width=True, key=f"lessons_top_back_{subject_key}"):
+            set_route("subject", subject=subject_key); _do_rerun()
+    with cols[1]:
+        if st.button("🏠 홈", type="secondary", use_container_width=True, key=f"lessons_top_home_{subject_key}"):
+            set_route("home"); _do_rerun()
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
