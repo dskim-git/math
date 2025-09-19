@@ -66,6 +66,7 @@ class Activity:
     title: str
     description: str
     render: Callable[[], None]
+    order: int = 10_000_000  # 기본값(크게) → 지정 없으면 뒤로 밀림
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 유틸: 동적 모듈 로딩
@@ -101,6 +102,15 @@ def load_units(subject_key: str) -> Dict[str, Any]:
         return {}
     mod = load_module_from_path(units_py)
     return getattr(mod, "UNITS", {}) or {}
+
+def load_activity_order(subject_key: str) -> List[str]:
+    """activities/<subject>/_order.py 의 ORDER 리스트를 읽어옵니다."""
+    p = ACTIVITIES_ROOT / subject_key / "_order.py"
+    if not p.exists():
+        return []
+    m = load_module_from_path(p)
+    return list(getattr(m, "ORDER", []) or [])
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Streamlit 버전 호환 라우팅 유틸
@@ -169,6 +179,7 @@ def discover_activities() -> Dict[str, List[Activity]]:
             title = meta.get("title") or py_file.stem.replace("_", " ").title()
             description = meta.get("description") or "활동 소개가 아직 없습니다."
             render_fn = getattr(module, "render", None)
+            order = int(meta.get("order", 10_000_000))
             if callable(render_fn):
                 registry[subject_key].append(
                     Activity(
@@ -177,6 +188,7 @@ def discover_activities() -> Dict[str, List[Activity]]:
                         title=title,
                         description=description,
                         render=render_fn,
+                        order=order,
                     )
                 )
 
@@ -187,10 +199,9 @@ def discover_activities() -> Dict[str, List[Activity]]:
         if subject_key not in SUBJECTS:
             continue
 
-        # 1) 교과 폴더 바로 아래의 활동 파일
+        # 1) 과목 폴더 바로 아래
         add_from_dir(subject_dir, subject_key, slug_prefix="")
-
-        # 2) 교과 폴더의 하위 폴더(1단계) 안의 활동 파일도 포함 (lessons 등은 제외)
+        # 2) 1단계 하위 폴더(lessons, __pycache__, '_' 시작 제외)
         for subdir in subject_dir.iterdir():
             if not subdir.is_dir():
                 continue
@@ -198,12 +209,15 @@ def discover_activities() -> Dict[str, List[Activity]]:
                 continue
             add_from_dir(subdir, subject_key, slug_prefix=f"{subdir.name}/")
 
-        # 제목 기준 정렬
-        registry[subject_key].sort(key=lambda a: a.title)
+        # ---- 정렬: _order.py > META.order > 제목 ----
+        desired = load_activity_order(subject_key)  # 리스트가 비어 있으면 무시
+        rank = {slug: i for i, slug in enumerate(desired)}
+        registry[subject_key].sort(
+            key=lambda a: (rank.get(a.slug, 10_000_000), a.order, a.title)
+        )
 
     return registry
-
-
+    
 # ─────────────────────────────────────────────────────────────────────────────
 # 라우팅
 # 구조: view=home|subject|activity|lessons & subject=probability & activity=... & unit=...
