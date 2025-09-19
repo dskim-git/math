@@ -10,9 +10,7 @@ CURRICULUM = [
         "key": "1-1",
         "label": "(1) 순열과 조합",
         "children": [
-          {"key": "1-1-1",
-           "label": "1. 원순열",
-           "items": [
+          {"key": "1-1-1", "label": "1. 원순열", "items": [
                 {
                     "type": "canva",
                     "title": "원순열",
@@ -34,8 +32,25 @@ CURRICULUM = [
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
                 # {"type":"url","title":"보충 설명","src":"https://..."},
             ]},
-          {"key": "1-1-3", "label": "3. 같은 것이 있는 순열", "items": []},
-          {"key": "1-1-4", "label": "4. 중복조합", "items": []},
+          {"key": "1-1-3", "label": "3. 같은 것이 있는 순열", "items": [
+                {
+                    "type": "canva",
+                    "title": "같은 것이 있는 순열",
+                    "src": "https://www.canva.com/design/DAGNl2vhKYA/ObtbLokxlZBoJgazUpFQYg/view?embed",
+                    "height": 800
+                },
+            ]},
+          {"key": "1-1-4", "label": "4. 중복조합", "items": [
+                {
+                    "type": "canva",
+                    "title": "같은 것이 있는 순열",
+                    "src": "https://www.canva.com/design/DAGNly2hs8o/pnOkCbXhNC0Ca0L-2hIObg/view?embed",
+                    "height": 800
+                },
+                # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
+                # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
+                # {"type":"url","title":"보충 설명","src":"https://..."},
+            ]},
         ],
       },
       {
