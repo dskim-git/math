@@ -51,7 +51,23 @@ CURRICULUM = [
         "key": "1-2",
         "label": "(2) 이항정리",
         "children": [
-          {"key": "1-2-1", "label": "1. 이항정리", "items": []},
+          {"key": "1-2-1", "label": "1. 이항정리", "items": [
+                {
+                    "type": "canva",
+                    "title": "이항정리",
+                    "src": "https://www.canva.com/design/DAGNl1q_da0/TXTFw1qR_ph2kjpXxzdivQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "파스칼의 삼각형",
+                    "src": "https://www.canva.com/design/DAGNlypGJuM/dZGjjww0s4Ix0bH_wUY5nQ/view?embed",
+                    "height": 800
+                }
+                # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
+                # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
+                # {"type":"url","title":"보충 설명","src":"https://..."},
+            ]},
           {"key": "1-2-2", "label": "2. 이항정리의 활용", "items": []},
         ],
       },
