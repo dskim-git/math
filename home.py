@@ -494,11 +494,13 @@ def lessons_view(subject_key: str):
 
     label = SUBJECTS.get(subject_key, subject_key)
 
-    # ⬇️⬇️ 여기만 변경: 기본은 숨김(원하면 True로 켜서 다시 보이게 가능)
+    # 헤더는 기본 숨김(원하면 LESSON_HEADER_VISIBLE=True로)
     if LESSON_HEADER_VISIBLE:
         st.title(f"🔖 {label} 수업")
         st.caption("왼쪽 선택에서 단원을 고르면, 해당 단원의 수업 자료가 순서대로 나타납니다.")
-    # ⬆️⬆️
+
+    # ✅ 상단 네비게이션(제목 아래 고정)
+    _lessons_top_nav(subject_key)
 
     curriculum = load_curriculum(subject_key)  # list or None
     units = load_units(subject_key)            # dict or {}
@@ -507,12 +509,11 @@ def lessons_view(subject_key: str):
         # ── 계층형: 대단원 → 중단원 → 소단원 ─────────────────────────────
         def children(node): return node.get("children", []) if isinstance(node, dict) else []
 
-        # ✅ URL의 unit 쿼리를 사용해 기본 선택(대/중/소) 자동 설정
+        # URL의 unit 쿼리로 초기 선택 자동 세팅
         _, _, _, unit_qp = get_route()
         flag_key = f"_{subject_key}_lesson_idx_initialized"
         if unit_qp and st.session_state.get(flag_key) != unit_qp:
             maj_idx = mid_idx = min_idx = None
-            # path 탐색
             for i, maj in enumerate(curriculum):
                 if maj.get("key") == unit_qp:
                     maj_idx = i; break
@@ -529,7 +530,6 @@ def lessons_view(subject_key: str):
                 if maj_idx is not None and (mid_idx is None or min_idx is not None):
                     break
 
-            # state에 주입
             if maj_idx is not None:
                 st.session_state[f"_{subject_key}_major"] = maj_idx
                 if mid_idx is not None:
@@ -545,8 +545,6 @@ def lessons_view(subject_key: str):
         # 사이드바 3단 선택
         with st.sidebar:
             st.subheader("📚 단원 선택")
-
-            # 대단원
             majors = curriculum
             maj_state_key = f"_{subject_key}_major"
             maj_idx = st.session_state.get(maj_state_key, 0)
@@ -554,7 +552,6 @@ def lessons_view(subject_key: str):
                                    format_func=lambda i: majors[i]["label"],
                                    key=maj_state_key)
 
-            # 중단원
             mids = children(majors[maj_idx])
             middle = None
             if mids:
@@ -565,7 +562,6 @@ def lessons_view(subject_key: str):
                                        key=mid_state_key)
                 middle = mids[mid_idx]
 
-            # 소단원
             minor = None
             if middle:
                 mins = children(middle)
@@ -577,7 +573,7 @@ def lessons_view(subject_key: str):
                                            key=min_state_key)
                     minor = mins[min_idx]
 
-        # 렌더할 items: 소단원 > 중단원 > 대단원 순
+        # 렌더 노드(소 > 중 > 대)
         items_node = None
         for node in [minor, middle, majors[maj_idx]]:
             if isinstance(node, dict) and "items" in node:
@@ -620,16 +616,10 @@ def lessons_view(subject_key: str):
 
             st.divider()
 
-        cols = st.columns([1, 1])
-        with cols[0]:
-            if st.button("← 교과 메인", type="secondary", use_container_width=True):
-                set_route("subject", subject=subject_key); _do_rerun()
-        with cols[1]:
-            if st.button("🏠 홈", type="secondary", use_container_width=True):
-                set_route("home"); _do_rerun()
+        # ✅ 하단 네비 버튼은 제거됨 (상단만 사용)
 
     else:
-        # ── 평면형 UNITS (기존 방식) ──
+        # ── 평면형 UNITS(기존 방식) ──
         if not units:
             st.info(f"`activities/{subject_key}/lessons/_units.py` 에 CURRICULUM 또는 UNITS를 정의해 주세요.")
             return
@@ -683,13 +673,8 @@ def lessons_view(subject_key: str):
 
             st.divider()
 
-        cols = st.columns([1, 1])
-        with cols[0]:
-            if st.button("← 교과 메인", type="secondary", use_container_width=True):
-                set_route("subject", subject=subject_key); _do_rerun()
-        with cols[1]:
-            if st.button("🏠 홈", type="secondary", use_container_width=True):
-                set_route("home"); _do_rerun()
+        # ✅ 하단 네비 버튼은 제거됨 (상단만 사용)
+
 
 def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity]], unit: Optional[str] = None):
     acts = registry.get(subject_key, [])
