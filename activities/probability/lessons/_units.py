@@ -26,8 +26,8 @@ CURRICULUM = [
           {"key": "1-1-2", "label": "2. 중복순열", "items": [
                 {
                     "type": "canva",
-                    "title": "원순열",
-                    "src": "https://www.canva.com/design/DAGNl8s3A0s/Nbs_N2gbTcqYSpIrfu6cBQ/view?utm_content=DAGNl8s3A0s&utm_campaign=designshare&utm_medium=link&utm_source=editor",
+                    "title": "중복순열",
+                    "src": "https://www.canva.com/design/DAGNl8s3A0s/Nbs_N2gbTcqYSpIrfu6cBQ/view?embed",
                     "height": 800
                 },
                 # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
