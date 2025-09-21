@@ -74,7 +74,26 @@ CURRICULUM = [
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
                 # {"type":"url","title":"보충 설명","src":"https://..."},
             ]},
-          {"key": "1-2-2", "label": "2. 이항정리의 활용", "items": []},
+          {"key": "1-2-2", "label": "2. 이항정리의 활용", "items": [
+                {
+                    "type": "canva",
+                    "title": "이항정리의 활용",
+                    "src": "https://www.canva.com/design/DAGNl0IVvy0/Sk5roP86VF-FxyTI3pZ6HQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이항계수의 성질",
+                    "src": "https://https://www.canva.com/design/DAGNl45UHuA/G9hddVZMCJM13F43M7hZYw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "파스칼의 삼각형에서 찾아보는 프랙털",
+                    "subject": "etc",
+                    "slug": "fractal/pascal_modulo"
+                }
+            ]},
         ],
       },
       {
