@@ -158,6 +158,22 @@ def _lessons_top_nav(subject_key: str):
         if st.button("🏠 홈", type="secondary", use_container_width=True, key=f"lessons_top_home_{subject_key}"):
             set_route("home"); _do_rerun()
 
+# 🔎 커리큘럼 트리에서 key로 경로(대/중/소 인덱스)를 찾는 헬퍼
+def _find_curriculum_path(curriculum: List[Dict[str, Any]], key: str) -> Optional[tuple[int, Optional[int], Optional[int]]]:
+    def ch(node): return node.get("children", []) if isinstance(node, dict) else []
+    for i, maj in enumerate(curriculum):
+        if maj.get("key") == key:
+            return (i, None, None)
+        mids = ch(maj)
+        for j, mid in enumerate(mids):
+            if mid.get("key") == key:
+                return (i, j, None)
+            mins = ch(mid)
+            for k, mnr in enumerate(mins):
+                if mnr.get("key") == key:
+                    return (i, j, k)
+    return None
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Streamlit 버전 호환 라우팅 유틸
 def _qp_get() -> Dict[str, List[str]]:
@@ -278,7 +294,7 @@ def get_route():
     subject  = first("subject", None)
     activity = first("activity", None)
     unit     = first("unit", None)     # lessons 단원 키
-    # origin은 여기서 굳이 반환하지 않아도 되지만, 필요하면 꺼내 쓸 수 있음
+    # origin은 필요 시 개별 함수에서 _qp_get()으로 직접 읽음
     return view, subject, activity, unit
 
 def set_route(view: str, subject: Optional[str] = None,
@@ -507,42 +523,30 @@ def lessons_view(subject_key: str):
     curriculum = load_curriculum(subject_key)  # list or None
     units = load_units(subject_key)            # dict or {}
 
+    # 현재 URL의 unit 파라미터
+    _, _, _, unit_qp = get_route()
+
     if curriculum:
         # ── 계층형: 대단원 → 중단원 → 소단원 ─────────────────────────────
         def children(node): return node.get("children", []) if isinstance(node, dict) else []
 
-        # URL의 unit 쿼리로 초기 선택 자동 세팅
-        _, _, _, unit_qp = get_route()
-        flag_key = f"_{subject_key}_lesson_idx_initialized"
-        if unit_qp and st.session_state.get(flag_key) != unit_qp:
-            maj_idx = mid_idx = min_idx = None
-            for i, maj in enumerate(curriculum):
-                if maj.get("key") == unit_qp:
-                    maj_idx = i; break
-                mids = children(maj)
-                for j, mid in enumerate(mids):
-                    if mid.get("key") == unit_qp:
-                        maj_idx = i; mid_idx = j; break
-                    mins = children(mid)
-                    for k, mnr in enumerate(mins):
-                        if mnr.get("key") == unit_qp:
-                            maj_idx = i; mid_idx = j; min_idx = k; break
-                    if min_idx is not None or (maj_idx is not None and mid_idx is not None):
-                        break
-                if maj_idx is not None and (mid_idx is None or min_idx is not None):
-                    break
-
-            if maj_idx is not None:
-                st.session_state[f"_{subject_key}_major"] = maj_idx
-                if mid_idx is not None:
-                    st.session_state[f"_{subject_key}_mid"] = mid_idx
+        # ✅ unit 쿼리가 있으면 항상(매 진입 시) 해당 경로로 선택 인덱스 동기화
+        if unit_qp:
+            path = _find_curriculum_path(curriculum, unit_qp)
+            maj_state_key = f"_{subject_key}_major"
+            mid_state_key = f"_{subject_key}_mid"
+            min_state_key = f"_{subject_key}_min"
+            if path:
+                maj_i, mid_i, min_i = path
+                st.session_state[maj_state_key] = maj_i
+                if mid_i is not None:
+                    st.session_state[mid_state_key] = mid_i
                 else:
-                    st.session_state.pop(f"_{subject_key}_mid", None)
-                if min_idx is not None:
-                    st.session_state[f"_{subject_key}_min"] = min_idx
+                    st.session_state.pop(mid_state_key, None)
+                if min_i is not None:
+                    st.session_state[min_state_key] = min_i
                 else:
-                    st.session_state.pop(f"_{subject_key}_min", None)
-                st.session_state[flag_key] = unit_qp
+                    st.session_state.pop(min_state_key, None)
 
         # 사이드바 3단 선택
         with st.sidebar:
@@ -627,9 +631,10 @@ def lessons_view(subject_key: str):
             st.info(f"`activities/{subject_key}/lessons/_units.py` 에 CURRICULUM 또는 UNITS를 정의해 주세요.")
             return
 
-        view, subject, activity, unit_qp = get_route()
         unit_keys = list(units.keys())
-        default_idx = 0 if unit_qp not in unit_keys else unit_keys.index(unit_qp)
+        # ✅ unit 쿼리 반영: selectbox 상태 강제 동기화
+        default_idx = unit_keys.index(unit_qp) if (unit_qp in unit_keys) else 0
+        st.session_state["_lesson_sel_idx"] = default_idx
 
         def _on_select():
             idx = st.session_state.get("_lesson_sel_idx", 0)
@@ -643,7 +648,8 @@ def lessons_view(subject_key: str):
                          index=default_idx, key="_lesson_sel_idx",
                          on_change=_on_select)
 
-        cur_key = unit_keys[default_idx]
+        cur_idx = st.session_state.get("_lesson_sel_idx", default_idx)
+        cur_key = unit_keys[cur_idx]
         data = units[cur_key]
         st.subheader(f"단원: {data.get('label','')}")
         st.divider()
