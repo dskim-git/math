@@ -90,8 +90,8 @@ CURRICULUM = [
                 {
                     "type": "activity",
                     "title": "파스칼의 삼각형에서 찾아보는 프랙털",
-                    "subject": "etc",
-                    "slug": "fractal/pascal_modulo"
+                    "subject": "probability",
+                    "slug": "pascal_modulo_view"
                 }
             ]},
         ],
