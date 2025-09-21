@@ -283,7 +283,8 @@ def get_route():
     return view, subject, activity, unit
 
 def set_route(view: str, subject: Optional[str] = None,
-              activity: Optional[str] = None, unit: Optional[str] = None):
+              activity: Optional[str] = None, unit: Optional[str] = None,
+              origin: Optional[str] = None):
     params = {"view": view}
     if subject:
         params["subject"] = subject
@@ -291,6 +292,8 @@ def set_route(view: str, subject: Optional[str] = None,
         params["activity"] = activity
     if unit:
         params["unit"] = unit
+    if origin:
+        params["origin"]  = origin
     _qp_set(params)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -665,8 +668,10 @@ def lessons_view(subject_key: str):
                 st.link_button("문서 열기", url=item["src"], use_container_width=True)
             elif typ == "activity":
                 subj = item.get("subject"); slug = item.get("slug")
-                if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{cur_key}_{slug}", use_container_width=True):
-                    set_route("activity", subject=subj, activity=slug, unit=cur_key)
+                if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{subj}_{slug}", use_container_width=True):
+                    back_key = (minor or middle or majors[maj_idx]).get("key")   # ← 현재(소/중/대) 단원의 key
+                    set_route("activity", subject=subj, activity=slug, unit=back_key,
+                              origin=subject_key)  # ✅ 원래 수업 과목을 origin에 담아 전송
                     _do_rerun()
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
@@ -677,18 +682,27 @@ def lessons_view(subject_key: str):
 
 
 def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity]], unit: Optional[str] = None):
-    acts = registry.get(subject_key, [])
-    act = next((a for a in acts if a.slug == slug), None)
-    if not act:
-        st.error("해당 활동을 찾을 수 없습니다. 파일명이 바뀌었는지 확인하세요.")
-        return
+    # ...
+    qp = _qp_get()
+    origin_subject = None
+    try:
+        origin_vals = qp.get("origin")
+        if origin_vals: origin_subject = origin_vals[0]
+    except Exception:
+        pass
 
     cols = st.columns([1, 1, 1])
     with cols[0]:
-        if unit:
-            # ✅ 수업에서 넘어온 경우: 단원 정보 유지하여 복귀
+        if unit and origin_subject:
+            # ✅ 수업(원래 과목)으로 정확히 복귀
             if st.button("← 수업으로 돌아가기", type="secondary", use_container_width=True):
-                set_route("lessons", subject=subject_key, unit=unit); _do_rerun()
+                set_route("lessons", subject=origin_subject, unit=unit)
+                _do_rerun()
+        elif unit:
+            # (이전 호환) 같은 과목의 lessons로 복귀
+            if st.button("← 수업으로 돌아가기", type="secondary", use_container_width=True):
+                set_route("lessons", subject=subject_key, unit=unit)
+                _do_rerun()
         else:
             if st.button("← 교과 메인", type="secondary", use_container_width=True):
                 set_route("subject", subject=subject_key); _do_rerun()
