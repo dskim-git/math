@@ -158,8 +158,6 @@ def _lessons_top_nav(subject_key: str):
         if st.button("🏠 홈", type="secondary", use_container_width=True, key=f"lessons_top_home_{subject_key}"):
             set_route("home"); _do_rerun()
 
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Streamlit 버전 호환 라우팅 유틸
 def _qp_get() -> Dict[str, List[str]]:
@@ -265,10 +263,10 @@ def discover_activities() -> Dict[str, List[Activity]]:
         )
 
     return registry
-    
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 라우팅
-# 구조: view=home|subject|activity|lessons & subject=probability & activity=... & unit=...
+# 구조: view=home|subject|activity|lessons & subject=probability & activity=... & unit=... & origin=...
 def get_route():
     qp = _qp_get()
     def first(key: str, default: Optional[str] = None) -> Optional[str]:
@@ -279,11 +277,13 @@ def get_route():
     view     = first("view", "home")
     subject  = first("subject", None)
     activity = first("activity", None)
-    unit     = first("unit", None)   # lessons 단원 키
+    unit     = first("unit", None)     # lessons 단원 키
+    # origin은 여기서 굳이 반환하지 않아도 되지만, 필요하면 꺼내 쓸 수 있음
     return view, subject, activity, unit
 
 def set_route(view: str, subject: Optional[str] = None,
-              activity: Optional[str] = None, unit: Optional[str] = None):
+              activity: Optional[str] = None, unit: Optional[str] = None,
+              origin: Optional[str] = None):  # ✅ origin 지원
     params = {"view": view}
     if subject:
         params["subject"] = subject
@@ -291,6 +291,8 @@ def set_route(view: str, subject: Optional[str] = None,
         params["activity"] = activity
     if unit:
         params["unit"] = unit
+    if origin:
+        params["origin"] = origin  # ✅ 원래 수업 과목을 기억
     _qp_set(params)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -609,7 +611,8 @@ def lessons_view(subject_key: str):
                 subj = item.get("subject"); slug = item.get("slug")
                 if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{subj}_{slug}", use_container_width=True):
                     back_key = (minor or middle or majors[maj_idx]).get("key")
-                    set_route("activity", subject=subj, activity=slug, unit=back_key)
+                    # ✅ 원래 수업 과목(subject_key)을 origin으로 함께 전달
+                    set_route("activity", subject=subj, activity=slug, unit=back_key, origin=subject_key)
                     _do_rerun()
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
@@ -666,7 +669,8 @@ def lessons_view(subject_key: str):
             elif typ == "activity":
                 subj = item.get("subject"); slug = item.get("slug")
                 if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{cur_key}_{slug}", use_container_width=True):
-                    set_route("activity", subject=subj, activity=slug, unit=cur_key)
+                    # ✅ UNITS 평면형에서도 origin=subject_key 전달
+                    set_route("activity", subject=subj, activity=slug, unit=cur_key, origin=subject_key)
                     _do_rerun()
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
@@ -683,12 +687,23 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
         st.error("해당 활동을 찾을 수 없습니다. 파일명이 바뀌었는지 확인하세요.")
         return
 
+    # ✅ 쿼리에서 origin(원래 수업 과목) 읽기
+    qp = _qp_get()
+    origin_subject = None
+    try:
+        vals = qp.get("origin")
+        if vals:
+            origin_subject = vals[0]
+    except Exception:
+        origin_subject = None
+
     cols = st.columns([1, 1, 1])
     with cols[0]:
         if unit:
-            # ✅ 수업에서 넘어온 경우: 단원 정보 유지하여 복귀
+            # ✅ 수업에서 넘어온 경우: origin이 있으면 그 과목으로, 없으면 현재 과목으로 복귀
             if st.button("← 수업으로 돌아가기", type="secondary", use_container_width=True):
-                set_route("lessons", subject=subject_key, unit=unit); _do_rerun()
+                target_subject = origin_subject or subject_key
+                set_route("lessons", subject=target_subject, unit=unit); _do_rerun()
         else:
             if st.button("← 교과 메인", type="secondary", use_container_width=True):
                 set_route("subject", subject=subject_key); _do_rerun()
