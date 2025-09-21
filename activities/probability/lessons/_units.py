@@ -84,7 +84,7 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "이항계수의 성질",
-                    "src": "https://https://www.canva.com/design/DAGNl45UHuA/G9hddVZMCJM13F43M7hZYw/view?embed",
+                    "src": "https://www.canva.com/design/DAGNl45UHuA/G9hddVZMCJM13F43M7hZYw/view?embed",
                     "height": 800
                 },
                 {
