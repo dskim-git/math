@@ -101,13 +101,6 @@ CURRICULUM = [
         "label": "(3) 대단원 문제",
         # 소단원 없이 이 레벨에서 바로 items를 둘 수도 있습니다.
         "items": [
-                #{
-                    #"type": "image",
-                    #"title": "나무",
-                    #"src": "assets/tree.jpg",
-                    #"width":640,
-                    #"caption": "나무다"
-                #},
                 {
                     "type": "pdf",
                     "title": "단원평가문제",
@@ -212,7 +205,27 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "2-1-4", "label": "4. 여사건의 확률", "items": []},
+          {"key": "2-1-4", "label": "여사건의 확률", "items": [
+                {
+                    "type": "canva",
+                    "title": "여사건",
+                    "src": "https://www.canva.com/design/DAGNlwRyb0Q/uFGi82VwEUHsPNn50t5RPg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "여사건의 확률",
+                    "src": "https://www.canva.com/design/DAGNlwT2t6Y/8nByHtuP-3HKQ_4WkCsN4A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "image",
+                    "title": "생일 예시",
+                    "src": "assets/birth.jpg",
+                    "width":640,
+                    "caption": "생일"
+                },
+          ]},
         ],
       },
       {
