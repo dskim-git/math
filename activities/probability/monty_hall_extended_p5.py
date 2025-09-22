@@ -5,7 +5,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "확장된 몬티홀 (p5.js)",
+    "title": "확장된 몬티홀",
     "description": "문과 자동차의 개수를 바꿔가며 '유지/교체' 전략을 실험해 보세요.",
     "order": 121,
 }
