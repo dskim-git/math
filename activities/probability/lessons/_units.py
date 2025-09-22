@@ -154,6 +154,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "iframe",
+                    "title": "수학적 확률과 통계적 확률의 관계 (통그라미)",
+                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
+                    "height": 800
+                }
+                {
                     "type": "activity",
                     "title": "뷔퐁의 바늘 실험",
                     "subject": "probability",
