@@ -105,6 +105,7 @@ CURRICULUM = [
                     "type": "image",
                     "title": "나무",
                     "src": "assets/tree.jpg",
+                    "쟝소":640,
                     "caption": "나무다"
                 }
         ],
@@ -191,3 +192,16 @@ CURRICULUM = [
 UNITS = {
     # "freepack": {"label": "예시 단원", "items": [ ... ]},
 }
+
+
+
+
+#<이미지 넣는 법>
+# 1) 픽셀 고정
+#{"type":"image", "title":"도형 예", "src":"assets/geom/a.png", "width":640, "caption":"정다각형"}
+
+# 2) 여러 장을 한 줄에 3칸
+#{"type":"image", "title":"예제 모음", "srcs":["a.png","b.png","c.png"], "cols":3}
+
+# 3) 반응형(열 폭 가득)
+#{"type":"image", "title":"반응형", "src":"assets/foo.png"}  # use_container_width=True가 기본
