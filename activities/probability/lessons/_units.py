@@ -152,6 +152,12 @@ CURRICULUM = [
                     "title": "수학적 확률과 통계적 확률의 관계",
                     "src": "https://docs.google.com/spreadsheets/d/1oz2DHhzrRxRFRn92RcGZdupPGvXUzWTk/edit?usp=drivesdk",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "뷔퐁의 바늘 실험",
+                    "subject": "probability",
+                    "slug": "buffon_needle_p5",
                 }
           ]},
           {"key": "2-1-2", "label": "2. 확률의 기본 성질", "items": []},
