@@ -110,9 +110,9 @@ CURRICULUM = [
                 #},
                 {
                     "type": "pdf",
-                    "title": "수업 프린트 (PDF)",
+                    "title": "단원평가문제",
                     "src": "https://drive.google.com/file/d/1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW/preview",
-                    "height": 900,
+                    #"height": 900,
                     "download": "https://drive.google.com/uc?export=download&id=1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW"  # (선택) 다운로드 버튼 표시용
                 }
         ],
