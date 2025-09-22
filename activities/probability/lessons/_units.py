@@ -198,7 +198,20 @@ CURRICULUM = [
                     "slug": "monty_hall_extended_p5"
                 }
           ]},
-          {"key": "2-1-3", "label": "3. 확률의 덧셈정리", "items": []},
+          {"key": "2-1-3", "label": "확률의 덧셈정리", "items": [
+                {
+                    "type": "canva",
+                    "title": "배반사건",
+                    "src": "https://www.canva.com/design/DAGNl4WLA34/0B49FEc9BXaV-f033EiDrA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "확률의 덧셈정리",
+                    "src": "https://www.canva.com/design/DAGNl4dXCFU/wU2f46tNJIQxIAkx6WH_sw/view?embed",
+                    "height": 800
+                }
+          ]},
           {"key": "2-1-4", "label": "4. 여사건의 확률", "items": []},
         ],
       },
