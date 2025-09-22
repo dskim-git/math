@@ -12,7 +12,7 @@ META = {
 # ... 생략 (META, page_header 등 동일)
 
 def render():
-    page_header("베르트랑의 역설 (p5.js)", "무작위 정의(방법)에 따라 ‘긴 현’의 확률이 달라진다", "🎲", top_rule=True)
+    page_header("베르트랑의 역설", "무작위 정의(방법)에 따라 ‘긴 현’의 확률이 달라진다", "🎲", top_rule=True)
 
     st.markdown("""
     **현의 길이가 내접 정삼각형의 한 변보다 ‘길다’**(longer than triangle side)일 확률을 세 가지 방법으로 비교합니다.  
