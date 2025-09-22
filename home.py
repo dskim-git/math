@@ -532,12 +532,10 @@ def lessons_view(subject_key: str):
 
     label = SUBJECTS.get(subject_key, subject_key)
 
-    # 헤더는 기본 숨김(원하면 LESSON_HEADER_VISIBLE=True로)
     if LESSON_HEADER_VISIBLE:
         st.title(f"🔖 {label} 수업")
         st.caption("왼쪽 선택에서 단원을 고르면, 해당 단원의 수업 자료가 순서대로 나타납니다.")
 
-    # ✅ 상단 네비게이션(제목 아래 고정)
     _lessons_top_nav(subject_key)
 
     curriculum = load_curriculum(subject_key)  # list or None
@@ -550,7 +548,7 @@ def lessons_view(subject_key: str):
         # ── 계층형: 대단원 → 중단원 → 소단원 ─────────────────────────────
         def children(node): return node.get("children", []) if isinstance(node, dict) else []
 
-        # ✅ unit 쿼리가 있으면 항상(매 진입 시) 해당 경로로 선택 인덱스 동기화
+        # ✅ unit 쿼리가 있으면 해당 경로로 선택 인덱스 동기화
         if unit_qp:
             path = _find_curriculum_path(curriculum, unit_qp)
             maj_state_key = f"_{subject_key}_major"
@@ -568,7 +566,7 @@ def lessons_view(subject_key: str):
                 else:
                     st.session_state.pop(min_state_key, None)
 
-        # 사이드바 3단 선택
+        # ── 사이드바 3단 선택 ──
         with st.sidebar:
             st.subheader("📚 단원 선택")
 
@@ -596,7 +594,7 @@ def lessons_view(subject_key: str):
                 index=min(maj_idx_default, len(majors)-1),
                 format_func=lambda i: majors[i]["label"],
                 key=maj_key,
-                on_change=_on_major_change,   # ★ 대단원 바뀌면 중/소단원 초기화
+                on_change=_on_major_change,
             )
 
             # 중단원
@@ -610,11 +608,10 @@ def lessons_view(subject_key: str):
                     index=min(mid_idx_default, len(mids)-1),
                     format_func=lambda i: mids[i]["label"],
                     key=mid_key,
-                    on_change=_on_mid_change,  # ★ 중단원 바뀌면 소단원 초기화
+                    on_change=_on_mid_change,
                 )
                 middle = mids[mid_idx]
             else:
-                # 중단원이 없다면 관련 state 제거
                 st.session_state.pop(mid_key, None)
                 st.session_state.pop(min_key, None)
 
@@ -624,7 +621,6 @@ def lessons_view(subject_key: str):
                 mins = ch(middle)
                 if mins:
                     min_idx_default = st.session_state.get(min_key, 0)
-                    # 혹시 이전 선택이 범위를 벗어나면 0으로 가드
                     if min_idx_default >= len(mins):
                         min_idx_default = 0
                         st.session_state[min_key] = 0
@@ -637,12 +633,20 @@ def lessons_view(subject_key: str):
                     )
                     minor = mins[min_idx]
                 else:
-                    # 선택된 중단원에 소단원이 없으면 state 제거
                     st.session_state.pop(min_key, None)
             else:
                 st.session_state.pop(min_key, None)
 
-        # 렌더 노드(소 > 중 > 대)
+        # ★ 선택 변경을 URL unit에 동기화(중요!)
+        #    - 현재 선택(소>중>대)의 key가 URL의 unit과 다르면 업데이트 후 즉시 rerun
+        sel_node = minor or middle or majors[maj_idx]
+        sel_key = sel_node.get("key") if isinstance(sel_node, dict) else None
+        if sel_key and sel_key != unit_qp:
+            set_route("lessons", subject=subject_key, unit=sel_key)
+            _do_rerun()
+            return  # (이 줄은 이 rerun에서 아래 렌더를 건너뛰게 해 깜빡임을 줄임)
+
+        # ── 렌더 대상 결정(소 > 중 > 대에서 items 가진 노드) ──
         items_node = None
         for node in [minor, middle, majors[maj_idx]]:
             if isinstance(node, dict) and "items" in node:
@@ -655,7 +659,7 @@ def lessons_view(subject_key: str):
         st.subheader(items_node.get("label", "선택한 단원"))
         st.divider()
 
-        # 아이템 렌더
+        # ── 아이템 렌더 ──
         for i, item in enumerate(items_node.get("items", []), start=1):
             typ = item.get("type"); title = item.get("title", "")
             st.markdown(f"### {i}. {title}")
@@ -678,44 +682,34 @@ def lessons_view(subject_key: str):
                 subj = item.get("subject"); slug = item.get("slug")
                 if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{subj}_{slug}", use_container_width=True):
                     back_key = (minor or middle or majors[maj_idx]).get("key")
-                    # ✅ 원래 수업 과목(subject_key)을 origin으로 함께 전달
                     set_route("activity", subject=subj, activity=slug, unit=back_key, origin=subject_key)
                     _do_rerun()
             elif typ == "pdf":
-                # 예: src = gview 링크 / drive preview / .pdf 원본 링크
                 embed_pdf(item["src"], height=item.get("height", 800))
-                # (선택) 다운로드 버튼을 쓰고 싶으면 아래처럼 링크 버튼 하나 더 달기
                 if item.get("download"):
                     st.link_button("PDF 다운로드", url=item["download"], use_container_width=True)
-
             elif typ == "image":
                 imgs = item.get("srcs") or item.get("src")
                 caption = item.get("caption")
-                width   = item.get("width")          # 픽셀 고정(선택)
-                cols_n  = item.get("cols")           # 여러 장을 한 줄에 배치(선택)
-
-                # 여러 장 + 열 배치
+                width   = item.get("width")
+                cols_n  = item.get("cols")
                 if isinstance(imgs, list) and cols_n and cols_n > 1:
                     cols = st.columns(cols_n)
-                    for i, img in enumerate(imgs):
-                        with cols[i % cols_n]:
+                    for j, img in enumerate(imgs):
+                        with cols[j % cols_n]:
                             if width:
-                                st.image(img, width=width, caption=caption if i == 0 else None)
+                                st.image(img, width=width, caption=caption if j == 0 else None)
                             else:
-                                st.image(img, use_container_width=True, caption=caption if i == 0 else None)
+                                st.image(img, use_container_width=True, caption=caption if j == 0 else None)
                 else:
-                    # 단일 또는 그냥 여러 장 세로로
                     if width:
                         st.image(imgs, width=width, caption=caption)
                     else:
                         st.image(imgs, use_container_width=True, caption=caption)
-
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
 
             st.divider()
-
-        # ✅ 하단 네비 버튼은 제거됨 (상단만 사용)
 
     else:
         # ── 평면형 UNITS(기존 방식) ──
@@ -724,7 +718,6 @@ def lessons_view(subject_key: str):
             return
 
         unit_keys = list(units.keys())
-        # ✅ unit 쿼리 반영: selectbox 상태 강제 동기화
         default_idx = unit_keys.index(unit_qp) if (unit_qp in unit_keys) else 0
         st.session_state["_lesson_sel_idx"] = default_idx
 
@@ -767,13 +760,13 @@ def lessons_view(subject_key: str):
             elif typ == "activity":
                 subj = item.get("subject"); slug = item.get("slug")
                 if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{cur_key}_{slug}", use_container_width=True):
-                    # ✅ UNITS 평면형에서도 origin=subject_key 전달
                     set_route("activity", subject=subj, activity=slug, unit=cur_key, origin=subject_key)
                     _do_rerun()
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
 
             st.divider()
+
 
         # ✅ 하단 네비 버튼은 제거됨 (상단만 사용)
 
