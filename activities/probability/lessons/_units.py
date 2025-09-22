@@ -105,7 +105,7 @@ CURRICULUM = [
                     "type": "image",
                     "title": "나무",
                     "src": "assets/tree.jpg",
-                    "쟝소":640,
+                    "width":640,
                     "caption": "나무다"
                 }
         ],
