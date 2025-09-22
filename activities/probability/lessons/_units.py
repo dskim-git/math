@@ -100,7 +100,14 @@ CURRICULUM = [
         "key": "1-3",
         "label": "(3) 대단원 문제",
         # 소단원 없이 이 레벨에서 바로 items를 둘 수도 있습니다.
-        "items": [],
+        "items": [
+                {
+                    "type": "image",
+                    "title": "나무",
+                    "src": "assets/tree.jpg",
+                    "caption": "나무다"
+                }
+        ],
       },
     ],
   },
