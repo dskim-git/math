@@ -9,23 +9,23 @@ META = {
     "order": 70,
 }
 
-def render():
-    page_header("베르트랑의 역설", "무작위 정의(방법)에 따라 ‘긴 현’의 확률이 달라진다", "🎲", top_rule=True)
+# ... 생략 (META, page_header 등 동일)
 
-    st.markdown(
-        """
-        **현의 길이가 내접 정삼각형의 한 변보다 ‘길다’**(longer than triangle side)일 확률을 세 가지 방법으로 비교합니다.  
-        - **Method 1**: 원 위의 두 점을 균일하게 뽑아 연결 → 기대 확률 **1/3**  
-        - **Method 2**: 임의의 반지름에서 중점을 균일하게 선택(반지름 거리 균일) → **1/2**  
-        - **Method 3**: 원 내부에서 중점을 ‘면적 균일’로 선택 → **1/4**
-        """
-    )
+def render():
+    page_header("베르트랑의 역설 (p5.js)", "무작위 정의(방법)에 따라 ‘긴 현’의 확률이 달라진다", "🎲", top_rule=True)
+
+    st.markdown("""
+    **현의 길이가 내접 정삼각형의 한 변보다 ‘길다’**(longer than triangle side)일 확률을 세 가지 방법으로 비교합니다.  
+    - **Method 1**: 원 위의 두 점을 균일하게 뽑아 연결 → 기대 확률 **1/3**  
+    - **Method 2**: 임의의 반지름에서 중점을 균일하게 선택(반지름 거리 균일) → **1/2**  
+    - **Method 3**: 원 내부에서 중점을 ‘면적 균일’로 선택 → **1/4**
+    """)
 
     html = r'''
     <div id="bertrand-holder" style="width:100%;"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
     <script>
-    // ====== p5.js: Bertrand's Paradox (responsive, Streamlit embed) ======
+    // ====== Bertrand's Paradox (with extra bottom space) ======
     let method = 1;
     let circleRadius = 200;
     let totalChords = 1000;
@@ -35,20 +35,23 @@ def render():
     let isLonger = false;
     let chordLayer;
 
-    let runButton, demoButton, inputBox;
-    let m1Button, m2Button, m3Button;
+    let runButton, demoButton, inputBox, m1Button, m2Button, m3Button;
 
-    // responsive canvas size
-    let canvasW = 700, canvasH = 620;
-    function fitSize() {
+    // 상단/하단 여백
+    const HUD = 110;      // 버튼/설명 영역 높이
+    const BOTTOM = 160;   // 하단 확률 텍스트 여백
+
+    // responsive size
+    let canvasW = 700, canvasH = 0;
+    function computeSize() {
       const holder = document.getElementById('bertrand-holder');
       const w = (holder && holder.clientWidth) ? holder.clientWidth : (window.innerWidth - 32);
       canvasW = Math.min(w, 1000);
-      canvasH = 620;
+      canvasH = HUD + 2*circleRadius + BOTTOM;
     }
 
     function setup() {
-      fitSize();
+      computeSize();
       const c = createCanvas(canvasW, canvasH);
       c.parent('bertrand-holder');
 
@@ -67,8 +70,8 @@ def render():
 
       inputBox = createInput(totalChords.toString());
 
-      runButton  = createButton('Run');
-      demoButton = createButton('Show One');
+      const runButton  = createButton('Run');
+      const demoButton = createButton('Show One');
       runButton.mousePressed(runSimulation);
       demoButton.mousePressed(showOneDemo);
 
@@ -77,32 +80,25 @@ def render():
     }
 
     function windowResized() {
-      fitSize();
+      computeSize();
       resizeCanvas(canvasW, canvasH);
-      // 그래픽 버퍼도 새 크기로 재생성 후 재그리기
       chordLayer = createGraphics(canvasW, canvasH);
       layoutControls();
       runSimulation();
     }
 
     function layoutControls() {
-      const left = 20, top = 14, gap = 110;
+      const left = 20, top = 14;
       m1Button.position(left, top);
       m2Button.position(left + 120, top);
       m3Button.position(left + 240, top);
-
       inputBox.position(left + 380, top + 1);
       inputBox.size(90);
-
-      runButton.position(left + 480, top);
-      demoButton.position(left + 540, top);
-
-      // 간단한 스타일
-      [m1Button,m2Button,m3Button,runButton,demoButton].forEach(b=>{
-        b.style('font-family','Arial');
-        b.style('font-size','14px');
+      // Run / Show One는 inputBox 뒤에 자동 배치됨(생략해도 무방)
+      document.querySelectorAll('button').forEach(b=>{
+        b.style.fontFamily='Arial'; b.style.fontSize='14px';
       });
-      inputBox.style('font-family','Arial');
+      inputBox.style.fontFamily='Arial';
     }
 
     function showOneDemo() {
@@ -122,20 +118,21 @@ def render():
       text('1: Pick two random points on the circle.', 20, 60);
       text('2: Pick a random point on a radius (uniform along radius).', 20, 80);
       text('3: Pick a random midpoint uniformly in the disk.', 20, 100);
-
       const expected = (method===1? '1/3' : method===2? '1/2' : '1/4');
       text('Expected P(longer) = ' + expected, 20, 122);
 
       if (demoMode && demoChord) {
-        image(chordLayer, 0, 0); // 기존 그림 유지
+        image(chordLayer, 0, 0);
         drawSingleDemoChord();
       } else {
         image(chordLayer, 0, 0);
       }
 
+      // 기준점: 상단 HUD 아래 원의 중심 위치
       push();
-      translate(width/2, height/2 + 70);
-      // 데모가 아닐 때는 기준 도형(정삼각형+내접원) 보여주기
+      translate(width/2, HUD + circleRadius);
+
+      // 데모가 아닐 때 기준 도형
       if (!(demoMode && (method === 1 || method === 2))) {
         drawEquilateralTriangleWithIncircle();
       }
@@ -145,11 +142,12 @@ def render():
       fill(0); noStroke();
       textAlign(CENTER);
       textSize(16);
+      const yText = circleRadius + 60;   // 하단 텍스트 위치(여유있게 60)
       if (!demoMode) {
         const p = (totalChords>0)? (longerThanEquilateral/totalChords).toFixed(3) : '—';
-        text(`Method ${method}: Probability = ${p}`, 0, circleRadius + 38);
+        text(`Method ${method}: Probability = ${p}`, 0, yText);
       } else {
-        text(`This chord is ${isLonger ? 'LONGER' : 'SHORTER'} than triangle side.`, 0, circleRadius + 38);
+        text(`This chord is ${isLonger ? 'LONGER' : 'SHORTER'} than triangle side.`, 0, yText);
       }
       pop();
     }
@@ -161,7 +159,7 @@ def render():
       chordLayer.clear();
 
       chordLayer.push();
-      chordLayer.translate(width/2, height/2 + 70);
+      chordLayer.translate(width/2, HUD + circleRadius);
 
       for (let i=0; i<totalChords; i++) {
         let chord = generateChord(method);
@@ -177,50 +175,38 @@ def render():
 
     function generateChord(method) {
       if (method === 1) {
-        // 두 점을 원주에서 균일 선택
-        let a1 = random(TWO_PI);
-        let a2 = random(TWO_PI);
+        let a1 = random(TWO_PI), a2 = random(TWO_PI);
         return [
           createVector(Math.cos(a1)*circleRadius, Math.sin(a1)*circleRadius),
           createVector(Math.cos(a2)*circleRadius, Math.sin(a2)*circleRadius),
         ];
       } else if (method === 2) {
-        // 반지름에서 거리 r을 균일 선택 (→ 기대 확률 1/2)
-        let r = random(circleRadius);
-        let ang = random(TWO_PI);
+        let r = random(circleRadius), ang = random(TWO_PI);
         let mid = createVector(Math.cos(ang)*r, Math.sin(ang)*r);
         let half = Math.sqrt(circleRadius*circleRadius - r*r);
         let dir = createVector(-Math.sin(ang), Math.cos(ang));
-        return [
-          p5.Vector.add(mid, p5.Vector.mult(dir, half)),
-          p5.Vector.sub(mid, p5.Vector.mult(dir, half)),
-        ];
+        return [ p5.Vector.add(mid, p5.Vector.mult(dir, half)),
+                 p5.Vector.sub(mid, p5.Vector.mult(dir, half)) ];
       } else {
-        // 원판에서 면적 균일 (r = R*sqrt(U)) (→ 기대 확률 1/4)
-        let r = circleRadius * Math.sqrt(random(1));
-        let ang = random(TWO_PI);
+        let r = circleRadius * Math.sqrt(random(1)), ang = random(TWO_PI);
         let mid = createVector(Math.cos(ang)*r, Math.sin(ang)*r);
         let half = Math.sqrt(circleRadius*circleRadius - mid.magSq());
         let dir = createVector(-Math.sin(ang), Math.cos(ang));
-        return [
-          p5.Vector.add(mid, p5.Vector.mult(dir, half)),
-          p5.Vector.sub(mid, p5.Vector.mult(dir, half)),
-        ];
+        return [ p5.Vector.add(mid, p5.Vector.mult(dir, half)),
+                 p5.Vector.sub(mid, p5.Vector.mult(dir, half)) ];
       }
     }
 
     function drawSingleDemoChord() {
       let p1 = demoChord[0], p2 = demoChord[1];
       push();
-      translate(width/2, height/2 + 70);
-      stroke(isLonger ? color(255, 0, 0) : color(0)); strokeWeight(2);
+      translate(width/2, HUD + circleRadius);
+      stroke(isLonger ? color(255,0,0) : color(0)); strokeWeight(2);
       line(p1.x, p1.y, p2.x, p2.y);
       strokeWeight(1);
 
       if (method === 1) {
-        // 데모: p1, p2 각도를 이용해 기준 정삼각형 하나 표시
-        let a1 = Math.atan2(p1.y, p1.x);
-        let base = a1;
+        let a1 = Math.atan2(p1.y, p1.x), base = a1;
         let v1 = createVector(Math.cos(base)*circleRadius, Math.sin(base)*circleRadius);
         let v2 = createVector(Math.cos(base + TWO_PI/3)*circleRadius, Math.sin(base + TWO_PI/3)*circleRadius);
         let v3 = createVector(Math.cos(base + 2*TWO_PI/3)*circleRadius, Math.sin(base + 2*TWO_PI/3)*circleRadius);
@@ -229,7 +215,6 @@ def render():
       } else if (method === 2) {
         drawTriangleUsingPerpendicularBisector(p1, p2);
       } else {
-        // 방법 3: 중점 찍기
         let mid = p5.Vector.add(p1, p2).div(2);
         fill(0); noStroke(); ellipse(mid.x, mid.y, 8, 8);
       }
@@ -277,4 +262,6 @@ def render():
     }
     </script>
     '''
-    components.html(html, height=660, scrolling=False)
+    # 👇 바닥이 잘리지 않도록 iframe 높이를 넉넉히
+    components.html(html, height=740, scrolling=False)
+
