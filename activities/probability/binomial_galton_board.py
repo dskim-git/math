@@ -1,186 +1,131 @@
 # activities/probability/binomial_galton_board.py
-from __future__ import annotations
 import time
-import math
-import random
-from dataclasses import dataclass
-from typing import List, Tuple
+from math import comb
+from typing import Optional
 
 import numpy as np
+import plotly.graph_objects as go
 import streamlit as st
-import matplotlib.pyplot as plt
 
 META = {
-    "title": "갈톤보드 (이항분포 실험기)",
-    "description": "핀을 통과하며 좌/우로 튕기는 공을 떨어뜨려 이항분포가 어떻게 생기는지 관찰합니다.",
-    "order": 200,  # 사이드바 정렬을 원하면 숫자 조정
+    "title": "갈톤보드(이항분포) 시뮬레이터",
+    "description": "핀을 통과하며 좌/우로 움직이는 공을 모사해 막대그래프가 이항분포로 수렴하는 모습을 봅니다.",
+    "order": 20,
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 내부 상태
-@dataclass
-class BoardState:
-    rows: int               # 핀의 줄 수 = 시행 횟수 n
-    p_right: float          # 오른쪽으로 튕길 확률 p
-    counts: List[int]       # 각 칸(0..rows) 도착 개수
-    last_path: List[Tuple[int, int]]  # 마지막 공의 (level i, right_count r) 궤적
-    running: bool           # 자동 실행 ON/OFF
-    total_balls: int        # 총 떨어뜨린 공 개수
+def _binom_counts(n_rows: int, n_balls: int, p: float, seed: Optional[int] = None) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    # 각 공이 오른쪽으로 간 횟수 ~ Binomial(n_rows, p)
+    rights = rng.binomial(n_rows, p, size=n_balls)
+    # 슬롯 인덱스 = rights (0..n_rows)
+    counts = np.bincount(rights, minlength=n_rows + 1)
+    return counts
 
-SESSION_KEY = "_galton_state"
+def _binom_theory(n_rows: int, p: float, total: int) -> np.ndarray:
+    k = np.arange(n_rows + 1)
+    pmf = np.array([comb(n_rows, int(i)) * (p ** i) * ((1 - p) ** (n_rows - i)) for i in k], dtype=float)
+    return pmf * total  # 총 공 개수에 맞게 스케일
 
-def _new_state(rows: int, p_right: float) -> BoardState:
-    return BoardState(
-        rows=rows,
-        p_right=p_right,
-        counts=[0]*(rows+1),
-        last_path=[],
-        running=False,
-        total_balls=0,
+def _plot_hist_with_theory(counts: np.ndarray, theory: np.ndarray, p: float) -> go.Figure:
+    n_rows = len(counts) - 1
+    x = np.arange(n_rows + 1)
+    fig = go.Figure()
+    fig.add_bar(x=x, y=counts, name="실험(슬롯별 개수)", opacity=0.75)
+    fig.add_scatter(x=x, y=theory, mode="lines", name="이론(이항분포)", line=dict(width=2))
+    fig.update_layout(
+        xaxis_title="오른쪽으로 간 횟수 (슬롯 인덱스)",
+        yaxis_title="개수",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        margin=dict(l=10, r=10, t=10, b=10),
     )
+    fig.update_xaxes(dtick=1)
+    return fig
 
-def _get_state(rows: int, p: float) -> BoardState:
-    st_state = st.session_state.get(SESSION_KEY)
-    if isinstance(st_state, BoardState):
-        # 행/확률이 바뀌면 리셋
-        if st_state.rows != rows or abs(st_state.p_right - p) > 1e-12:
-            st_state = _new_state(rows, p)
-            st.session_state[SESSION_KEY] = st_state
-    else:
-        st_state = _new_state(rows, p)
-        st.session_state[SESSION_KEY] = st_state
-    return st_state
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 시뮬레이션
-def _drop_one_ball(state: BoardState):
-    """공 1개를 떨어뜨려 끝 칸을 결정하고 카운트를 갱신."""
-    r = 0
-    path = []
-    for i in range(1, state.rows+1):
-        # i번째 핀을 지난 뒤 현재까지 오른쪽으로 튄 횟수 r
-        go_right = random.random() < state.p_right
-        if go_right:
-            r += 1
-        path.append((i, r))  # (현재 level i, 오른쪽으로 간 누적 r)
-    state.counts[r] += 1
-    state.total_balls += 1
-    state.last_path = path
-
-# ─────────────────────────────────────────────────────────────────────────────
-# 그리기
-def _draw_board(state: BoardState, show_path: bool):
-    """삼각 격자 핀 + 마지막 공의 경로 시각화"""
-    rows = state.rows
-    # 좌표 설정: x = r - (i-r) = 2r - i  (레벨 i에서의 수평 위치), y = -i
-    xs_pegs, ys_pegs = [], []
-    for i in range(1, rows+1):  # i번째 줄 핀: 개수 i
-        for r in range(i+1):    # 좌표는 중앙정렬 보정 위해 r- i/2 사용
-            xs_pegs.append(r - i/2)
-            ys_pegs.append(-i)
-
-    fig, ax = plt.subplots(figsize=(5.2, 5.6))
-    ax.scatter(xs_pegs, ys_pegs, s=16, alpha=0.7)
-
-    # 마지막 경로
-    if show_path and state.last_path:
-        x_path = [0.0]  # 시작점(상단 중앙)
-        y_path = [0.0]
-        for i, r in state.last_path:
-            x_path.append(r - i/2)
-            y_path.append(-i)
-        ax.plot(x_path, y_path, linewidth=2)
-
-    ax.set_title("갈톤보드(핀) & 마지막 공 경로")
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_xlim(-rows/2 - 0.8, rows/2 + 0.8)
-    ax.set_ylim(-rows - 0.5, 1.0)
-    ax.axhline(0, linewidth=0.8)
-    st.pyplot(fig, use_container_width=True)
-    plt.close(fig)
-
-def _binom_pmf(n: int, p: float) -> np.ndarray:
-    k = np.arange(n+1)
-    # 조합수
-    comb = np.array([math.comb(n, int(kk)) for kk in k], dtype=float)
-    return comb * (p**k) * ((1-p)**(n-k))
-
-def _draw_histogram(state: BoardState, overlay: bool):
-    counts = np.array(state.counts, dtype=float)
-    n = state.rows
-    fig, ax = plt.subplots(figsize=(6.6, 5.6))
-    ax.bar(np.arange(n+1), counts, width=0.85, edgecolor="black")
-    ax.set_xlabel("도착한 칸 번호 (오른쪽으로 튄 횟수 k)")
-    ax.set_ylabel("개수")
-    ax.set_title(f"누적 히스토그램  —  총 {state.total_balls:,}개")
-
-    if overlay:
-        pmf = _binom_pmf(n, state.p_right)
-        expected = pmf * max(1, counts.sum())
-        ax.plot(np.arange(n+1), expected, linewidth=2)
-        ax.legend(["이론값(스케일)", "실험치"], loc="upper right")
-
-    st.pyplot(fig, use_container_width=True)
-    plt.close(fig)
-
-# ─────────────────────────────────────────────────────────────────────────────
 def render():
-    st.title("🎯 갈톤보드 (이항분포 실험기)")
+    st.header("🧪 갈톤보드(이항분포) 시뮬레이터")
 
-    # ── 좌측 설정, 우측 그래프 배치
-    colL, colR = st.columns([1, 1])
-
-    with colL:
-        st.subheader("설정")
-        rows = st.slider("핀 줄 수 (시행 횟수 n)", 3, 20, 10, help="아래 칸 개수는 n+1개가 됩니다.")
-        p = st.slider("오른쪽으로 튕길 확률 p", 0.0, 1.0, 0.5, 0.01)
-
-    state = _get_state(rows, p)
-
-    with colL:
-        st.markdown("---")
-        c1, c2, c3 = st.columns([1,1,1])
-
-        if c1.button("공 1개 떨어뜨리기"):
-            _drop_one_ball(state)
-
-        # 자동 실행 토글
-        if not state.running:
-            if c2.button("▶ 자동 실행"):
-                state.running = True
-                st.session_state[SESSION_KEY] = state
-                st.experimental_rerun()
-        else:
-            if c2.button("⏸ 정지"):
-                state.running = False
-
-        if c3.button("🔄 초기화"):
-            st.session_state[SESSION_KEY] = _new_state(rows, p)
-            st.experimental_rerun()
-
-        speed = st.slider("속도(틱당 공 개수)", 1, 200, 20,
-                          help="자동 실행 중 매 틱마다 몇 개의 공을 떨어뜨릴지 정합니다.")
-        show_path = st.checkbox("마지막 공의 경로 보기", value=True)
-        show_theory = st.checkbox("이론적 분포(이항분포) 겹쳐 보기", value=True)
-
-        st.caption(
-            "이론적으로 마지막 칸의 분포는  **Binomial(n, p)** 입니다. "
-            "즉, k번째 칸에 도착할 확률은  "
-            r"$\displaystyle \binom{n}{k} p^k (1-p)^{\,n-k}$ 입니다."
+    with st.expander("설명", expanded=False):
+        st.write(
+            "- 공이 핀을 **n**번 통과할 때, 각 핀에서 오른쪽으로 갈 확률을 **p**라 두면\n"
+            "  오른쪽으로 간 총 횟수 **K**는 `K ~ Binomial(n, p)`을 따릅니다.\n"
+            "- 아래 그래프에서 막대는 **실험 결과**, 선은 **이론값**(이항분포)입니다."
         )
+        st.latex(r"P(K=k)=\binom{n}{k}p^k(1-p)^{n-k}")
 
-    # 자동 실행 루프: 틱 당 speed개 드롭 후 즉시 rerun
-    if state.running:
-        for _ in range(speed):
-            _drop_one_ball(state)
-        # 너무 과도한 리렌더를 막기 위해 아주 짧게 쉬고 리런
-        time.sleep(0.01)
-        st.session_state[SESSION_KEY] = state
-        st.experimental_rerun()
+    c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.2, 1])
+    with c1:
+        n_rows = st.slider("핀(충돌) 횟수 n", 3, 20, 12, 1)
+    with c2:
+        n_balls = st.slider("공의 개수", 50, 50_000, 5_000, step=50)
+    with c3:
+        p = st.slider("오른쪽으로 갈 확률 p", 0.0, 1.0, 0.5, 0.01)
+    with c4:
+        seed_opt = st.text_input("시드(선택)", value="", help="재현 가능한 결과가 필요하면 숫자를 입력하세요.")
+        seed = None
+        if seed_opt.strip():
+            try:
+                seed = int(seed_opt)
+            except Exception:
+                st.warning("시드는 정수만 입력하세요. (빈칸이면 무작위)")
 
-    # ── 그림들
-    with colR:
-        _draw_board(state, show_path)
-    with colR:
-        _draw_histogram(state, overlay=show_theory)
+    run_col, step_col, clear_col = st.columns([1, 1, 1])
+    placeholder = st.empty()
+
+    if "gb_counts" not in st.session_state:
+        st.session_state["gb_counts"] = np.zeros(n_rows + 1, dtype=int)
+        st.session_state["gb_total"] = 0
+        st.session_state["gb_n_rows"] = n_rows
+
+    def _reset_state():
+        st.session_state["gb_counts"] = np.zeros(n_rows + 1, dtype=int)
+        st.session_state["gb_total"] = 0
+        st.session_state["gb_n_rows"] = n_rows
+
+    # n_rows 변경 시 상태도 맞춰 초기화
+    if st.session_state.get("gb_n_rows") != n_rows:
+        _reset_state()
+
+    with run_col:
+        if st.button("▶ 한 번에 실행"):
+            counts = _binom_counts(n_rows, n_balls, p, seed)
+            st.session_state["gb_counts"] = counts
+            st.session_state["gb_total"] = int(counts.sum())
+    with step_col:
+        if st.button("⏩ 점점 늘리기(애니)"):
+            _reset_state()
+            batch = max(50, n_balls // 50)
+            done = 0
+            while done < n_balls:
+                this = min(batch, n_balls - done)
+                counts = _binom_counts(n_rows, this, p, None if seed is None else seed + done)
+                st.session_state["gb_counts"] += counts
+                st.session_state["gb_total"] += int(counts.sum())
+                theory = _binom_theory(n_rows, p, st.session_state["gb_total"])
+                fig = _plot_hist_with_theory(st.session_state["gb_counts"], theory, p)
+                placeholder.plotly_chart(fig, use_container_width=True)
+                done += this
+                time.sleep(0.03)
+    with clear_col:
+        if st.button("🧹 초기화"):
+            _reset_state()
+
+    # 최종 그래프
+    total_now = st.session_state["gb_total"]
+    if total_now == 0:
+        counts = _binom_counts(n_rows, 1, p, seed) * 0  # 빈 그래프용
+        theory = _binom_theory(n_rows, p, 1) * 0
+    else:
+        counts = st.session_state["gb_counts"]
+        theory = _binom_theory(n_rows, p, total_now)
+
+    fig = _plot_hist_with_theory(counts, theory, p)
+    placeholder.plotly_chart(fig, use_container_width=True)
+
+    # 요약
+    k = np.arange(n_rows + 1)
+    mean_emp = (k * counts).sum() / max(1, total_now)
+    var_emp = (((k - mean_emp) ** 2) * counts).sum() / max(1, total_now)
+    st.caption(
+        f"실험 개수: **{total_now:,}** · 경험적 평균 **{mean_emp:.3f}** / 분산 **{var_emp:.3f}**  "
+        f"· 이론 평균 **{n_rows * p:.3f}** / 이론 분산 **{n_rows * p * (1 - p):.3f}**"
+    )
