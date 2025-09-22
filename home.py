@@ -650,9 +650,9 @@ def lessons_view(subject_key: str):
                 imgs = item.get("srcs") or item.get("src")
                 caption = item.get("caption", None)
                 if isinstance(imgs, list):
-                    st.image(imgs, use_column_width=True, caption=caption)
+                    st.image(imgs, use_container_width=True, caption=caption)
                 else:
-                    st.image(imgs, use_column_width=True, caption=caption)
+                    st.image(imgs, use_container_width=True, caption=caption)
 
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
