@@ -128,7 +128,32 @@ CURRICULUM = [
         "key": "2-1",
         "label": "(1) 확률의 뜻과 활용",
         "children": [
-          {"key": "2-1-1", "label": "1. 확률의 뜻", "items": []},
+          {"key": "2-1-1", "label": "1. 확률의 뜻", "items": [
+                {
+                    "type": "canva",
+                    "title": "시행과 사건",
+                    "src": "https://www.canva.com/design/DAGNl7Kpmdc/qH9Yd9_aa6jpJsh0TcVY2A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "수학적 확률",
+                    "src": "https://www.canva.com/design/DAGNl1df9hA/vZkiHQlTQrGwOUnAtdxe1Q/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "통계적 확률",
+                    "src": "https://www.canva.com/design/DAGNl3VnqaM/rJz9C3d1irXdI7fap2Mzjg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "gsheet",
+                    "title": "수학적 확률과 통계적 확률의 관계",
+                    "src": "https://docs.google.com/spreadsheets/d/1oz2DHhzrRxRFRn92RcGZdupPGvXUzWTk/edit?usp=drivesdk",
+                    "height": 800
+                }
+          ]},
           {"key": "2-1-2", "label": "2. 확률의 기본 성질", "items": []},
           {"key": "2-1-3", "label": "3. 확률의 덧셈정리", "items": []},
           {"key": "2-1-4", "label": "4. 여사건의 확률", "items": []},
