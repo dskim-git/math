@@ -5,6 +5,7 @@ import importlib.util
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Any
 import streamlit.components.v1 as components  # 임베드용
+import urllib.parse 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Fallback: utils.keep_scroll이 없을 때 최소 구현
@@ -36,6 +37,25 @@ except Exception:
 def embed_iframe(src: str, height: int = 600, scrolling: bool = True):
     """외부 페이지/문서를 iframe으로 임베드"""
     components.iframe(src, height=height, scrolling=scrolling)
+
+
+def embed_pdf(src: str, height: int = 800):
+    """
+    src가 아래 중 하나면 그대로:
+      - data: (base64 data URI)
+      - docs.google.com/gview?embedded=true ...
+      - drive.google.com/file/.../preview
+    그 외 .pdf URL이면 gview로 감싸서 iframe 임베드
+    """
+    url = src
+    s = src.lower()
+    if not (s.startswith("data:") or "gview?embedded=true" in s or "drive.google.com/file" in s):
+        if s.endswith(".pdf"):
+            url = "https://docs.google.com/gview?embedded=true&url=" + urllib.parse.quote(src, safe="")
+    components.html(
+        f'<iframe src="{url}" style="width:100%; height:{height}px; border:0;" allowfullscreen></iframe>',
+        height=height
+    )
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 전역 설정
@@ -618,6 +638,22 @@ def lessons_view(subject_key: str):
                     # ✅ 원래 수업 과목(subject_key)을 origin으로 함께 전달
                     set_route("activity", subject=subj, activity=slug, unit=back_key, origin=subject_key)
                     _do_rerun()
+            elif typ == "pdf":
+                # 예: src = gview 링크 / drive preview / .pdf 원본 링크
+                embed_pdf(item["src"], height=item.get("height", 800))
+                # (선택) 다운로드 버튼을 쓰고 싶으면 아래처럼 링크 버튼 하나 더 달기
+                if item.get("download"):
+                    st.link_button("PDF 다운로드", url=item["download"], use_container_width=True)
+
+            elif typ == "image":
+                # src: 문자열(단일 이미지) 또는 리스트(여러 장)
+                imgs = item.get("srcs") or item.get("src")
+                caption = item.get("caption", None)
+                if isinstance(imgs, list):
+                    st.image(imgs, use_column_width=True, caption=caption)
+                else:
+                    st.image(imgs, use_column_width=True, caption=caption)
+
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
 
