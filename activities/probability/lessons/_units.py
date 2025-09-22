@@ -10,7 +10,7 @@ CURRICULUM = [
         "key": "1-1",
         "label": "(1) 순열과 조합",
         "children": [
-          {"key": "1-1-1", "label": "1. 원순열", "items": [
+          {"key": "1-1-1", "label": "원순열", "items": [
                 {
                     "type": "canva",
                     "title": "원순열",
@@ -21,7 +21,7 @@ CURRICULUM = [
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
                 # {"type":"url","title":"보충 설명","src":"https://..."},
             ]},
-          {"key": "1-1-2", "label": "2. 중복순열", "items": [
+          {"key": "1-1-2", "label": "중복순열", "items": [
                 {
                     "type": "canva",
                     "title": "중복순열",
@@ -29,7 +29,7 @@ CURRICULUM = [
                     "height": 800
                 }
             ]},
-          {"key": "1-1-3", "label": "3. 같은 것이 있는 순열", "items": [
+          {"key": "1-1-3", "label": "같은 것이 있는 순열", "items": [
                 {
                     "type": "canva",
                     "title": "같은 것이 있는 순열",
@@ -37,7 +37,7 @@ CURRICULUM = [
                     "height": 800
                 }
             ]},
-          {"key": "1-1-4", "label": "4. 중복조합", "items": [
+          {"key": "1-1-4", "label": "중복조합", "items": [
                 {
                     "type": "canva",
                     "title": "중복조합",
@@ -51,7 +51,7 @@ CURRICULUM = [
         "key": "1-2",
         "label": "(2) 이항정리",
         "children": [
-          {"key": "1-2-1", "label": "1. 이항정리", "items": [
+          {"key": "1-2-1", "label": "이항정리", "items": [
                 {
                     "type": "canva",
                     "title": "이항정리",
@@ -74,7 +74,7 @@ CURRICULUM = [
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
                 # {"type":"url","title":"보충 설명","src":"https://..."},
             ]},
-          {"key": "1-2-2", "label": "2. 이항정리의 활용", "items": [
+          {"key": "1-2-2", "label": "이항정리의 활용", "items": [
                 {
                     "type": "canva",
                     "title": "이항정리의 활용",
@@ -128,7 +128,7 @@ CURRICULUM = [
         "key": "2-1",
         "label": "(1) 확률의 뜻과 활용",
         "children": [
-          {"key": "2-1-1", "label": "1. 확률의 뜻", "items": [
+          {"key": "2-1-1", "label": "확률의 뜻", "items": [
                 {
                     "type": "canva",
                     "title": "시행과 사건",
@@ -178,7 +178,7 @@ CURRICULUM = [
                     "slug": "bertrand_paradox_p5"
                 }
           ]},
-          {"key": "2-1-2", "label": "2. 확률의 기본 성질", "items": [
+          {"key": "2-1-2", "label": "확률의 기본 성질", "items": [
                 {
                     "type": "canva",
                     "title": "확률의 기본 성질",
