@@ -5,7 +5,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "몬티홀 시뮬레이터 (p5.js)",
+    "title": "몬티홀 문제",
     "description": "문을 고르고 공개 후, 유지/교체 전략의 승률을 직접 시뮬레이션해 보세요.",
     "order": 120,
 }
