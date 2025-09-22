@@ -221,7 +221,7 @@ CURRICULUM = [
                 {
                     "type": "image",
                     "title": "생일 예시",
-                    "src": "assets/birth.jpg",
+                    "src": "assets/birth.png",
                     "width":640,
                     "caption": "생일"
                 },
