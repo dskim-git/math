@@ -190,6 +190,12 @@ CURRICULUM = [
                     "title": "몬티홀 문제",
                     "subject": "probability",
                     "slug": "monty_hall_p5"
+                },
+                {
+                    "type": "activity",
+                    "title": "몬티홀 문제(확장)",
+                    "subject": "probability",
+                    "slug": "monty_hall_extended_p5"
                 }
           ]},
           {"key": "2-1-3", "label": "3. 확률의 덧셈정리", "items": []},
