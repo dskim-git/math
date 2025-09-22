@@ -572,7 +572,7 @@ def lessons_view(subject_key: str):
         with st.sidebar:
             st.subheader("📚 단원 선택")
 
-            def children(node):  # 안전하게 children 꺼내기
+            def ch(node):
                 return node.get("children", []) if isinstance(node, dict) else []
 
             majors = curriculum
@@ -580,54 +580,67 @@ def lessons_view(subject_key: str):
             mid_key = f"_{subject_key}_mid"
             min_key = f"_{subject_key}_min"
 
-            # 대단원
-            maj_idx = st.session_state.get(maj_key, 0)
-            maj_idx = st.selectbox(
-                "대단원", range(len(majors)),
-                format_func=lambda i: majors[i]["label"],
-                key=maj_key
-            )
-            # ↻ 대단원이 바뀌면 중/소단원 초기화
-            if st.session_state.get(maj_key + "__prev") != maj_idx:
-                st.session_state[maj_key + "__prev"] = maj_idx
+            # 변경 시 소단원 초기화 콜백
+            def _on_major_change():
                 st.session_state[mid_key] = 0
-                st.session_state.pop(min_key, None)
+                st.session_state.pop(min_key, None)   # 소단원 완전 초기화
+
+            def _on_mid_change():
+                st.session_state.pop(min_key, None)   # 소단원 완전 초기화
+
+            # 대단원
+            maj_idx_default = st.session_state.get(maj_key, 0)
+            maj_idx = st.selectbox(
+                "대단원",
+                options=range(len(majors)),
+                index=min(maj_idx_default, len(majors)-1),
+                format_func=lambda i: majors[i]["label"],
+                key=maj_key,
+                on_change=_on_major_change,   # ★ 대단원 바뀌면 중/소단원 초기화
+            )
 
             # 중단원
-            mids = children(majors[maj_idx])
+            mids = ch(majors[maj_idx])
             middle = None
             if mids:
-                mid_idx = st.session_state.get(mid_key, 0)
+                mid_idx_default = st.session_state.get(mid_key, 0)
                 mid_idx = st.selectbox(
-                    "중단원", range(len(mids)),
+                    "중단원",
+                    options=range(len(mids)),
+                    index=min(mid_idx_default, len(mids)-1),
                     format_func=lambda i: mids[i]["label"],
-                    key=mid_key
+                    key=mid_key,
+                    on_change=_on_mid_change,  # ★ 중단원 바뀌면 소단원 초기화
                 )
-                # ↻ 중단원이 바뀌면 소단원 초기화(없던 → 있는 경우 포함)
-                if st.session_state.get(mid_key + "__prev") != mid_idx:
-                    st.session_state[mid_key + "__prev"] = mid_idx
-                    st.session_state.pop(min_key, None)
                 middle = mids[mid_idx]
             else:
-                # 중단원 자체가 없으면 소단원도 제거
+                # 중단원이 없다면 관련 state 제거
                 st.session_state.pop(mid_key, None)
                 st.session_state.pop(min_key, None)
 
             # 소단원
             minor = None
             if middle:
-                mins = children(middle)
+                mins = ch(middle)
                 if mins:
-                    min_idx = st.session_state.get(min_key, 0)
+                    min_idx_default = st.session_state.get(min_key, 0)
+                    # 혹시 이전 선택이 범위를 벗어나면 0으로 가드
+                    if min_idx_default >= len(mins):
+                        min_idx_default = 0
+                        st.session_state[min_key] = 0
                     min_idx = st.selectbox(
-                        "소단원", range(len(mins)),
+                        "소단원",
+                        options=range(len(mins)),
+                        index=min_idx_default,
                         format_func=lambda i: mins[i]["label"],
-                        key=min_key
+                        key=min_key,
                     )
                     minor = mins[min_idx]
                 else:
-                    # 선택한 중단원에 소단원이 없으면 소단원 상태 제거
+                    # 선택된 중단원에 소단원이 없으면 state 제거
                     st.session_state.pop(min_key, None)
+            else:
+                st.session_state.pop(min_key, None)
 
         # 렌더 노드(소 > 중 > 대)
         items_node = None
