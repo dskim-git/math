@@ -677,6 +677,8 @@ def lessons_view(subject_key: str):
                 embed_iframe(item["src"], height=item.get("height", 480))
             elif typ == "gsheet":
                 embed_iframe(item["src"], height=item.get("height", 700))
+            elif typ == "iframe":
+                embed_iframe(item["src"], height=item.get("height", 800))
             elif typ == "canva":
                 components.html(
                     f'''
@@ -756,6 +758,8 @@ def lessons_view(subject_key: str):
                 embed_iframe(item["src"], height=item.get("height", 480))
             elif typ == "gsheet":
                 embed_iframe(item["src"], height=item.get("height", 700))
+            elif typ == "iframe":
+                embed_iframe(item["src"], height=item.get("height", 800))
             elif typ == "canva":
                 components.html(
                     f'''
