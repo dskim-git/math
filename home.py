@@ -526,16 +526,20 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
 
 LESSON_HEADER_VISIBLE = False
 
+LESSON_HEADER_VISIBLE = False
+
 def lessons_view(subject_key: str):
     """교과별 '수업(lessons)' 허브: (1) CURRICULUM 계층형 또는 (2) UNITS 평면형을 지원"""
     keep_scroll(key=f"{subject_key}/lessons", mount="sidebar")
 
     label = SUBJECTS.get(subject_key, subject_key)
 
+    # 헤더는 기본 숨김(원하면 LESSON_HEADER_VISIBLE=True로)
     if LESSON_HEADER_VISIBLE:
         st.title(f"🔖 {label} 수업")
         st.caption("왼쪽 선택에서 단원을 고르면, 해당 단원의 수업 자료가 순서대로 나타납니다.")
 
+    # 상단 네비
     _lessons_top_nav(subject_key)
 
     curriculum = load_curriculum(subject_key)  # list or None
@@ -546,10 +550,16 @@ def lessons_view(subject_key: str):
 
     if curriculum:
         # ── 계층형: 대단원 → 중단원 → 소단원 ─────────────────────────────
-        def children(node): return node.get("children", []) if isinstance(node, dict) else []
 
-        # ✅ unit 쿼리가 있으면 해당 경로로 선택 인덱스 동기화
-        if unit_qp:
+        def children(node): 
+            return node.get("children", []) if isinstance(node, dict) else []
+
+        # ★ 사용자 선택이 있었는지 표시하는 플래그 (쿼리→세션 동기화 건너뛰기용)
+        skip_key = f"__skip_sync_{subject_key}"
+        skip_sync = st.session_state.pop(skip_key, False)
+
+        # ★ unit 쿼리가 있고, 이번 렌더가 '사용자 선택 rerun'이 아니라면 쿼리값으로 세션 동기화
+        if unit_qp and not skip_sync:
             path = _find_curriculum_path(curriculum, unit_qp)
             maj_state_key = f"_{subject_key}_major"
             mid_state_key = f"_{subject_key}_mid"
@@ -570,21 +580,20 @@ def lessons_view(subject_key: str):
         with st.sidebar:
             st.subheader("📚 단원 선택")
 
-            def ch(node):
-                return node.get("children", []) if isinstance(node, dict) else []
-
             majors = curriculum
             maj_key = f"_{subject_key}_major"
             mid_key = f"_{subject_key}_mid"
             min_key = f"_{subject_key}_min"
 
-            # 변경 시 소단원 초기화 콜백
+            # ★ on_change 콜백에서 '이번 rerun은 사용자 선택'임을 표시
             def _on_major_change():
                 st.session_state[mid_key] = 0
-                st.session_state.pop(min_key, None)   # 소단원 완전 초기화
+                st.session_state.pop(min_key, None)
+                st.session_state[skip_key] = True  # ← 중요
 
             def _on_mid_change():
-                st.session_state.pop(min_key, None)   # 소단원 완전 초기화
+                st.session_state.pop(min_key, None)
+                st.session_state[skip_key] = True  # ← 중요
 
             # 대단원
             maj_idx_default = st.session_state.get(maj_key, 0)
@@ -598,7 +607,7 @@ def lessons_view(subject_key: str):
             )
 
             # 중단원
-            mids = ch(majors[maj_idx])
+            mids = children(majors[maj_idx])
             middle = None
             if mids:
                 mid_idx_default = st.session_state.get(mid_key, 0)
@@ -618,7 +627,7 @@ def lessons_view(subject_key: str):
             # 소단원
             minor = None
             if middle:
-                mins = ch(middle)
+                mins = children(middle)
                 if mins:
                     min_idx_default = st.session_state.get(min_key, 0)
                     if min_idx_default >= len(mins):
@@ -644,7 +653,7 @@ def lessons_view(subject_key: str):
         if sel_key and sel_key != unit_qp:
             set_route("lessons", subject=subject_key, unit=sel_key)
             _do_rerun()
-            return  # (이 줄은 이 rerun에서 아래 렌더를 건너뛰게 해 깜빡임을 줄임)
+            return
 
         # ── 렌더 대상 결정(소 > 중 > 대에서 items 가진 노드) ──
         items_node = None
@@ -766,6 +775,7 @@ def lessons_view(subject_key: str):
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
 
             st.divider()
+
 
 
         # ✅ 하단 네비 버튼은 제거됨 (상단만 사용)
