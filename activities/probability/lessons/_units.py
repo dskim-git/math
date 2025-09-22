@@ -158,6 +158,12 @@ CURRICULUM = [
                     "title": "뷔퐁의 바늘 실험",
                     "subject": "probability",
                     "slug": "buffon_needle_p5",
+                },
+                {
+                    "type": "activity",
+                    "title": "베르트랑의 역설",
+                    "subject": "probability",
+                    "slug": "bertrand_paradox_p5",
                 }
           ]},
           {"key": "2-1-2", "label": "2. 확률의 기본 성질", "items": []},
