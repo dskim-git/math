@@ -102,11 +102,17 @@ CURRICULUM = [
         # 소단원 없이 이 레벨에서 바로 items를 둘 수도 있습니다.
         "items": [
                 {
-                    "type": "image",
-                    "title": "나무",
-                    "src": "assets/tree.jpg",
-                    "width":640,
-                    "caption": "나무다"
+                    #"type": "image",
+                    #"title": "나무",
+                    #"src": "assets/tree.jpg",
+                    #"width":640,
+                    #"caption": "나무다"
+                },
+                {
+                    "type": "pdf",
+                    "title": "단원평가문제",
+                    "src": "https://drive.google.com/file/d/1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW/view?embed",
+                    "height":800
                 }
         ],
       },
