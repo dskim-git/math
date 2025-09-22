@@ -646,13 +646,26 @@ def lessons_view(subject_key: str):
                     st.link_button("PDF 다운로드", url=item["download"], use_container_width=True)
 
             elif typ == "image":
-                # src: 문자열(단일 이미지) 또는 리스트(여러 장)
                 imgs = item.get("srcs") or item.get("src")
-                caption = item.get("caption", None)
-                if isinstance(imgs, list):
-                    st.image(imgs, use_container_width=True, caption=caption)
+                caption = item.get("caption")
+                width   = item.get("width")          # 픽셀 고정(선택)
+                cols_n  = item.get("cols")           # 여러 장을 한 줄에 배치(선택)
+
+                # 여러 장 + 열 배치
+                if isinstance(imgs, list) and cols_n and cols_n > 1:
+                    cols = st.columns(cols_n)
+                    for i, img in enumerate(imgs):
+                        with cols[i % cols_n]:
+                            if width:
+                                st.image(img, width=width, caption=caption if i == 0 else None)
+                            else:
+                                st.image(img, use_container_width=True, caption=caption if i == 0 else None)
                 else:
-                    st.image(imgs, use_container_width=True, caption=caption)
+                    # 단일 또는 그냥 여러 장 세로로
+                    if width:
+                        st.image(imgs, width=width, caption=caption)
+                    else:
+                        st.image(imgs, use_container_width=True, caption=caption)
 
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
