@@ -178,7 +178,20 @@ CURRICULUM = [
                     "slug": "bertrand_paradox_p5"
                 }
           ]},
-          {"key": "2-1-2", "label": "2. 확률의 기본 성질", "items": []},
+          {"key": "2-1-2", "label": "2. 확률의 기본 성질", "items": [
+                {
+                    "type": "canva",
+                    "title": "확률의 기본 성질",
+                    "src": "https://www.canva.com/design/DAGNl4QjJQk/In6tmF5d2maLToc3tJkPwQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "몬티홀 문제",
+                    "subject": "probability",
+                    "slug": "monty_hall_p5"
+                }
+          ]},
           {"key": "2-1-3", "label": "3. 확률의 덧셈정리", "items": []},
           {"key": "2-1-4", "label": "4. 여사건의 확률", "items": []},
         ],
