@@ -10,7 +10,7 @@ META = {
 }
 
 def render():
-    page_header("뷔퐁의 바늘 실험 (p5.js)", "평행선 교차 확률로 π 추정", "🪡", top_rule=True)
+    page_header("뷔퐁의 바늘 실험", "평행선 교차 확률로 π 추정", "🪡", top_rule=True)
 
     st.markdown(
         """
