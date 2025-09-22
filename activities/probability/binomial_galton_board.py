@@ -7,38 +7,16 @@ import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import streamlit.components.v1 as components
 
 META = {
     "title": "갈톤보드(이항분포) 시뮬레이터",
-    "description": "핀을 통과하며 좌/우로 움직이는 공을 모사합니다. 실시간 경로 보기 + 이론 곡선 표시.",
+    "description": "핀을 통과하며 좌/우로 움직이는 공을 모사합니다. 누적(빠름) + 실시간(부드러운 캔버스)",
     "order": 20,
 }
 
-# ── 스크롤 복원(Fallback 포함)
-try:
-    from utils import keep_scroll  # 앱에 이미 있음
-except Exception:
-    import streamlit.components.v1 as components
-    def keep_scroll(key: str = "default", mount: str = "sidebar"):
-        html = f"""
-        <html><body>
-        <script>
-          (function(){{
-            const KEY='st_scroll::{key}::'+location.pathname+location.search;
-            function restore(){{
-              const y=sessionStorage.getItem(KEY); if(y!==null) window.scrollTo(0, parseFloat(y));
-            }}
-            restore(); setTimeout(restore,50); setTimeout(restore,250);
-            let t=false; window.addEventListener('scroll',function(){{
-              if(!t){{ requestAnimationFrame(function(){{ sessionStorage.setItem(KEY, window.scrollY); t=false; }}); t=true;}}
-            }});
-            setInterval(function(){{ sessionStorage.setItem(KEY, window.scrollY); }},500);
-          }})();
-        </script></body></html>"""
-        components.html(html, height=1, scrolling=False)
-
 # ─────────────────────────────────────────────────────────────────────────────
-# 공통 유틸
+# 빠른 누적 시뮬에 쓰는 유틸
 def _binom_counts(n_rows: int, n_balls: int, p: float, seed: Optional[int] = None) -> np.ndarray:
     rng = np.random.default_rng(seed)
     rights = rng.binomial(n_rows, p, size=n_balls)
@@ -50,20 +28,6 @@ def _binom_theory(n_rows: int, p: float, total: int) -> np.ndarray:
     k = np.arange(n_rows + 1)
     pmf = np.array([comb(n_rows, int(i)) * (p ** i) * ((1 - p) ** (n_rows - i)) for i in k], dtype=float)
     return pmf * total
-
-# ── (실시간) 핀/공 좌표: y를 음수로 둬서 **위→아래** 낙하
-def _peg_xy(n_rows: int):
-    xs, ys = [], []
-    for r in range(n_rows):
-        for j in range(r + 1):
-            xs.append(j - r / 2.0)
-            ys.append(-float(r))  # 위(0) → 아래(-n)
-    return np.array(xs), np.array(ys)
-
-def _ball_xy_at_step(row_r: int, rights_so_far: int) -> tuple[float, float]:
-    x = rights_so_far - row_r / 2.0
-    y = -float(row_r)
-    return x, y
 
 def _plot_hist_with_theory(counts: np.ndarray, theory: np.ndarray) -> go.Figure:
     n_rows = len(counts) - 1
@@ -80,118 +44,287 @@ def _plot_hist_with_theory(counts: np.ndarray, theory: np.ndarray) -> go.Figure:
     fig.update_xaxes(dtick=1)
     return fig
 
-def _make_live_figure(n_rows: int, ball_pos: Optional[tuple[float, float]],
-                      counts: np.ndarray, theory: np.ndarray) -> go.Figure:
-    """좌: 핀+공(위→아래), 우: 누적 히스토그램 + 이론선"""
-    peg_x, peg_y = _peg_xy(n_rows)
-    # x 범위 여유, y는 0(위) ~ -n(아래)
-    x_range = (-n_rows / 2 - 1, n_rows / 2 + 1)
-    y_range = (-(n_rows + 0.8), 0.8)
+# ─────────────────────────────────────────────────────────────────────────────
+# p5.js 실시간(부드러운) 모드 – Streamlit rerun 불필요(스크롤 튐 방지)
+P5_HTML = r"""
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+  <style>
+    body{ margin:0; padding:0; }
+    .ui { font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 10px 12px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .row > * { margin: 2px 0; }
+    label { font-weight: 600; }
+    input[type=number], input[type=range] { vertical-align: middle; }
+    button { padding: 6px 10px; }
+    .small { font-size: 12px; color:#555; }
+    #holder { display:flex; justify-content:center; }
+  </style>
+</head>
+<body>
+  <div class="ui">
+    <div class="row">
+      <label>핀 수(n):</label>
+      <input id="rows" type="number" min="3" max="15" step="1" value="10"/>
+      <label>p(오른쪽 확률):</label>
+      <input id="prob" type="number" min="0" max="1" step="0.01" value="0.5"/>
+      <label>총 공 개수:</label>
+      <input id="balls" type="number" min="10" max="5000" step="10" value="300"/>
+      <label>속도:</label>
+      <input id="speed" type="range" min="0.2" max="5" step="0.1" value="1.5"/>
+      <span id="speedVal" class="small">1.5x</span>
+      <button id="start">▶ Start</button>
+      <button id="pause">⏸ Pause</button>
+      <button id="reset">🧹 Reset</button>
+    </div>
+    <div class="row small" id="info">-</div>
+  </div>
+  <div id="holder"></div>
 
-    fig = make_subplots(
-        rows=1, cols=2, column_widths=[0.60, 0.40],
-        specs=[[{"type": "scatter"}, {"type": "bar"}]],
-        horizontal_spacing=0.10,
-    )
+<script>
+(() => {
+  // Panel sizes
+  const W = 1000, H = 560;
+  const leftW = 600, rightW = W - leftW;
 
-    # 왼쪽: 핀
-    fig.add_trace(
-        go.Scatter(x=peg_x, y=peg_y, mode="markers",
-                   marker=dict(size=8, color="lightgray"),
-                   name="핀", showlegend=False),
-        row=1, col=1,
-    )
+  // Params & state
+  let nRows = 10, p = 0.5, totalBalls = 300, speed = 1.5;
+  let running = false;
 
-    # 왼쪽: 공
-    if ball_pos is not None:
-        bx, by = ball_pos
-        fig.add_trace(
-            go.Scatter(x=[bx], y=[by], mode="markers",
-                       marker=dict(size=14, color="crimson"),
-                       name="공", showlegend=False),
-            row=1, col=1,
-        )
+  let ballIdx = 0;   // 0..totalBalls
+  let row = 0;
+  let rights = 0;
+  let counts = [];
+  let lastSlot = null; // 마지막으로 들어간 슬롯 번호
 
-    fig.update_xaxes(range=x_range, row=1, col=1, zeroline=False)
-    fig.update_yaxes(range=y_range, row=1, col=1, zeroline=False, scaleanchor="x", scaleratio=1)
+  // Timing (속도 체감 확실)
+  let stepInterval = 0.12; // seconds per pin at speed 1.0
+  let acc = 0;
 
-    # 오른쪽: 히스토그램 + 이론선
-    x = np.arange(n_rows + 1)
-    fig.add_trace(go.Bar(x=x, y=counts, name="누적", opacity=0.85), row=1, col=2)
-    fig.add_trace(go.Scatter(x=x, y=theory, mode="lines", name="이론(이항)", line=dict(width=2)), row=1, col=2)
+  // UI refs
+  const elRows  = document.getElementById('rows');
+  const elProb  = document.getElementById('prob');
+  const elBalls = document.getElementById('balls');
+  const elSpeed = document.getElementById('speed');
+  const elSpeedVal = document.getElementById('speedVal');
+  const elInfo  = document.getElementById('info');
+  const elStart = document.getElementById('start');
+  const elPause = document.getElementById('pause');
+  const elReset = document.getElementById('reset');
 
-    fig.update_xaxes(title_text="슬롯(오른쪽 횟수)", dtick=1, row=1, col=2)
-    fig.update_yaxes(title_text="개수", row=1, col=2)
-    fig.update_layout(margin=dict(l=10, r=10, t=10, b=10))
-    return fig
+  function resetState() {
+    nRows = clamp(intVal(elRows,10), 3, 15);
+    p     = clampFloat(floatVal(elProb,0.5), 0, 1);
+    totalBalls = clamp(intVal(elBalls,300), 10, 5000);
+    speed = clampFloat(floatVal(elSpeed,1.5), 0.2, 5);
+    elSpeedVal.textContent = speed.toFixed(1) + "x";
 
-# ── 실시간 엔진 상태 초기화
-def _live_init(n_rows: int, n_balls: int, p: float, seed: Optional[int]):
-    rng = np.random.default_rng(seed)
-    moves = rng.binomial(1, p, size=(n_balls, n_rows)).astype(np.int8)  # 1=오른쪽, 0=왼쪽
-    st.session_state["gb_live"] = dict(
-        running=True,
-        n_rows=n_rows,
-        n_balls=n_balls,
-        p=float(p),
-        moves=moves,
-        ball_i=0,         # 진행 중인 공 인덱스
-        row_r=0,          # 현재 공의 행(핀 index)
-        rights=0,         # 현재 공의 오른쪽 누계
-        counts=np.zeros(n_rows + 1, dtype=int),
-        total=0,
-        interval_ms=60,   # 프레임 간 목표 시간
-        _last_ts=time.perf_counter(),  # 속도 제어(경과 시간 기반)
-    )
+    running = false;
+    ballIdx = 0; row = 0; rights = 0; lastSlot = null;
+    counts = Array(nRows + 1).fill(0);
+    acc = 0;
+    updateInfo();
+  }
 
-# 한 스텝(핀 하나) 진행
-def _live_tick_once(S: dict):
-    n_rows = S["n_rows"]
-    n_balls = S["n_balls"]
-    moves = S["moves"]
+  function intVal(el, defv){ const v=parseInt(el.value,10); return Number.isFinite(v)?v:defv; }
+  function floatVal(el, defv){ const v=parseFloat(el.value); return Number.isFinite(v)?v:defv; }
+  function clamp(x,a,b){ return Math.min(b, Math.max(a,x)); }
+  function clampFloat(x,a,b){ return Math.min(b, Math.max(a,x)); }
 
-    if S["ball_i"] >= n_balls:  # 전부 완료
-        S["running"] = False
-        return
+  // 이론 이항분포(해당 시점까지의 떨어진 공 개수에 맞춰 스케일)
+  function theoryCounts(total) {
+    const res = Array(nRows+1).fill(0);
+    if (total <= 0) return res;
+    for (let k=0; k<=nRows; k++){
+      const c = nCk(nRows,k) * Math.pow(p,k) * Math.pow(1-p, nRows-k);
+      res[k] = c * total;
+    }
+    return res;
+  }
+  function nCk(n,k){
+    if (k<0||k>n) return 0;
+    if (k===0||k===n) return 1;
+    // fast
+    if (k>n-k) k=n-k;
+    let r=1;
+    for (let i=1;i<=k;i++){ r = (r * (n-k+i))/i; }
+    return r;
+  }
 
-    if S["row_r"] < n_rows:
-        step = int(moves[S["ball_i"], S["row_r"]])  # 0/1
-        S["rights"] += step
-        S["row_r"] += 1
-    else:
-        S["counts"][S["rights"]] += 1
-        S["total"] += 1
-        S["ball_i"] += 1
-        S["row_r"] = 0
-        S["rights"] = 0
-        if S["ball_i"] >= n_balls:
-            S["running"] = False
+  // p5
+  new p5(p => {
+    p.setup = () => {
+      const cnv = p.createCanvas(W, H);
+      cnv.parent('holder');
+      p.frameRate(60);
+      resetState();
+    };
 
-# 경과 시간만큼 여러 스텝 진행(속도 체감 ↑)
-def _live_tick_by_elapsed():
-    S = st.session_state.get("gb_live")
-    if not S or not S.get("running", False):
-        return
-    now = time.perf_counter()
-    interval = max(0.01, S.get("interval_ms", 60) / 1000.0)  # 최소 10ms
-    elapsed = now - S.get("_last_ts", now)
-    steps = max(1, int(elapsed // interval))  # 경과시간/간격 → 처리할 스텝 수
-    for _ in range(steps):
-        if not S.get("running", False):
-            break
-        _live_tick_once(S)
-    # 남은 잔여시간 보존
-    leftover = elapsed - steps * interval
-    S["_last_ts"] = now - max(0.0, leftover)
+    p.draw = () => {
+      // 진행
+      if (running && ballIdx < totalBalls){
+        const dt = p.deltaTime/1000;                 // seconds
+        const interval = stepInterval / speed;       // quick = small interval
+        acc += dt;
+        while (acc >= interval) {
+          stepOnce();
+          acc -= interval;
+          if (!running) break;
+        }
+      }
+
+      // 배경
+      p.background(255);
+
+      // 왼쪽 판: 좌표계
+      p.push();
+      p.translate(40, 40);
+      drawBoard(p);
+      p.pop();
+
+      // 오른쪽 히스토그램
+      p.push();
+      p.translate(leftW + 30, 30);
+      drawHistogram(p);
+      p.pop();
+
+      updateInfo();
+    };
+
+    function drawBoard(p){
+      const panelW = leftW-60, panelH = H-100;
+      // 스케일: x축 [-n/2, n/2], y축 [0..n]
+      const xMin = -nRows/2 - 0.8, xMax = nRows/2 + 0.8;
+      const yMin = 0, yMax = nRows + 0.8;
+      const sx = panelW/(xMax-xMin), sy = panelH/(yMax-yMin);
+
+      // 틀
+      p.noFill();
+      p.stroke(0,80);
+      p.rect(0,0,panelW,panelH);
+
+      // 핀
+      p.noStroke();
+      p.fill(200);
+      for (let r=0;r<nRows;r++){
+        for (let j=0;j<=r;j++){
+          const x = j - r/2;
+          const y = r+1;  // 위→아래
+          p.circle((x-xMin)*sx, (y-yMin)*sy, 6);
+        }
+      }
+
+      // 공
+      if (ballIdx < totalBalls){
+        const bx = rights - row/2;
+        const by = row;
+        p.fill(220,0,60);
+        p.noStroke();
+        p.circle((bx-xMin)*sx, ((by+0.4)-yMin)*sy, 10);
+      }
+
+      // 상단 텍스트(진입 슬롯)
+      p.fill(0);
+      p.textSize(14);
+      let slotText = lastSlot==null ? '—' : lastSlot.toString();
+      p.text(`Last slot: ${slotText}`, panelW-120, 16);
+    }
+
+    function drawHistogram(p){
+      const panelW = rightW-60, panelH = H-100;
+      const maxY = Math.max(5, Math.max(...counts));
+      const barW = panelW/(nRows+1);
+
+      // 틀
+      p.noFill();
+      p.stroke(0,80);
+      p.rect(0,0,panelW,panelH);
+
+      // 막대
+      for (let k=0;k<=nRows;k++){
+        const h = (counts[k]/Math.max(1,maxY))*panelH;
+        p.fill(60,120,255,180);
+        p.noStroke();
+        p.rect(k*barW+2, panelH-h, barW-4, h);
+      }
+
+      // 이론선
+      const th = theoryCounts(ballIdx);
+      p.stroke(220,0,60);
+      p.noFill();
+      p.beginShape();
+      for (let k=0;k<=nRows;k++){
+        const h = (th[k]/Math.max(1,maxY))*panelH;
+        p.vertex(k*barW+barW/2, panelH-h);
+      }
+      p.endShape();
+
+      // 축 눈금
+      p.fill(0);
+      p.textSize(12);
+      p.textAlign(p.CENTER, p.TOP);
+      for (let k=0;k<=nRows;k++){
+        p.text(k, k*barW+barW/2, panelH+4);
+      }
+      p.textAlign(p.LEFT, p.BOTTOM);
+      p.text("개수", 4, 12);
+      p.textAlign(p.CENTER, p.BOTTOM);
+      p.text(`슬롯(오른쪽 횟수)`, panelW/2, panelH+22);
+    }
+
+    function stepOnce(){
+      // 한 핀 통과
+      if (row < nRows){
+        if (Math.random() < p) rights += 1;
+        row += 1;
+      } else {
+        // 슬롯 확정
+        counts[rights] += 1;
+        lastSlot = rights;
+        // 다음 공 준비
+        ballIdx += 1;
+        row = 0; rights = 0;
+        if (ballIdx >= totalBalls) {
+          running = false;
+        }
+      }
+    }
+  });
+
+  // UI 바인딩
+  function updateInfo(){
+    elInfo.textContent = `진행: ${ballIdx} / ${totalBalls}  ·  남은 공: ${Math.max(0,totalBalls-ballIdx)}  ·  속도: ${speed.toFixed(1)}x`;
+  }
+  function onChange(){
+    // 파라미터만 갱신(Reset은 하지 않음)
+    speed = clampFloat(floatVal(elSpeed,1.5), 0.2, 5);
+    elSpeedVal.textContent = speed.toFixed(1) + "x";
+    updateInfo();
+  }
+  elSpeed.addEventListener('input', onChange);
+
+  elStart.onclick = () => { running = true; };
+  elPause.onclick = () => { running = false; };
+  elReset.onclick = () => { resetState(); };
+
+  // 초기화
+  resetState();
+})();
+</script>
+</body>
+</html>
+"""
 
 # ─────────────────────────────────────────────────────────────────────────────
 def render():
-    keep_scroll(key="probability/galton_live", mount="sidebar")  # 스크롤 튐 방지(추가 주입)
-    st.header("🧪 갈톤보드(이항분포) 시뮬레이터")
+    st.header("🎯 갈톤보드(이항분포) 시뮬레이터")
 
-    tab_fast, tab_live = st.tabs(["누적(빠름)", "실시간(경로)"])
+    tab_fast, tab_live = st.tabs(["누적(빠름)", "실시간(부드러운 캔버스, 권장)"])
 
-    # ── 1) 누적(빠름)
+    # ── 1) 누적(빠름): Plotly (정확한 누적 + 이론선)
     with tab_fast:
         c1, c2, c3, c4 = st.columns([1.2, 1.2, 1.2, 1])
         with c1:
@@ -260,69 +393,6 @@ def render():
             f"· 이론 평균 **{n_rows * p:.3f}** / 이론 분산 **{n_rows * p * (1 - p):.3f}**"
         )
 
-    # ── 2) 실시간(경로)
+    # ── 2) 실시간(부드러운 캔버스): p5.js + 단일 iframe(스크롤 튐 없음)
     with tab_live:
-        lc1, lc2, lc3 = st.columns([1.2, 1.2, 1.2])
-        with lc1:
-            n_rows_l = st.slider("핀(충돌) 횟수 n (실시간)", 3, 15, 10, 1, key="gb_live_n")
-        with lc2:
-            n_balls_l = st.slider("공의 개수(실시간)", 10, 800, 200, 10, key="gb_live_b")
-        with lc3:
-            p_l = st.slider("오른쪽 확률 p", 0.0, 1.0, 0.5, 0.01, key="gb_live_p")
-
-        colA, colB, colC, colD = st.columns([1, 1, 1, 1])
-        with colA:
-            start = st.button("▶ 실시간 시작", key="gb_live_start")
-        with colB:
-            stop = st.button("⏸ 일시정지", key="gb_live_stop")
-        with colC:
-            clear = st.button("🧹 리셋", key="gb_live_reset")
-        with colD:
-            interval = st.slider("속도(작을수록 빠름, ms)", 10, 250, 60, 5, key="gb_live_interval")
-
-        # 상태 초기화/제어
-        if start:
-            _live_init(n_rows_l, n_balls_l, p_l, seed=None)
-            st.session_state["gb_live"]["interval_ms"] = interval
-
-        S = st.session_state.get("gb_live")
-        if S:
-            if stop:
-                S["running"] = False
-            if clear:
-                st.session_state.pop("gb_live", None)
-                S = None
-            elif not stop and S.get("running", False):
-                S["interval_ms"] = interval
-                _live_tick_by_elapsed()  # 경과시간만큼 여러 스텝 진행
-
-        # 고정 placeholder(레이아웃 높이 안정 → 스크롤 튐 완화)
-        info_ph = st.empty()
-        fig_ph = st.empty()
-
-        # 현재 상태로 그림/정보 표시
-        counts_view = np.zeros(n_rows_l + 1, dtype=int)
-        ball_pos = None
-        total_so_far = 0
-        remaining = 0
-        if S and S["n_rows"] == n_rows_l:
-            counts_view = S["counts"].copy()
-            total_so_far = int(S["total"])
-            remaining = max(0, S["n_balls"] - total_so_far)
-            if 0 < S["row_r"] <= n_rows_l and S["ball_i"] < S["n_balls"]:
-                ball_pos = _ball_xy_at_step(S["row_r"], S["rights"])
-
-        theory_live = _binom_theory(n_rows_l, p_l, total_so_far)
-        fig_live = _make_live_figure(n_rows_l, ball_pos, counts_view, theory_live)
-        fig_ph.plotly_chart(fig_live, use_container_width=True)
-
-        info_ph.markdown(
-            f"**진행:** {total_so_far:,} / {n_balls_l:,}  "
-            f"· **남은 공:** {remaining:,}  "
-            f"· **속도(ms/step):** {interval}"
-        )
-
-        # 계속 진행 중이면 짧게 쉬고 rerun (keep_scroll이 스크롤 복원)
-        if S and S.get("running", False):
-            time.sleep(0.03)  # CPU 과점유 방지
-            st.rerun()
+        components.html(P5_HTML, height=640, scrolling=False)
