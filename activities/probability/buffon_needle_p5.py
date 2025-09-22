@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 from utils import page_header
 
 META = {
-    "title": "뷔퐁의 바늘 (p5.js)",
+    "title": "뷔퐁의 바늘문제",
     "description": "평행선 위로 바늘을 떨어뜨려 π를 추정하는 고전적 시뮬레이션.",
     "order": 60,
 }
@@ -15,15 +15,23 @@ def render():
     st.markdown(
         """
         - 바늘 길이 **L**, 선 간격 **d**(두 평행선 사이의 거리), 투척 횟수 **n**을 정한 뒤 바늘을 무작위로 떨어뜨립니다.  
-        - 교차 횟수를 **hits**라 할 때, 고전적 설정(**L ≤ d**)에서는  
-          \\[
-             P(교차) = \\frac{2L}{\\pi d},\\qquad \\Rightarrow\\quad
-             \\pi \\approx \\frac{2L\\cdot n}{\\text{hits}\\cdot d}.
-          \\]
+        - 교차 횟수를 **hits**라 할 때, 고전적 설정(**L ≤ d**)에서는 아래 관계로 π를 추정할 수 있습니다.  
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    st.latex(
+    r"P(\text{교차})=\frac{2L}{\pi d},\qquad \Rightarrow\quad "
+    r"\pi \approx \frac{2L\cdot n}{\text{hits}\cdot d}"
+    )
+    
+    st.markdown(
+        """ 
         - **Run Live**(한 개씩), **Run Fast**(묶음), **Auto/Pause**(자동 반복)을 지원합니다.
         """,
         unsafe_allow_html=True,
     )
+    
 
     # p5.js 스케치: iframe 내부에서 글로벌 모드로 실행되도록 캡슐화
     html = r'''
