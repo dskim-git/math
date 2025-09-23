@@ -344,7 +344,6 @@ def set_route(view: str, subject: Optional[str] = None,
 # ─────────────────────────────────────────────────────────────────────────────
 # 공통 UI
 def sidebar_navigation(registry: Dict[str, List[Activity]]):
-    # ✅ 단원/수업 바로가기: 각 교과 expander 내에 '수업 열기' 버튼을 조건부로 추가
     st.sidebar.header("📂 교과별 페이지")
     for key, label in SUBJECTS.items():
         with st.sidebar.expander(f"{label}", expanded=False):
@@ -353,15 +352,16 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
                 set_route("subject", subject=key)
                 _do_rerun()
 
-            # ✅ lessons 폴더가 있으면 '수업 열기' 노출
+            # lessons 폴더가 있으면 '수업 열기'
             if (ACTIVITIES_ROOT / key / "lessons" / "_units.py").exists():
                 if st.button("수업 열기 (단원별 자료)", key=f"open_{key}_lessons", use_container_width=True):
                     set_route("lessons", subject=key)
                     _do_rerun()
 
-            # 하위 활동
-            acts = registry.get(key, [])
-            acts = [a for a in acts_all if not a.hidden]
+            # 하위 활동 (숨김 제외)
+            acts_all = registry.get(key, [])              # ✅ 먼저 정의
+            acts = [a for a in acts_all if not a.hidden]  # ✅ 숨김 필터
+
             if not acts:
                 st.caption("아직 활동이 없습니다. 파일을 추가하면 자동 등록됩니다.")
             else:
