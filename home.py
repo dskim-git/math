@@ -580,41 +580,46 @@ def lessons_view(subject_key: str):
         with st.sidebar:
             st.subheader("📚 단원 선택")
 
+            def ch(node): return node.get("children", []) if isinstance(node, dict) else []
+
             majors = curriculum
             maj_key = f"_{subject_key}_major"
             mid_key = f"_{subject_key}_mid"
             min_key = f"_{subject_key}_min"
 
-            # ★ on_change 콜백에서 '이번 rerun은 사용자 선택'임을 표시
+            # 1) 초기값을 세션에만 심어두고
+            st.session_state.setdefault(maj_key, 0)
+            # out-of-range 가드
+            if st.session_state[maj_key] >= len(majors):
+                st.session_state[maj_key] = 0
+
+            # 2) index 파라미터 없이 생성 (세션값을 그대로 씀)
             def _on_major_change():
                 st.session_state[mid_key] = 0
                 st.session_state.pop(min_key, None)
-                st.session_state[skip_key] = True  # ← 중요
 
-            def _on_mid_change():
-                st.session_state.pop(min_key, None)
-                st.session_state[skip_key] = True  # ← 중요
-
-            # 대단원
-            maj_idx_default = st.session_state.get(maj_key, 0)
             maj_idx = st.selectbox(
                 "대단원",
                 options=range(len(majors)),
-                index=min(maj_idx_default, len(majors)-1),
                 format_func=lambda i: majors[i]["label"],
                 key=maj_key,
                 on_change=_on_major_change,
             )
 
             # 중단원
-            mids = children(majors[maj_idx])
+            mids = ch(majors[maj_idx])
             middle = None
             if mids:
-                mid_idx_default = st.session_state.get(mid_key, 0)
+                st.session_state.setdefault(mid_key, 0)
+                if st.session_state[mid_key] >= len(mids):
+                    st.session_state[mid_key] = 0
+
+                def _on_mid_change():
+                    st.session_state.pop(min_key, None)
+
                 mid_idx = st.selectbox(
                     "중단원",
                     options=range(len(mids)),
-                    index=min(mid_idx_default, len(mids)-1),
                     format_func=lambda i: mids[i]["label"],
                     key=mid_key,
                     on_change=_on_mid_change,
@@ -627,24 +632,21 @@ def lessons_view(subject_key: str):
             # 소단원
             minor = None
             if middle:
-                mins = children(middle)
+                mins = ch(middle)
                 if mins:
-                    min_idx_default = st.session_state.get(min_key, 0)
-                    if min_idx_default >= len(mins):
-                        min_idx_default = 0
+                    st.session_state.setdefault(min_key, 0)
+                    if st.session_state[min_key] >= len(mins):
                         st.session_state[min_key] = 0
+
                     min_idx = st.selectbox(
                         "소단원",
                         options=range(len(mins)),
-                        index=min_idx_default,
                         format_func=lambda i: mins[i]["label"],
                         key=min_key,
                     )
                     minor = mins[min_idx]
                 else:
                     st.session_state.pop(min_key, None)
-            else:
-                st.session_state.pop(min_key, None)
 
         # ★ 선택 변경을 URL unit에 동기화(중요!)
         #    - 현재 선택(소>중>대)의 key가 URL의 unit과 다르면 업데이트 후 즉시 rerun
