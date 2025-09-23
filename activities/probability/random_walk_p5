@@ -3,13 +3,13 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "랜덤워크",
+    "title": "랜덤워크 (p5.js 애니메이션)",
     "description": "2D 무작위 보행을 여러 개의 공으로 실시간 시뮬레이션합니다. 공 개수/속도/걸음 수/궤적 표시를 p5 UI로 조절할 수 있어요.",
     "order": 500,  # 원하시면 _order.py로 더 정교하게 순서 제어 가능
 }
 
 def render():
-    st.subheader("🚶 2D 랜덤워크")
+    st.subheader("🚶 2D 랜덤워크 (p5.js)")
     st.caption("공(입자)들이 임의의 각도로 한 걸음씩 이동합니다. ▶ Start 로 재생, ⏸ Pause, ⟲ Reset, Apply로 설정 반영.")
 
     components.html(
