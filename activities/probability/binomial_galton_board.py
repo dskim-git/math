@@ -419,7 +419,7 @@ P5_HTML = r"""
 def render():
     st.header("🎯 갈톤보드(이항분포) 시뮬레이터")
 
-    tab_fast, tab_live = st.tabs(["누적(빠름)", "실시간(부드러운 캔버스, 권장)"])
+    tab_fast, tab_live = st.tabs(["이항분포", "갈톤보드"])
 
     with tab_fast:
         c1, c2, c3 = st.columns([1.2, 1.2, 1.2])
