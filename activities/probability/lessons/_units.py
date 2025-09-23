@@ -244,6 +244,12 @@ CURRICULUM = [
                     "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
                     "subject": "probability",
                     "slug": "mini/odd_prime_conditional",   # 👈 파일명
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 확률 수렴 관찰(10,100,1,000...)", 
+                    "subject": "probability",
+                    "slug": "mini/odd_prime_convergence",
                 }
           ]},
           {"key": "2-2-2", "label": "2. 확률의 곱셈정리", "items": []},
