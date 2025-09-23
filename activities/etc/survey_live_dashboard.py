@@ -1,16 +1,20 @@
 # activities/etc/survey_live_dashboard.py
+import time
+import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
-import pandas as pd
 
 from survey_utils import (
-    load_published_csv, parse_mcq_series,
-    basic_tokenize_korean, top_n_tokens
+    make_csv_export_url,
+    load_csv_live,
+    parse_mcq_series,
+    basic_tokenize_korean,
+    top_n_tokens,
 )
 
 META = {
     "title": "실시간 설문 대시보드",
-    "description": "구글폼→시트(웹에 게시·CSV)를 실시간으로 읽어 그래프/워드클라우드 표시",
+    "description": "구글시트 CSV를 실시간으로 읽어 그래프/워드클라우드를 만듭니다.",
     "order": 10,
     # "hidden": True,
 }
@@ -25,52 +29,66 @@ except Exception:
 
 
 def _auto_refresh(seconds: int, key: str = "auto_refresh_survey"):
-    """
-    최신 스트림릿: st.autorefresh 사용
-    구버전: <meta http-equiv='refresh'> 폴백
-    """
+    """최신 스트림릿은 st.autorefresh, 구버전은 meta refresh로 폴백."""
     if seconds <= 0:
         return
     try:
-        # 최신 스트림릿
-        _ = getattr(st, "autorefresh")
-        st.autorefresh(interval=seconds * 1000, key=key)
+        st.autorefresh(interval=seconds * 1000, key=key)  # type: ignore[attr-defined]
     except Exception:
-        # 구버전 폴백: 페이지 전체 새로고침
-        components.html(
-            f"<meta http-equiv='refresh' content='{int(seconds)}'>",
-            height=0
-        )
+        components.html(f"<meta http-equiv='refresh' content='{int(seconds)}'>", height=0)
 
 
 def render():
     st.header("🗳️ 실시간 설문 대시보드")
 
     with st.sidebar:
-        st.subheader("⚙️ 설정")
-        csv_url = st.text_input(
-            "구글시트(웹에 게시·CSV) 주소",
-            placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?gid=0&single=true&output=csv",
-            help="시트 > 파일 > 웹에 게시 > (특정 시트 탭, 형식: CSV) 후 나온 링크를 붙여넣으세요."
+        st.subheader("⚙️ 데이터 소스")
+        csv_or_sheet_url = st.text_input(
+            "시트 URL 또는 CSV 내보내기 URL",
+            placeholder=(
+                "예) https://docs.google.com/spreadsheets/d/FILE_ID/edit#gid=0 "
+                "또는 https://docs.google.com/spreadsheets/d/FILE_ID/export?format=csv&gid=0"
+            ),
+            help=(
+                "① 시트를 열고 주소표시줄의 링크 그대로 붙여도 됩니다.\n"
+                "   (앱이 자동으로 CSV 내보내기 주소로 변환)\n"
+                "② 만약 '웹에 게시' 링크를 쓰면 반영이 늦을 수 있어요. "
+                "가능하면 export?format=csv&gid=... 형태가 가장 빠릅니다."
+            ),
         )
-        refresh_sec = st.slider("자동 새로고침(초)", 0, 60, 10,
-                                help="0으로 두면 자동 새로고침 비활성화")
+
+        st.caption("🔗 변환된 CSV 주소(읽기 전용)")
+        csv_preview = make_csv_export_url(csv_or_sheet_url) if csv_or_sheet_url else ""
+        st.text_area("CSV URL", csv_preview, height=60, label_visibility="collapsed")
+
+        st.subheader("🔁 새로고침")
+        refresh_sec = st.slider("자동 새로고침(초)", 0, 60, 10, help="0이면 자동 새로고침 없음")
+        manual = st.button("🔄 지금 새로고침")
+
         show_raw = st.checkbox("원시 데이터 보기", False)
 
-    # 자동 새로고침(주소가 있을 때만)
-    if csv_url and refresh_sec:
+    # 자동 새로고침
+    if csv_or_sheet_url and refresh_sec > 0:
         _auto_refresh(refresh_sec, key="auto_refresh_survey")
 
-    @st.cache_data(ttl=30)
-    def _load(url: str) -> pd.DataFrame:
-        return load_published_csv(url)
+    # 캐시 무력화용 'bust' 값 생성
+    if manual:
+        bust = int(time.time())  # 버튼 누를 때마다 강제 재다운로드
+    elif refresh_sec > 0:
+        bust = int(time.time() // max(refresh_sec, 1))  # n초 단위로 값이 바뀜
+    else:
+        bust = 0  # 같은 세션 동안 캐시 유지
 
-    if not csv_url:
-        st.info("좌측에 **CSV 주소**를 입력하면 그래프가 나타납니다.")
+    @st.cache_data(show_spinner=False)
+    def _load(url: str, bust_val: int) -> pd.DataFrame:
+        return load_csv_live(url, cache_bust=bust_val)
+
+    if not csv_or_sheet_url:
+        st.info("좌측에 **시트 URL 또는 CSV URL**을 입력하면 그래프가 나타납니다.")
         return
 
     try:
-        df = _load(csv_url)
+        df = _load(csv_or_sheet_url, bust)
     except Exception as e:
         st.error(f"CSV를 불러오는 중 오류가 발생했어요: {e}")
         return
@@ -79,7 +97,7 @@ def render():
         st.warning("시트가 비어있거나 접근이 불가합니다. 주소/공개 설정을 확인해 주세요.")
         return
 
-    st.success(f"행 {len(df):,}개, 열 {len(df.columns)}개 로드됨")
+    st.success(f"행 {len(df):,}개 · 열 {len(df.columns)}개 로드됨 · {time.strftime('%H:%M:%S')} 기준")
     if show_raw:
         st.dataframe(df, use_container_width=True)
 
@@ -98,7 +116,7 @@ def render():
                     if normalize:
                         s = (s / s.sum() * 100).round(1)
                     st.bar_chart(s, use_container_width=True)
-                    st.caption(f"총 응답 수: {sum(counts.values())} / 범주 수: {len(s)}")
+                    st.caption(f"총 응답 수: {int(s.sum() if not normalize else (s.sum()/100*len(s)))} / 범주 수: {len(s)}")
                 else:
                     st.info("집계할 응답이 없습니다.")
         else:
@@ -107,7 +125,9 @@ def render():
     # ── 자유응답 워드클라우드 & 상위 단어 ─────────────────────────
     with st.expander("주관식(자유응답) 워드클라우드 & 상위 단어", expanded=True):
         if cols:
-            col_text = st.selectbox("질문(자유응답 열 선택)", options=cols, index=min(1, len(cols)-1))
+            # 보통 첫 열이 타임스탬프인 경우가 많아 index=1을 기본값으로 둠
+            default_idx = 1 if len(cols) > 1 else 0
+            col_text = st.selectbox("질문(자유응답 열 선택)", options=cols, index=default_idx)
             max_words = st.slider("단어 수(워드클라우드)", 20, 300, 120)
             user_stop = st.text_area("제외할 단어(쉼표로 구분)", "입니다, 그리고, 또는, 정말")
             stopwords = [w.strip() for w in user_stop.split(",") if w.strip()]
@@ -126,7 +146,7 @@ def render():
                 st.info("표시할 단어가 없습니다.")
 
             if WC_AVAILABLE and tokens:
-                FONT_PATH = "assets/NanumGothic.ttf"  # 프로젝트에 폰트 파일을 두고 경로를 맞추세요.
+                FONT_PATH = "assets/NanumGothic.ttf"  # 프로젝트에 폰트 파일을 두세요.
                 try:
                     wc = WordCloud(
                         width=900, height=500,
@@ -145,6 +165,5 @@ def render():
         else:
             st.info("표시할 열이 없습니다.")
 
-    # ── 요약 통계(옵션) ───────────────────────────────────────────
     with st.expander("빠른 요약", expanded=False):
         st.write(df.describe(include="all").transpose())
