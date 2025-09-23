@@ -284,10 +284,11 @@ def discover_activities() -> Dict[str, List[Activity]]:
         # 1) 과목 폴더 바로 아래
         add_from_dir(subject_dir, subject_key, slug_prefix="")
         # 2) 1단계 하위 폴더(lessons, __pycache__, '_' 시작 제외)
+        HIDE_DIRS = {"lessons", "__pycache__", "mini"}  # ← mini 폴더도 숨김
         for subdir in subject_dir.iterdir():
             if not subdir.is_dir():
                 continue
-            if subdir.name in ("lessons", "__pycache__") or subdir.name.startswith("_"):
+            if subdir.name in HIDE_DIRS or subdir.name.startswith("_"):
                 continue
             add_from_dir(subdir, subject_key, slug_prefix=f"{subdir.name}/")
 
