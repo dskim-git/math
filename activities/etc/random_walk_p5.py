@@ -3,14 +3,14 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "랜덤워크 (p5.js)",
-    "description": "2D 랜덤워크를 p5.js로 실시간/즉시 모드로 시각화합니다. 경로·걸음·속도·줌·선/점 크기 조절 가능.",
+    "title": "랜덤워크",
+    "description": "2D 랜덤워크를 실시간/즉시 모드로 시각화합니다. 경로·걸음·속도·줌·선/점 크기 조절 가능.",
     "order": 50,
     "hidden": False,
 }
 
 def render():
-    st.markdown("### 2D 랜덤워크 (p5.js)")
+    st.markdown("### 2D 랜덤워크")
     components.html(
         """
 <!doctype html>
