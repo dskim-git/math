@@ -352,16 +352,15 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
                 set_route("subject", subject=key)
                 _do_rerun()
 
-            # lessons 폴더가 있으면 '수업 열기'
+            # lessons 진입
             if (ACTIVITIES_ROOT / key / "lessons" / "_units.py").exists():
                 if st.button("수업 열기 (단원별 자료)", key=f"open_{key}_lessons", use_container_width=True):
                     set_route("lessons", subject=key)
                     _do_rerun()
 
-            # 하위 활동 (숨김 제외)
-            acts_all = registry.get(key, [])              # ✅ 먼저 정의
-            acts = [a for a in acts_all if not a.hidden]  # ✅ 숨김 필터
-
+            # 활동 목록 (숨김 제외)
+            acts_all = registry.get(key, [])
+            acts = [a for a in acts_all if not a.hidden]
             if not acts:
                 st.caption("아직 활동이 없습니다. 파일을 추가하면 자동 등록됩니다.")
             else:
@@ -541,36 +540,26 @@ LESSON_HEADER_VISIBLE = False
 LESSON_HEADER_VISIBLE = False
 
 def lessons_view(subject_key: str):
-    """교과별 '수업(lessons)' 허브: (1) CURRICULUM 계층형 또는 (2) UNITS 평면형을 지원"""
     keep_scroll(key=f"{subject_key}/lessons", mount="sidebar")
-
     label = SUBJECTS.get(subject_key, subject_key)
-
-    # 헤더는 기본 숨김(원하면 LESSON_HEADER_VISIBLE=True로)
     if LESSON_HEADER_VISIBLE:
         st.title(f"🔖 {label} 수업")
         st.caption("왼쪽 선택에서 단원을 고르면, 해당 단원의 수업 자료가 순서대로 나타납니다.")
 
-    # 상단 네비
     _lessons_top_nav(subject_key)
 
-    curriculum = load_curriculum(subject_key)  # list or None
-    units = load_units(subject_key)            # dict or {}
-
-    # 현재 URL의 unit 파라미터
+    curriculum = load_curriculum(subject_key)
+    units = load_units(subject_key)
     _, _, _, unit_qp = get_route()
 
     if curriculum:
-        # ── 계층형: 대단원 → 중단원 → 소단원 ─────────────────────────────
+        def children(node): return node.get("children", []) if isinstance(node, dict) else []
 
-        def children(node): 
-            return node.get("children", []) if isinstance(node, dict) else []
-
-        # ★ 사용자 선택이 있었는지 표시하는 플래그 (쿼리→세션 동기화 건너뛰기용)
+        # 사용자 변경 시 동기화 건너뛰기용 플래그
         skip_key = f"__skip_sync_{subject_key}"
         skip_sync = st.session_state.pop(skip_key, False)
 
-        # ★ unit 쿼리가 있고, 이번 렌더가 '사용자 선택 rerun'이 아니라면 쿼리값으로 세션 동기화
+        # URL → 세션 동기화 (사용자 변경이 아닌 경우에만)
         if unit_qp and not skip_sync:
             path = _find_curriculum_path(curriculum, unit_qp)
             maj_state_key = f"_{subject_key}_major"
@@ -579,16 +568,12 @@ def lessons_view(subject_key: str):
             if path:
                 maj_i, mid_i, min_i = path
                 st.session_state[maj_state_key] = maj_i
-                if mid_i is not None:
-                    st.session_state[mid_state_key] = mid_i
-                else:
-                    st.session_state.pop(mid_state_key, None)
-                if min_i is not None:
-                    st.session_state[min_state_key] = min_i
-                else:
-                    st.session_state.pop(min_state_key, None)
+                if mid_i is not None: st.session_state[mid_state_key] = mid_i
+                else: st.session_state.pop(mid_state_key, None)
+                if min_i is not None: st.session_state[min_state_key] = min_i
+                else: st.session_state.pop(min_state_key, None)
 
-        # ── 사이드바 3단 선택 ──
+        # ── 사이드바 선택 ──
         with st.sidebar:
             st.subheader("📚 단원 선택")
 
@@ -599,16 +584,19 @@ def lessons_view(subject_key: str):
             mid_key = f"_{subject_key}_mid"
             min_key = f"_{subject_key}_min"
 
-            # 1) 초기값을 세션에만 심어두고
+            # 사용자 변경 마크
+            def _mark_user_change():
+                st.session_state[skip_key] = True
+
+            # 대단원
             st.session_state.setdefault(maj_key, 0)
-            # out-of-range 가드
             if st.session_state[maj_key] >= len(majors):
                 st.session_state[maj_key] = 0
 
-            # 2) index 파라미터 없이 생성 (세션값을 그대로 씀)
             def _on_major_change():
                 st.session_state[mid_key] = 0
                 st.session_state.pop(min_key, None)
+                _mark_user_change()
 
             maj_idx = st.selectbox(
                 "대단원",
@@ -628,6 +616,7 @@ def lessons_view(subject_key: str):
 
                 def _on_mid_change():
                     st.session_state.pop(min_key, None)
+                    _mark_user_change()
 
                 mid_idx = st.selectbox(
                     "중단원",
@@ -650,26 +639,30 @@ def lessons_view(subject_key: str):
                     if st.session_state[min_key] >= len(mins):
                         st.session_state[min_key] = 0
 
+                    def _on_min_change():
+                        _mark_user_change()
+
                     min_idx = st.selectbox(
                         "소단원",
                         options=range(len(mins)),
                         format_func=lambda i: mins[i]["label"],
                         key=min_key,
+                        on_change=_on_min_change,   # ← 추가
                     )
                     minor = mins[min_idx]
                 else:
                     st.session_state.pop(min_key, None)
 
-        # ★ 선택 변경을 URL unit에 동기화(중요!)
-        #    - 현재 선택(소>중>대)의 key가 URL의 unit과 다르면 업데이트 후 즉시 rerun
+        # 현재 선택을 URL unit과 동기화 (다르면 갱신)
         sel_node = minor or middle or majors[maj_idx]
         sel_key = sel_node.get("key") if isinstance(sel_node, dict) else None
         if sel_key and sel_key != unit_qp:
+            st.session_state[skip_key] = True     # ← 갱신 직전 플래그 세팅
             set_route("lessons", subject=subject_key, unit=sel_key)
             _do_rerun()
             return
 
-        # ── 렌더 대상 결정(소 > 중 > 대에서 items 가진 노드) ──
+        # ── 렌더 ──
         items_node = None
         for node in [minor, middle, majors[maj_idx]]:
             if isinstance(node, dict) and "items" in node:
@@ -682,11 +675,9 @@ def lessons_view(subject_key: str):
         st.subheader(items_node.get("label", "선택한 단원"))
         st.divider()
 
-        # ── 아이템 렌더 ──
         for i, item in enumerate(items_node.get("items", []), start=1):
             typ = item.get("type"); title = item.get("title", "")
             st.markdown(f"### {i}. {title}")
-
             if typ == "gslides":
                 embed_iframe(item["src"], height=item.get("height", 480))
             elif typ == "gsheet":
@@ -695,10 +686,7 @@ def lessons_view(subject_key: str):
                 embed_iframe(item["src"], height=item.get("height", 800))
             elif typ == "canva":
                 components.html(
-                    f'''
-                    <iframe loading="lazy" style="border:0; width:100%; height:{item.get("height",600)}px;"
-                            allowfullscreen src="{item["src"]}"></iframe>
-                    ''',
+                    f'''<iframe loading="lazy" style="border:0;width:100%;height:{item.get("height",600)}px;" allowfullscreen src="{item["src"]}"></iframe>''',
                     height=item.get("height", 600)
                 )
             elif typ == "url":
@@ -722,20 +710,15 @@ def lessons_view(subject_key: str):
                     cols = st.columns(cols_n)
                     for j, img in enumerate(imgs):
                         with cols[j % cols_n]:
-                            if width:
-                                st.image(img, width=width, caption=caption if j == 0 else None)
-                            else:
-                                st.image(img, use_container_width=True, caption=caption if j == 0 else None)
+                            if width: st.image(img, width=width, caption=caption if j == 0 else None)
+                            else:     st.image(img, use_container_width=True, caption=caption if j == 0 else None)
                 else:
-                    if width:
-                        st.image(imgs, width=width, caption=caption)
-                    else:
-                        st.image(imgs, use_container_width=True, caption=caption)
+                    if width: st.image(imgs, width=width, caption=caption)
+                    else:     st.image(imgs, use_container_width=True, caption=caption)
             else:
                 st.info("지원되지 않는 타입입니다. (gslides/gsheet/canva/url/activity)")
-
             st.divider()
-
+            
     else:
         # ── 평면형 UNITS(기존 방식) ──
         if not units:
