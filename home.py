@@ -87,6 +87,7 @@ class Activity:
     description: str
     render: Callable[[], None]
     order: int = 10_000_000  # 기본값(크게) → 지정 없으면 뒤로 밀림
+    hidden: bool = False
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 유틸: 동적 모듈 로딩
@@ -250,6 +251,9 @@ def discover_activities() -> Dict[str, List[Activity]]:
         return registry
 
     def add_from_dir(dir_path: Path, subject_key: str, slug_prefix: str = ""):
+        # mini 폴더 여부 판정
+        is_hidden_dir = (Path(dir_path).name == "mini") or slug_prefix.startswith("mini/")
+
         for py_file in dir_path.glob("*.py"):
             name = py_file.name
             if name.startswith("_") or name == "__init__.py":
@@ -262,15 +266,20 @@ def discover_activities() -> Dict[str, List[Activity]]:
             description = meta.get("description") or "활동 소개가 아직 없습니다."
             render_fn = getattr(module, "render", None)
             order = int(meta.get("order", 10_000_000))
+            # 파일 단위 숨김도 지원
+            is_hidden_file = bool(meta.get("hidden", False))
+            hidden = is_hidden_dir or is_hidden_file
+
             if callable(render_fn):
                 registry[subject_key].append(
                     Activity(
                         subject_key=subject_key,
-                        slug=(slug_prefix + py_file.stem),  # 예: "fractal/sierpinski_chaos"
+                        slug=(slug_prefix + py_file.stem),   # 예: "mini/dice_conditional_prob"
                         title=title,
                         description=description,
                         render=render_fn,
                         order=order,
+                        hidden=hidden,                       # ← 추가
                     )
                 )
 
@@ -284,7 +293,7 @@ def discover_activities() -> Dict[str, List[Activity]]:
         # 1) 과목 폴더 바로 아래
         add_from_dir(subject_dir, subject_key, slug_prefix="")
         # 2) 1단계 하위 폴더(lessons, __pycache__, '_' 시작 제외)
-        HIDE_DIRS = {"lessons", "__pycache__", "mini"}  # ← mini 폴더도 숨김
+        HIDE_DIRS = {"lessons", "__pycache__"}  # ← mini 폴더도 숨김
         for subdir in subject_dir.iterdir():
             if not subdir.is_dir():
                 continue
@@ -352,6 +361,7 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
 
             # 하위 활동
             acts = registry.get(key, [])
+            acts = [a for a in acts_all if not a.hidden]
             if not acts:
                 st.caption("아직 활동이 없습니다. 파일을 추가하면 자동 등록됩니다.")
             else:
@@ -508,7 +518,8 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
                 st.caption(f"`activities/{subject_key}/lessons/_units.py`에 CURRICULUM 또는 UNITS를 정의하면 여기서 바로 이동할 수 있어요.")
 
     # ▼ 활동 카드들
-    acts = registry.get(subject_key, [])
+    acts_all = registry.get(subject_key, [])
+    acts = [a for a in acts_all if not a.hidden]    # ← 추가
     if not acts:
         st.info(f"아직 등록된 활동이 없습니다. `activities/{subject_key}/` 폴더에 .py 파일을 추가하세요.")
         return
