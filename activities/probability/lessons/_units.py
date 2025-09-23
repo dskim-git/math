@@ -232,7 +232,14 @@ CURRICULUM = [
         "key": "2-2",
         "label": "(2) 조건부확률",
         "children": [
-          {"key": "2-2-1", "label": "1. 조건부확률", "items": []},
+          {"key": "2-2-1", "label": "1. 조건부확률", "items": [
+                {
+                    "type": "canva",
+                    "title": "조건부확률",
+                    "src": "https://www.canva.com/design/DAGNl-3fzAo/dG6Ih5DHeLzB3_-3yFkWmw/view?embed",
+                    "height": 800
+                }
+          ]},
           {"key": "2-2-2", "label": "2. 확률의 곱셈정리", "items": []},
           {"key": "2-2-3", "label": "3. 사건의 독립과 종속", "items": []},
           {"key": "2-2-4", "label": "4. 독립시행의 확률", "items": []},
