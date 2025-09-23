@@ -238,6 +238,12 @@ CURRICULUM = [
                     "title": "조건부확률",
                     "src": "https://www.canva.com/design/DAGNl-3fzAo/dG6Ih5DHeLzB3_-3yFkWmw/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
+                    "subject": "probability",
+                    "slug": "mini/odd_prime_conditional",   # 👈 파일명
                 }
           ]},
           {"key": "2-2-2", "label": "2. 확률의 곱셈정리", "items": []},
