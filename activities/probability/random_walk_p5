@@ -6,7 +6,7 @@ META = {
     "title": "랜덤워크 (p5.js)",
     "description": "p5.js로 2D 랜덤워크를 시각화합니다. 경로/걸음 수를 조절해 보세요.",
     "order": 50,
-    # "hidden": False  # ← 보이고 싶으면 생략 또는 False. (mini 폴더에 넣으면 폴더 기준으로 숨김 처리됩니다)
+    "hidden": False  # ← 보이고 싶으면 생략 또는 False. (mini 폴더에 넣으면 폴더 기준으로 숨김 처리됩니다)
 }
 
 def render():
