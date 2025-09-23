@@ -365,10 +365,10 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
         _do_rerun()
 
 def home_view():
-    st.title("🧮 수학 수업 시뮬레이션 허브")
+    st.title("🧮 Mathlab")
     st.markdown(
         """
-        이 웹앱은 **수학 수업에서 바로 활용**할 수 있는 시뮬레이션과 활동을 한 곳에 모은 허브입니다.  
+        이곳은 **수학 수업에서 활용**할 수 있는 시뮬레이션과 활동을 한 곳에 모은 연구실입니다.  
         아래에서 교과를 고르고, 교과별 메인 페이지에서 구체 활동으로 들어가세요.
 
         - **공통수학**: 수와 연산, 함수 기초, 수열 등
