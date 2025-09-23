@@ -3,3 +3,5 @@ numpy>=1.26
 plotly>=5.18
 scipy>=1.11
 matplotlib>=3.7
+pandas
+wordcloud
