@@ -38,13 +38,13 @@ def _plot_hist_with_theory(counts: np.ndarray, theory: np.ndarray) -> go.Figure:
                      float(np.max(theory)) if theory.size else 0.0))
     top = max(1.0, ymax * 1.15)
     fig.update_layout(
-        xaxis_title="오른쪽으로 간 횟수 (슬롯)",
-        yaxis_title="개수",
+        xaxis_title="슬롯(오른쪽 횟수)",
+        yaxis_title="도수",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         margin=dict(l=10, r=10, t=10, b=10),
     )
     fig.update_xaxes(dtick=1)
-    fig.update_yaxes(range=[0, top])   # ▶ y축 headroom
+    fig.update_yaxes(range=[0, top])
     return fig
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -66,15 +66,16 @@ P5_HTML = r"""
     .small { font-size: 12px; color:#555; }
     #wrap { display:flex; gap:12px; align-items:flex-start; justify-content:center; padding:0 12px 12px; }
     #holder { flex: 0 0 auto; }
-    #tableBox { flex: 0 0 180px; font: 13px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
-    #tableBox table { border-collapse: collapse; width: 180px; }
+    #tableBox { flex: 0 0 240px; font: 13px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    #tableBox table { border-collapse: collapse; width: 240px; }
     #tableBox th, #tableBox td { border: 1px solid #ddd; padding: 4px 6px; }
     #tableBox th { background: #f5f7fb; }
-    #tableBox td:nth-child(1), #tableBox th:nth-child(1) { text-align:center; width: 48px; }
-    #tableBox td:nth-child(2), #tableBox th:nth-child(2) { text-align:right; }
-    #tableBox .caption { font-weight:700; margin: 0 0 6px 0; }
+    #tableBox td:nth-child(1), #tableBox th:nth-child(1) { text-align:center; width: 44px; }
+    #tableBox td:nth-child(2), #tableBox th:nth-child(2) { text-align:right; width: 80px; }
+    #tableBox td:nth-child(3), #tableBox th:nth-child(3) { text-align:right; width: 90px; }
     .legend { font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:#222; }
     .box { display:inline-block; width:12px; height:12px; vertical-align:middle; margin-right:6px; border-radius:2px; }
+    .badge { background:#fff0d6; border:1px solid #ff9a2d; color:#b35900; padding:2px 8px; border-radius:10px; font-weight:700; }
   </style>
 </head>
 <body>
@@ -92,6 +93,7 @@ P5_HTML = r"""
       <button id="start">▶ Start</button>
       <button id="pause">⏸ Pause</button>
       <button id="reset">🧹 Reset</button>
+      <button id="runonce">⏩ Run Once</button>
     </div>
     <div class="row small" id="info">-</div>
   </div>
@@ -107,7 +109,7 @@ P5_HTML = r"""
 <script>
 (() => {
   // Panel sizes
-  const W = 1000, H = 560;
+  const W = 1000, H = 590;               // ← 아래 여백 조금 넉넉히
   const leftW = 600, rightW = W - leftW;
 
   // Params & state (⚠ 이름 충돌 방지: probRight)
@@ -134,6 +136,7 @@ P5_HTML = r"""
   const elStart = document.getElementById('start');
   const elPause = document.getElementById('pause');
   const elReset = document.getElementById('reset');
+  const elRunOnce = document.getElementById('runonce');
   const elTable = document.getElementById('countTable');
 
   function intVal(el, defv){ const v=parseInt(el.value,10); return Number.isFinite(v)?v:defv; }
@@ -147,12 +150,13 @@ P5_HTML = r"""
 
   function renderTable(){
     if (!elTable) return;
-    let html = '<tr><th>k</th><th>count</th></tr>';
-    for (let k=0;k<=nRows;k++){
-      html += `<tr><td>${k}</td><td>${counts[k]}</td></tr>`;
-    }
     const sum = counts.reduce((a,b)=>a+b,0);
-    html += `<tr><th>합계</th><th>${sum}</th></tr>`;
+    let html = '<tr><th>k</th><th>count</th><th>p̂ = count/총</th></tr>';
+    for (let k=0;k<=nRows;k++){
+      const freq = sum>0 ? (counts[k]/sum) : 0;
+      html += `<tr><td>${k}</td><td>${counts[k]}</td><td>${freq.toFixed(4)}</td></tr>`;
+    }
+    html += `<tr><th>합계</th><th>${sum}</th><th>${sum>0?'1.0000':'0.0000'}</th></tr>`;
     elTable.innerHTML = html;
   }
 
@@ -190,6 +194,13 @@ P5_HTML = r"""
     return res;
   }
 
+  function binomSample(n, p){
+    // n<=15 범위라 단순 합으로도 충분히 빠름
+    let r=0;
+    for (let i=0;i<n;i++) if (Math.random()<p) r++;
+    return r;
+  }
+
   // p5
   new p5(p => {
     p.setup = () => {
@@ -223,7 +234,7 @@ P5_HTML = r"""
 
       // 오른쪽 히스토그램 + 이론선
       p.push();
-      p.translate(leftW + 30, 30);
+      p.translate(leftW + 40, 30);
       drawHistogram(p);
       p.pop();
 
@@ -232,7 +243,7 @@ P5_HTML = r"""
     };
 
     function drawBoard(p){
-      const panelW = leftW-60, panelH = H-100;
+      const panelW = leftW-80, panelH = H-120;
       const xMin = -nRows/2 - 0.8, xMax = nRows/2 + 0.8;
       const yMin = 0, yMax = nRows + 0.8;
       const sx = panelW/(xMax-xMin), sy = panelH/(yMax-yMin);
@@ -262,28 +273,45 @@ P5_HTML = r"""
         p.circle((bx-xMin)*sx, ((by+0.4)-yMin)*sy, 10);
       }
 
-      // 우상단: 마지막 슬롯
-      p.fill(0);
+      // 우상단: 마지막 슬롯(배지로 강조)
+      p.noStroke();
+      p.fill(255,240,214);
+      p.rect(panelW-160, 6, 150, 24, 8);
+      p.fill(179,89,0);
       p.textSize(14);
-      let slotText = (lastSlot==null) ? '—' : lastSlot.toString();
-      p.text(`Last slot: ${slotText}`, panelW-120, 16);
+      p.textAlign(p.CENTER, p.CENTER);
+      p.text(`Last slot: ${lastSlot==null?'—':lastSlot}`, panelW-85, 18);
     }
 
     function drawHistogram(p){
-      const panelW = rightW-60, panelH = H-100;
-
-      // ▶ 누적(빠름) 스타일에 맞춘 구성: 막대 + 이론선 + 여유 15%
+      const panelW = rightW-80, panelH = H-120;
       const th = theoryCounts(ballIdx);
       const maxBar = Math.max(0, ...counts);
       const maxTh  = Math.max(0, ...th);
       const yMax   = Math.max(5, maxBar, maxTh) * 1.15;   // ▶ 머리공간
 
+      const ticks = 5;                     // y축 눈금 갯수
       const barW = panelW/(nRows+1);
 
       // 틀
       p.noFill();
       p.stroke(0,80);
       p.rect(0,0,panelW,panelH);
+
+      // y축 그리드/눈금/값
+      p.stroke(230);
+      p.textSize(12);
+      p.textAlign(p.RIGHT, p.CENTER);
+      for (let i=0;i<=ticks;i++){
+        const frac = i/ticks;
+        const y = panelH - frac*panelH;
+        const val = Math.round(frac*yMax);
+        p.stroke(235);
+        p.line(0,y,panelW,y);
+        p.noStroke();
+        p.fill(0);
+        p.text(`${val}`, -6, y);   // ← 왼쪽 바깥에 값
+      }
 
       // 막대 (실험)
       for (let k=0;k<=nRows;k++){
@@ -303,17 +331,29 @@ P5_HTML = r"""
       }
       p.endShape();
 
-      // 눈금/제목
+      // last slot 바 강조(외곽선)
+      if (lastSlot!=null){
+        const hL = (counts[lastSlot]/Math.max(1,yMax))*panelH;
+        p.noFill();
+        p.stroke(255,140,0);
+        p.strokeWeight(2);
+        p.rect(lastSlot*barW+1, panelH-hL-1, barW-2, hL+2, 3);
+        p.strokeWeight(1);
+      }
+
+      // x축 눈금/라벨(겹침 방지: 숫자 아래, 축제목 더 아래)
       p.fill(0);
       p.textSize(12);
       p.textAlign(p.CENTER, p.TOP);
-      for (let k=0;k<=nRows;k++) p.text(k, k*barW+barW/2, panelH+4);
-      p.textAlign(p.LEFT, p.BOTTOM);
-      p.text("개수", 4, 12);
-      p.textAlign(p.CENTER, p.BOTTOM);
-      p.text(`슬롯(오른쪽 횟수)`, panelW/2, panelH+22);
+      for (let k=0;k<=nRows;k++) p.text(k, k*barW+barW/2, panelH+6);
+      p.textAlign(p.CENTER, p.TOP);
+      p.text(`슬롯(오른쪽 횟수)`, panelW/2, panelH+26);  // ← 더 아래로 이동
 
-      // 간단한 범례(누적과 톤 맞춤)
+      // y축 제목
+      p.textAlign(p.LEFT, p.BOTTOM);
+      p.text("도수", 4, 12);
+
+      // 간단한 범례
       p.textAlign(p.LEFT, p.TOP);
       p.fill(0);
       p.textSize(12);
@@ -327,7 +367,7 @@ P5_HTML = r"""
     function stepOnce(){
       // 한 핀 통과
       if (row < nRows){
-        if (Math.random() < probRight) rights += 1;  // ← 확률 변수는 probRight 사용
+        if (Math.random() < probRight) rights += 1;
         row += 1;
       } else {
         // 슬롯 확정
@@ -352,6 +392,20 @@ P5_HTML = r"""
   document.getElementById('start').onclick = () => { running = true; };
   document.getElementById('pause').onclick = () => { running = false; };
   document.getElementById('reset').onclick = () => { resetState(); };
+  document.getElementById('runonce').onclick = () => {
+    // 한 번에 끝까지(애니메이션 없이) 실행
+    const remain = Math.max(0, totalBalls - ballIdx);
+    if (remain <= 0) return;
+    for (let t=0; t<remain; t++){
+      const r = binomSample(nRows, probRight);
+      counts[r] += 1;
+      lastSlot = r;
+      ballIdx += 1;
+    }
+    running = false;
+    renderTable();
+    updateInfo();
+  };
 
   // 처음 세팅
   resetState();
@@ -395,4 +449,4 @@ def render():
         st.plotly_chart(fig, use_container_width=True)
 
     with tab_live:
-        components.html(P5_HTML, height=700, scrolling=False)
+        components.html(P5_HTML, height=720, scrolling=False)
