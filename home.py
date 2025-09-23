@@ -252,6 +252,9 @@ def discover_activities() -> Dict[str, List[Activity]]:
     def add_from_dir(dir_path: Path, subject_key: str, slug_prefix: str = ""):
         for py_file in dir_path.glob("*.py"):
             name = py_file.name
+            meta = getattr(module, "META", {})
+            if meta.get("hidden"):          # 👈 숨김이면 등록 건너뜀
+                continue
             if name.startswith("_") or name == "__init__.py":
                 continue
             module = load_module_from_path(py_file)
