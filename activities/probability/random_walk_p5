@@ -3,241 +3,131 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "랜덤워크 (p5.js 애니메이션)",
-    "description": "2D 무작위 보행을 여러 개의 공으로 실시간 시뮬레이션합니다. 공 개수/속도/걸음 수/궤적 표시를 p5 UI로 조절할 수 있어요.",
-    "order": 500,  # 원하시면 _order.py로 더 정교하게 순서 제어 가능
+    "title": "랜덤워크 (p5.js)",
+    "description": "p5.js로 2D 랜덤워크를 시각화합니다. 경로/걸음 수를 조절해 보세요.",
+    "order": 50,
+    # "hidden": False  # ← 보이고 싶으면 생략 또는 False. (mini 폴더에 넣으면 폴더 기준으로 숨김 처리됩니다)
 }
 
 def render():
-    st.subheader("🚶 2D 랜덤워크 (p5.js)")
-    st.caption("공(입자)들이 임의의 각도로 한 걸음씩 이동합니다. ▶ Start 로 재생, ⏸ Pause, ⟲ Reset, Apply로 설정 반영.")
-
+    st.markdown("##### 2D 랜덤워크 (p5.js)")
     components.html(
         """
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="utf-8" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-<style>
-  body { margin:0; padding:0; }
-  .wrap { width:100%; display:flex; justify-content:center; }
-  .panel {
-    width: 960px;
-    margin: 8px auto 0 auto;
-    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-    color: #111;
-  }
-  .controls {
-    display:flex; flex-wrap:wrap; gap:8px; align-items:center;
-    background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; 
-  }
-  .controls label { font-size:13px; color:#374151; }
-  .controls input, .controls button {
-    font-size:13px; padding:6px 10px; border-radius:8px; border:1px solid #d1d5db; background:#fff;
-  }
-  .controls button.primary { background:#2563eb; color:white; border-color:#2563eb; }
-  .controls .spacer { flex: 1 1 auto; }
-  canvas { border:1px solid #e5e7eb; border-radius:10px; background:#ffffff; }
-  .statline { margin-top:6px; font-size:13px; color:#374151; }
-</style>
-</head>
-<body>
-<div class="panel">
-  <div class="controls" id="ctrl"></div>
-</div>
-<div class="wrap">
-  <div id="sketch"></div>
-</div>
-<div class="panel">
-  <div class="statline" id="stat">Ready.</div>
-</div>
+  <head>
+    <meta charset="utf-8"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+      body { margin:0; }
+      .ui { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; font-size:14px; margin-bottom:8px; }
+      .ui > * { margin-right:8px; }
+      #wrap { max-width: 900px; margin: 0 auto; }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <div class="ui">
+        경로 개수: <input id="paths" type="number" min="1" max="200" value="20"/>
+        걸음 수: <input id="steps" type="number" min="10" max="5000" value="500"/>
+        속도(프레임당 걸음): <input id="speed" type="number" min="1" max="50" value="5"/>
+        <button id="run">Run</button>
+        <button id="reset">Reset</button>
+      </div>
+      <div id="sketch"></div>
+    </div>
 
-<script>
-let W = 960;
-let H = 600;
+    <script>
+      let walkers = [];
+      let X = [], Y = [];
+      let curStep = 0, maxSteps = 500, speed = 5;
+      let running = false;
+      let W = 900, H = 560;
+      let nPaths = 20;
 
-let running = false;
-let walkers = [];
-let stepLen = 2;           // 픽셀
-let stepsTotal = 5000;     // 총 걸음
-let stepsDone = 0;
-let walkersCount = 50;
-let stepsPerFrame = 5;     // 속도: 프레임당 진행 걸음 수
-let showTrails = true;
-let maxTrail = 400;        // 궤적 길이(점 개수)
-let palette = [];
+      function newRun() {
+        nPaths = Math.max(1, Math.min(200, parseInt(document.getElementById('paths').value || '20')));
+        maxSteps = Math.max(10, Math.min(5000, parseInt(document.getElementById('steps').value || '500')));
+        speed = Math.max(1, Math.min(50, parseInt(document.getElementById('speed').value || '5')));
 
-function makeUI(){
-  const box = document.getElementById('ctrl');
-  box.innerHTML = "";
-
-  box.append(labelSpan("Balls"));
-  const nInput = inputNumber(walkersCount, 1, 1000, 1, v => walkersCount = v);
-  box.append(nInput);
-
-  box.append(labelSpan("Steps"));
-  const stepsInput = inputNumber(stepsTotal, 10, 200000, 10, v => stepsTotal = v);
-  box.append(stepsInput);
-
-  box.append(labelSpan("Speed (steps/frame)"));
-  const spdInput = inputNumber(stepsPerFrame, 1, 200, 1, v => stepsPerFrame = v);
-  box.append(spdInput);
-
-  box.append(labelSpan("Step length"));
-  const lenInput = inputNumber(stepLen, 0.2, 10, 0.2, v => stepLen = v);
-  box.append(lenInput);
-
-  // trails toggle
-  const trailLabel = labelSpan("Trails");
-  const trailChk = document.createElement("input");
-  trailChk.type = "checkbox";
-  trailChk.checked = showTrails;
-  trailChk.onchange = e => showTrails = e.target.checked;
-  box.append(trailLabel, trailChk);
-
-  // buttons
-  const btnStart = button("▶ Start", () => { running = true; });
-  const btnPause = button("⏸ Pause", () => { running = false; });
-  const btnReset = button("⟲ Reset", () => { resetSim(); });
-  const btnApply = button("Apply", () => { resetSim(); });
-  btnStart.classList.add("primary");
-
-  box.append(divSpacer(), btnStart, btnPause, btnReset, btnApply);
-}
-
-function labelSpan(txt){
-  const el = document.createElement("label");
-  el.textContent = txt;
-  el.style.marginRight = "6px";
-  return el;
-}
-function inputNumber(val, min, max, step, onChange){
-  const el = document.createElement("input");
-  el.type = "number";
-  el.value = val;
-  el.min = min; el.max = max; el.step = step;
-  el.onchange = e => {
-    const v = parseFloat(e.target.value);
-    if(!Number.isNaN(v)) onChange(v);
-  };
-  return el;
-}
-function button(txt, onClick){
-  const b = document.createElement("button");
-  b.textContent = txt;
-  b.onclick = onClick;
-  return b;
-}
-function divSpacer(){ const s = document.createElement("div"); s.className="spacer"; return s; }
-
-class Walker{
-  constructor(x, y, col){
-    this.x = x; this.y = y;
-    this.col = col;
-    this.path = [[x,y]]; // trail
-  }
-  step(){
-    const theta = Math.random() * Math.PI * 2;
-    this.x += Math.cos(theta) * stepLen;
-    this.y += Math.sin(theta) * stepLen;
-    // 경계 부드럽게 반사
-    if(this.x < 0){ this.x = -this.x; }
-    if(this.x > W){ this.x = W - (this.x - W); }
-    if(this.y < 0){ this.y = -this.y; }
-    if(this.y > H){ this.y = H - (this.y - H); }
-    // trail
-    this.path.push([this.x, this.y]);
-    if(this.path.length > maxTrail) this.path.shift();
-  }
-  draw(g){
-    g.stroke(this.col[0], this.col[1], this.col[2], 180);
-    g.noFill();
-    if(showTrails && this.path.length > 1){
-      g.beginShape();
-      for(let i=0;i<this.path.length;i++){
-        g.vertex(this.path[i][0], this.path[i][1]);
+        X = Array.from({length: nPaths}, () => [0]);
+        Y = Array.from({length: nPaths}, () => [0]);
+        walkers = Array.from({length: nPaths}, () => ({x:0, y:0}));
+        curStep = 0;
+        running = true;
       }
-      g.endShape();
-    }
-    // point (head)
-    g.noStroke();
-    g.fill(this.col[0], this.col[1], this.col[2]);
-    g.circle(this.x, this.y, 6);
-  }
-}
 
-function resetSim(){
-  running = false;
-  stepsDone = 0;
-  walkers = [];
-  palette = [];
-  // 부드러운 색상 팔레트 (HSL → RGB 비슷하게)
-  for(let i=0;i<walkersCount;i++){
-    const h = (i * 360 / Math.max(1,walkersCount)) | 0;
-    palette.push(hslToRgb(h/360, 0.65, 0.55)); // [r,g,b]
-  }
-  for(let i=0;i<walkersCount;i++){
-    const c = palette[i];
-    walkers.push(new Walker(W/2, H/2, c));
-  }
-  updateStat();
-}
+      function resetAll() {
+        X = []; Y = []; walkers = [];
+        curStep = 0;
+        running = false;
+        clear();
+        background(255);
+        drawAxes();
+      }
 
-function hslToRgb(h,s,l){ // 0..1
-  const f = (n,k=(n+h*12)%12) => l - s*Math.min(l,1-l)*Math.max(Math.min(k-3,9-k,1),-1);
-  return [255*f(0),255*f(8),255*f(4)].map(v => Math.round(v));
-}
+      document.getElementById('run').onclick = newRun;
+      document.getElementById('reset').onclick = resetAll;
 
-let gfx; // 별도 그래픽 버퍼 사용(부드러운 드로잉)
+      function setup() {
+        let cnv = createCanvas(W, H);
+        cnv.parent(document.getElementById('sketch'));
+        strokeWeight(1);
+        background(255);
+        drawAxes();
+      }
 
-function setup(){
-  makeUI();
-  const cnv = createCanvas(W, H);
-  cnv.parent("sketch");
-  gfx = createGraphics(W, H);
-  gfx.background(255);
-  resetSim();
-  frameRate(60);
-}
+      function drawAxes() {
+        push();
+        translate(W/2, H/2);
+        stroke(220);
+        line(-W/2, 0, W/2, 0);
+        line(0, -H/2, 0, H/2);
+        pop();
+      }
 
-function draw(){
-  // trail이 있을 때는 약한 페이드로 부드럽게
-  gfx.noStroke();
-  gfx.fill(255, 255, 255, showTrails ? 16 : 50);
-  gfx.rect(0,0,W,H);
+      function draw() {
+        if (!running) return;
 
-  if(running){
-    for(let s=0; s<stepsPerFrame; s++){
-      if(stepsDone >= stepsTotal) { running = false; break; }
-      for(let w of walkers) w.step();
-      stepsDone++;
-    }
-    updateStat();
-  }
+        // 여러 걸음을 한 프레임에 진행
+        for (let s = 0; s < speed && curStep < maxSteps; s++) {
+          for (let i = 0; i < walkers.length; i++) {
+            let ang = Math.random() * Math.PI * 2;
+            walkers[i].x += Math.cos(ang);
+            walkers[i].y += Math.sin(ang);
+            X[i].push(walkers[i].x);
+            Y[i].push(walkers[i].y);
+          }
+          curStep++;
+        }
 
-  // 그리기
-  for(let w of walkers) w.draw(gfx);
-  image(gfx, 0, 0, W, H);
+        // 그리기
+        clear();
+        background(255);
+        drawAxes();
 
-  // 중앙 원점
-  noFill(); stroke(180); circle(W/2, H/2, 8);
-}
+        push();
+        translate(W/2, H/2);
+        noFill();
+        for (let i = 0; i < X.length; i++) {
+          stroke(0, 120, 255, 90);
+          beginShape();
+          for (let k = 0; k < X[i].length; k++) {
+            vertex(X[i][k], Y[i][k]);
+          }
+          endShape();
+          // 끝점
+          stroke(10, 10, 10);
+          fill(10);
+          circle(X[i][X[i].length-1], Y[i][Y[i].length-1], 3.5);
+        }
+        pop();
 
-function updateStat(){
-  // 평균 반경
-  let sumR = 0;
-  for(let w of walkers){
-    const dx = w.x - W/2, dy = w.y - H/2;
-    sumR += Math.hypot(dx,dy);
-  }
-  const avgR = walkers.length ? (sumR / walkers.length) : 0;
-  const el = document.getElementById("stat");
-  el.textContent = `Steps: ${stepsDone} / ${stepsTotal} | Balls: ${walkers.length} | Avg radius: ${avgR.toFixed(2)} px`;
-}
-</script>
-</body>
+        if (curStep >= maxSteps) running = false;
+      }
+    </script>
+  </body>
 </html>
         """,
-        height=760,
+        height=620,
     )
