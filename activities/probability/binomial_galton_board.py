@@ -33,6 +33,10 @@ def _plot_hist_with_theory(counts: np.ndarray, theory: np.ndarray) -> go.Figure:
     fig = go.Figure()
     fig.add_bar(x=x, y=counts, name="실험(누적)", opacity=0.85)
     fig.add_scatter(x=x, y=theory, mode="lines", name="이론(이항)", line=dict(width=2))
+    # ▶ 여유(headroom) 15%
+    ymax = float(max(float(np.max(counts)) if counts.size else 0.0,
+                     float(np.max(theory)) if theory.size else 0.0))
+    top = max(1.0, ymax * 1.15)
     fig.update_layout(
         xaxis_title="오른쪽으로 간 횟수 (슬롯)",
         yaxis_title="개수",
@@ -40,6 +44,7 @@ def _plot_hist_with_theory(counts: np.ndarray, theory: np.ndarray) -> go.Figure:
         margin=dict(l=10, r=10, t=10, b=10),
     )
     fig.update_xaxes(dtick=1)
+    fig.update_yaxes(range=[0, top])   # ▶ y축 headroom
     return fig
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -68,6 +73,8 @@ P5_HTML = r"""
     #tableBox td:nth-child(1), #tableBox th:nth-child(1) { text-align:center; width: 48px; }
     #tableBox td:nth-child(2), #tableBox th:nth-child(2) { text-align:right; }
     #tableBox .caption { font-weight:700; margin: 0 0 6px 0; }
+    .legend { font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:#222; }
+    .box { display:inline-block; width:12px; height:12px; vertical-align:middle; margin-right:6px; border-radius:2px; }
   </style>
 </head>
 <body>
@@ -264,7 +271,13 @@ P5_HTML = r"""
 
     function drawHistogram(p){
       const panelW = rightW-60, panelH = H-100;
-      const maxY = Math.max(5, Math.max(...counts));
+
+      // ▶ 누적(빠름) 스타일에 맞춘 구성: 막대 + 이론선 + 여유 15%
+      const th = theoryCounts(ballIdx);
+      const maxBar = Math.max(0, ...counts);
+      const maxTh  = Math.max(0, ...th);
+      const yMax   = Math.max(5, maxBar, maxTh) * 1.15;   // ▶ 머리공간
+
       const barW = panelW/(nRows+1);
 
       // 틀
@@ -274,34 +287,41 @@ P5_HTML = r"""
 
       // 막대 (실험)
       for (let k=0;k<=nRows;k++){
-        const h = (counts[k]/Math.max(1,maxY))*panelH;
+        const h = (counts[k]/Math.max(1,yMax))*panelH;
         p.fill(60,120,255,180);
         p.noStroke();
-        p.rect(k*barW+2, panelH-h, barW-4, h);
+        p.rect(k*barW+2, panelH-h, barW-4, h, 2);
       }
 
       // 이론선
-      const th = theoryCounts(ballIdx);
       p.stroke(220,0,60);
       p.noFill();
       p.beginShape();
       for (let k=0;k<=nRows;k++){
-        const h = (th[k]/Math.max(1,maxY))*panelH;
+        const h = (th[k]/Math.max(1,yMax))*panelH;
         p.vertex(k*barW+barW/2, panelH-h);
       }
       p.endShape();
 
-      // 눈금
+      // 눈금/제목
       p.fill(0);
       p.textSize(12);
       p.textAlign(p.CENTER, p.TOP);
-      for (let k=0;k<=nRows;k++){
-        p.text(k, k*barW+barW/2, panelH+4);
-      }
+      for (let k=0;k<=nRows;k++) p.text(k, k*barW+barW/2, panelH+4);
       p.textAlign(p.LEFT, p.BOTTOM);
       p.text("개수", 4, 12);
       p.textAlign(p.CENTER, p.BOTTOM);
       p.text(`슬롯(오른쪽 횟수)`, panelW/2, panelH+22);
+
+      // 간단한 범례(누적과 톤 맞춤)
+      p.textAlign(p.LEFT, p.TOP);
+      p.fill(0);
+      p.textSize(12);
+      p.noStroke();
+      p.fill(60,120,255,200); p.rect(4, -20, 12, 12, 2);
+      p.fill(0); p.text("실험(누적)", 20, -22);
+      p.stroke(220,0,60); p.line(98, -14, 118, -14);
+      p.noStroke(); p.fill(0); p.text("이론(이항)", 122, -22);
     }
 
     function stepOnce(){
@@ -324,8 +344,7 @@ P5_HTML = r"""
 
   // UI 바인딩
   function onAnyChange(){
-    // Reset은 하지 않고 현재 값만 반영(속도만 즉시 반영)
-    speed = clampFloat(parseFloat(document.getElementById('speed').value)||1.5, 0.2, 5);
+    speed = Math.min(5, Math.max(0.2, parseFloat(document.getElementById('speed').value)||1.5));
     document.getElementById('speedVal').textContent = speed.toFixed(1) + "x";
   }
   document.getElementById('speed').addEventListener('input', onAnyChange);
@@ -376,5 +395,4 @@ def render():
         st.plotly_chart(fig, use_container_width=True)
 
     with tab_live:
-        # 오른쪽에 표를 붙였으므로 세로 여유 높이를 넉넉히
         components.html(P5_HTML, height=700, scrolling=False)
