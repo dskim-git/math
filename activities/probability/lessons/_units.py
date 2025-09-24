@@ -154,6 +154,12 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
+                    "title": "미니: 주사위 실험(애니메이션)", 
+                    "subject": "probability",
+                    "slug": "mini/dice_lab",
+                },
+                {
+                    "type": "activity",
                     "title": "뷔퐁의 바늘 실험",
                     "subject": "probability",
                     "slug": "buffon_needle_p5"
@@ -261,9 +267,9 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
-                    "title": "미니: 주사위 실험(애니메이션)", 
+                    "title": "신기한 주사위", 
                     "subject": "probability",
-                    "slug": "mini/dice_lab",
+                    "slug": "mini/nontransitive_dice_lab",
                 }
           ]},
           {"key": "2-2-3", "label": "3. 사건의 독립과 종속", "items": []},
