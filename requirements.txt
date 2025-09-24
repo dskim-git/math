@@ -6,3 +6,4 @@ matplotlib>=3.7
 pandas
 wordcloud
 requests
+streamlit-autorefresh
