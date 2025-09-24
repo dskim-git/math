@@ -490,6 +490,12 @@ CURRICULUM = [
                     "title": "모평균의 추정",
                     "src": "https://www.canva.com/design/DAGS90gRVbo/9uH90_qTyrhm2goy6M41Ug/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "신뢰도의 의미", 
+                    "subject": "probability",
+                    "slug": "ci_mean_demo_p5",
                 }
           ]},
         ],
