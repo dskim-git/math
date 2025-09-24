@@ -443,7 +443,7 @@ CURRICULUM = [
                     "type": "activity",
                     "title": "이항분포의 정규 근사", 
                     "subject": "probability",
-                    "slug": "mini/binomial_normal_approx",
+                    "slug": "binomial_normal_approx",
                 }
           ]},
         ],
