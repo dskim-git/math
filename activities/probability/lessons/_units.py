@@ -352,8 +352,28 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-1-2", "label": "2. 이산확률변수의 기댓값과 표준편차", "items": []},
-          {"key": "3-1-3", "label": "3. 이산확률변수 aX+b의 평균, 분산, 표준편차", "items": []},
+          {"key": "3-1-2", "label": "2. 이산확률변수의 기댓값과 표준편차", "items": [
+                {
+                    "type": "canva",
+                    "title": "이산확률변수의 기댓값과 표준편차",
+                    "src": "https://www.canva.com/design/DAGPlVNYwTY/jVyt833FOWh8vvOxJpdNmg/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-1-3", "label": "3. 이산확률변수 aX+b의 평균, 분산, 표준편차", "items": [
+                {
+                    "type": "canva",
+                    "title": "이산확률변수 aX+b의 평균과 표준편차",
+                    "src": "https://www.canva.com/design/DAGPlSwzIeE/R_uZ69JnP1om6lBeE5UijA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "iframe",
+                    "title": "확률변수 aX+b의 평균과 표준편차 확인 (통그라미)",
+                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
+                    "height": 800
+                }
+          ]},
           {"key": "3-1-4", "label": "4. 이항분포", "items": []},
           {"key": "3-1-5", "label": "5. 정규분포", "items": []},
           {"key": "3-1-6", "label": "6. 이항분포와 정규분포의 관계", "items": []},
