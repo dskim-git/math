@@ -311,7 +311,15 @@ CURRICULUM = [
       {
         "key": "2-3",
         "label": "(3) 대단원 문제",
-        "items": [],
+        "items": [
+                {
+                    "type": "pdf",
+                    "title": "단원평가문제",
+                    "src": "https://drive.google.com/file/d/1viXzZ3ETiz7kdmHfyLk91Lhfu-1HBUYu/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1viXzZ3ETiz7kdmHfyLk91Lhfu-1HBUYu"  # (선택) 다운로드 버튼 표시용
+                }
+        ],
       },
     ],
   },
