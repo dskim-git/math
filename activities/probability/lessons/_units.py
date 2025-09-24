@@ -281,7 +281,7 @@ CURRICULUM = [
                 },
                 {
                     "type": "youtube",
-                    "title": "베르누이 시행 개념",
+                    "title": "상금 분배 문제",
                     "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b",
                     "height": 420
                 }
