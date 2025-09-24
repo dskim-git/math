@@ -11,7 +11,7 @@ import streamlit.components.v1 as components
 from scipy.stats import t  # t-분포 임계값
 
 META = {
-    "title": "모평균 신뢰구간 체험",
+    "title": "신뢰도의 의미",
     "description": "같은 모집단에서 표본 100세트를 뽑아 평균의 신뢰구간을 그려보고, 신뢰도와의 관계를 체험합니다.",
     "order": 55,
 }
@@ -81,7 +81,7 @@ def ci_mean(x: np.ndarray, conf: float):
 
 # ─────────────────────────────────────────────────────────────────────────────
 def render():
-    st.title("모평균 신뢰구간 체험")
+    st.title("신뢰도의 의미")
 
     default_sheet = "https://docs.google.com/spreadsheets/d/1APFg3_bk6NdclVvpjwzCKGXBq86u9732/edit?usp=sharing"
 
