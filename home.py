@@ -57,6 +57,37 @@ def embed_pdf(src: str, height: int = 800):
         height=height
     )
 
+def to_youtube_embed(src: str) -> str:
+    """YouTube watch/shorts/youtu.be/playlist 링크를 embed용으로 정규화"""
+    try:
+        u = urllib.parse.urlparse(src.strip())
+        q = urllib.parse.parse_qs(u.query)
+
+        # 이미 embed면 그대로
+        if "/embed/" in u.path:
+            return src
+
+        # 플레이리스트
+        if "list" in q and ("watch" in u.path or "playlist" in u.path):
+            return f"https://www.youtube-nocookie.com/embed/videoseries?list={q['list'][0]}"
+
+        # shorts
+        if "/shorts/" in u.path:
+            vid = u.path.split("/shorts/")[1].split("/")[0]
+        # youtu.be 단축
+        elif u.netloc.endswith("youtu.be"):
+            vid = u.path.lstrip("/")
+        else:
+            vid = q.get("v", [""])[0]
+
+        base = f"https://www.youtube-nocookie.com/embed/{vid}"
+        # 주소에 start=초 가 있었다면 유지(선택)
+        if "start" in q:
+            return base + "?start=" + q["start"][0]
+        return base
+    except Exception:
+        return src
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 전역 설정
 st.set_page_config(
@@ -701,6 +732,9 @@ def lessons_view(subject_key: str):
                 embed_pdf(item["src"], height=item.get("height", 800))
                 if item.get("download"):
                     st.link_button("PDF 다운로드", url=item["download"], use_container_width=True)
+            elif typ == "youtube":
+                url = to_youtube_embed(item["src"])
+                embed_iframe(url, height=item.get("height", 400), scrolling=False)
             elif typ == "image":
                 imgs = item.get("srcs") or item.get("src")
                 caption = item.get("caption")
@@ -767,6 +801,9 @@ def lessons_view(subject_key: str):
                 )
             elif typ == "url":
                 st.link_button("문서 열기", url=item["src"], use_container_width=True)
+            elif typ == "youtube":
+                url = to_youtube_embed(item["src"])
+                embed_iframe(url, height=item.get("height", 400), scrolling=False)
             elif typ == "activity":
                 subj = item.get("subject"); slug = item.get("slug")
                 if st.button(f"▶ 액티비티 열기: {title}", key=f"lesson_open_{cur_key}_{slug}", use_container_width=True):
