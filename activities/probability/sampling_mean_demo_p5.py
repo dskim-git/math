@@ -22,25 +22,14 @@ META = {
 # 유틸: 구글시트 공유 URL → CSV 주소로 정규화
 def to_csv_url(url: str, sheet: str = "원본") -> str:
     """
-    사용자가 보통 복사해 오는 형태들을 모두 CSV 주소로 바꿔줍니다.
-
-    1) '파일 > 웹에 게시' 주소(이미 CSV):
-       https://docs.google.com/spreadsheets/d/e/2P.../pub?gid=0&single=true&output=csv
-       → 그대로 사용
-
-    2) 상단 공유 URL(문서 화면의 /edit 주소):
-       https://docs.google.com/spreadsheets/d/<ID>/edit#gid=123456789
-       → gid가 있으면: https://docs.google.com/spreadsheets/d/<ID>/export?format=csv&gid=<gid>
-       → gid가 없으면: https://docs.google.com/spreadsheets/d/<ID>/gviz/tq?tqx=out:csv&sheet=<sheet 인코딩>
-
-    3) export 형식(/export?format=csv ...):
-       → 그대로 사용
+    1) '웹에 게시' CSV 주소는 그대로 사용
+    2) /export?format=csv 도 그대로
+    3) 공유 /edit 주소는 gid가 있으면 export?format=csv&gid=... 로,
+       없으면 gviz/tq?tqx=out:csv&sheet=... (sheet는 URL 인코딩)
     """
     s = (url or "").strip()
     if not s:
         return s
-
-    # 이미 CSV export/gviz면 그대로 사용
     sl = s.lower()
     if ("output=csv" in sl) or ("/export?format=csv" in sl) or ("/gviz/tq?tqx=out:csv" in sl):
         return s
@@ -50,49 +39,53 @@ def to_csv_url(url: str, sheet: str = "원본") -> str:
         return s
     doc_id = m.group(1)
 
-    # gid가 있으면 export?format=csv&gid=... 사용 (탭명이 한글이어도 안전)
     parsed = urlparse(s)
-    # google 링크는 '#gid=...' 형태가 많아 fragment에도 gid가 들어있을 수 있음
     gid = None
-    # fragment에서 gid 추출
-    frag = parsed.fragment or ""
-    m_gid = re.search(r"gid=(\d+)", frag)
+    # #gid=... (fragment)에서 추출
+    m_gid = re.search(r"gid=(\d+)", parsed.fragment or "")
     if m_gid:
         gid = m_gid.group(1)
     # query에도 있을 수 있음
     if not gid:
         qs = parse_qs(parsed.query or "")
-        if "gid" in qs and len(qs["gid"]) > 0:
+        if "gid" in qs and qs["gid"]:
             gid = qs["gid"][0]
 
     if gid:
         return f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv&gid={gid}"
 
-    # gid가 없으면 gviz + sheet 사용 (sheet는 반드시 퍼센트 인코딩!)
     sheet_enc = quote(sheet, safe="")
     return f"https://docs.google.com/spreadsheets/d/{doc_id}/gviz/tq?tqx=out:csv&sheet={sheet_enc}"
 
 # ─────────────────────────────────────────────────────────────────────────────
-def _load_population(csv_url: str) -> Tuple[pd.DataFrame, np.ndarray]:
-    """구글시트 CSV를 읽어 원본 DF와 '키' 값 1차원 배열을 반환."""
-    # 구글시트 CSV는 UTF-8이므로 기본 read_csv로 충분
+def _load_population(csv_url: str) -> pd.DataFrame:
+    """원본 CSV를 DataFrame으로 로드(숫자열만 따로 선택 가능)."""
     df = pd.read_csv(csv_url)
-    # 완전 빈 열 제거
     df = df.dropna(axis=1, how="all")
+    return df
 
-    # 숫자 열만 모아 하나의 벡터로
-    num = df.select_dtypes(include=["number"])
-    values = num.to_numpy().ravel()
-    values = values[~np.isnan(values)]
-    values = values.astype(float)
+def _guess_numeric_columns(df: pd.DataFrame) -> Tuple[List[str], List[str]]:
+    """
+    숫자열 후보 반환 + 기본 선택 추천.
+    - 첫 번째 숫자열이 '반/학급'처럼 범주가 적은 정수열이면 **자동 제외**.
+    """
+    num_cols = df.select_dtypes(include=["number"]).columns.tolist()
+    if not num_cols:
+        return [], []
 
-    return df, values
+    default = num_cols.copy()
+    first = num_cols[0]
+    s = df[first].dropna()
+    looks_class = (
+        str(first).strip() in ("반", "학급", "class", "Class")
+        or (s.nunique() <= max(30, int(len(s) * 0.1)))  # 범주가 매우 적으면 학급/분반으로 가정
+    )
+    if looks_class and len(num_cols) >= 2:
+        default = num_cols[1:]  # 첫 숫자열 제외
+    return num_cols, default
 
 def _draw_samples(values: np.ndarray, n: int, m: int, seed: int) -> Tuple[List[np.ndarray], List[np.ndarray]]:
-    """
-    values(모집단)에서 크기 n 표본을 m개 생성(복원추출).
-    반환: (표본값 배열 리스트, 표본 '원본 인덱스' 배열 리스트)
-    """
+    """values(모집단)에서 크기 n 표본을 m개 생성(복원추출)."""
     rng = np.random.default_rng(seed)
     N = len(values)
     samples = []
@@ -108,7 +101,7 @@ def _draw_samples(values: np.ndarray, n: int, m: int, seed: int) -> Tuple[List[n
 def render():
     st.title("모평균과 표본평균의 관계 (p5.js)")
 
-    # 기본 시트(질문에서 주신 주소). 필요시 직접 입력/수정 가능하도록 인풋 제공.
+    # 기본 시트(질문에서 주신 주소)
     default_sheet_url = "https://docs.google.com/spreadsheets/d/1APFg3_bk6NdclVvpjwzCKGXBq86u9732/edit?usp=sharing"
     with st.sidebar:
         st.subheader("📥 데이터 소스")
@@ -120,42 +113,63 @@ def render():
         sheet_name = st.text_input("시트 탭 이름", value="원본")
         csv_url = to_csv_url(raw_url, sheet=sheet_name)
 
-        st.subheader("🎲 표본 설정")
-        n = st.number_input("표본 크기 n", 2, 1000, 30, step=1)
-        m = st.number_input("표본 개수 m", 1, 300, 30, step=1)
-        seed = st.number_input("난수 시드", 0, 10_000, 0, step=1)
-        go = st.button("표본 추출/새로고침")
-
     if not csv_url:
         st.info("좌측에 구글시트 주소를 입력하세요.")
         return
 
     # 모집단 로드
     try:
-        df, values = _load_population(csv_url)
+        df = _load_population(csv_url)
     except Exception as e:
         st.error(f"모집단 데이터를 불러오는 중 오류가 발생했습니다: {e}")
         return
 
-    N = len(values)
-    if N == 0:
-        st.warning("숫자 데이터가 발견되지 않았습니다. 시트의 '원본' 탭에 숫자(키) 데이터가 있는지 확인하세요.")
+    # 사용할 열 선택(숫자열 중)
+    num_cols, default_sel = _guess_numeric_columns(df)
+    with st.sidebar:
+        st.subheader("📊 사용할 열 선택")
+        sel_cols = st.multiselect(
+            "키(숫자) 데이터가 들어있는 열을 선택하세요.",
+            options=num_cols,
+            default=default_sel
+        )
+
+        st.subheader("🎲 표본 설정")
+        n = st.number_input("표본 크기 n", 2, 1000, 30, step=1)
+        m = st.number_input("표본 개수 m", 1, 300, 30, step=1)
+        seed = st.number_input("난수 시드", 0, 10_000, 0, step=1)
+        go = st.button("표본 추출/새로고침")
+
+    if not sel_cols:
+        st.warning("숫자 열을 한 개 이상 선택해 주세요. (A열 '반/학급'은 기본 제외됩니다)")
         st.dataframe(df, use_container_width=True)
         return
 
-    # 1) 모집단의 로우 데이터 보기
-    st.subheader("📄 모집단 원본 데이터(숫자 열)")
-    st.caption("아래 표는 CSV의 숫자 열만 모아서 보여줍니다. 전체 원본은 ‘전체 원본 보기’를 펼치세요.")
-    st.dataframe(df.select_dtypes("number"), use_container_width=True, height=300)
+    # 선택한 열만 펼쳐서 1차원 벡터로
+    num_df = df[sel_cols].select_dtypes(include=["number"])
+    values = num_df.to_numpy().ravel()
+    values = values[~np.isnan(values)].astype(float)
+
+    N = len(values)
+    if N == 0:
+        st.warning("선택한 열에서 숫자 데이터가 발견되지 않았습니다.")
+        st.dataframe(df, use_container_width=True)
+        return
+
+    # 1) 모집단의 로우 데이터 보기 (숫자열만)
+    st.subheader("📄 모집단 원본 데이터(선택한 숫자 열)")
+    st.caption("A열의 '반/학급' 등 범주형 숫자열은 기본으로 제외했으며, 좌측에서 직접 열을 선택할 수 있습니다.")
+    st.dataframe(num_df, use_container_width=True, height=300)
     with st.expander("전체 원본 보기"):
         st.dataframe(df, use_container_width=True, height=400)
 
     # 모집단 기술통계
     pop_mu = float(np.mean(values))
-    pop_sigma = float(np.std(values, ddof=0))
+    pop_sigma = float(np.std(values, ddof=0))          # 표준편차 σ
+    pop_var = float(pop_sigma ** 2)                    # 분산 σ^2
     st.markdown(
         f"**모집단 크기** N = {N:,}  \n"
-        f"**모평균** μ = {pop_mu:.3f} , **모표준편차** σ = {pop_sigma:.3f}"
+        f"**모평균** μ = {pop_mu:.3f} , **모분산** σ² = {pop_var:.3f} (σ = {pop_sigma:.3f})"
     )
 
     # 2) 3) 표본 추출
@@ -187,8 +201,8 @@ def render():
                 st.markdown(f"**표본 #{i+1} (n={len(samples[i])})**")
                 st.dataframe(pd.DataFrame({"값": samples[i]}), use_container_width=True, height=200)
 
-    # 5) 수직선(모집단) + 선택 표본 강조 (p5.js)
-    st.subheader("📍 모집단 수직선에서 표본의 위치(강조)")
+    # 5) 가로 수직선(모집단) + 선택 표본 강조 (p5.js)
+    st.subheader("📍 모집단 가로 수직선에서 표본의 위치(강조)")
     sel_idx = st.selectbox("강조할 표본 선택", options=list(range(len(samples))), format_func=lambda i: f"표본 #{i+1}", index=0)
 
     vmin, vmax = float(np.min(values)), float(np.max(values))
@@ -196,7 +210,7 @@ def render():
         "values": values.tolist(),
         "sel_indices": [int(x) for x in idx_lists[sel_idx].tolist()],
         "vmin": vmin, "vmax": vmax,
-        "title": f"모집단({N}명) 수직선과 표본 #{sel_idx+1} (n={len(samples[sel_idx])})"
+        "title": f"모집단({N}명) 가로 수직선과 표본 #{sel_idx+1} (n={len(samples[sel_idx])})"
     }
     html1 = """
 <div id="popline" style="width:100%;max-width:980px;margin:0 auto;"></div>
@@ -204,40 +218,40 @@ def render():
 <script>
 const DATA1 = """ + json.dumps(payload1) + """;
 new p5((p)=>{
-  let W=980,H=260, pad=40;
+  let W=980,H=220, pad=40;
   p.setup=()=>{ p.createCanvas(W,H).parent("popline"); p.noLoop(); p.textFont('sans-serif'); };
   p.draw=()=>{
     p.background(255);
-    const leftX = W*0.15;
-    // axis
+    const yAxis = H*0.6;
+    // 축(가로)
     p.stroke(50); p.strokeWeight(2);
-    p.line(leftX, pad, leftX, H-pad);
-    p.noStroke(); p.fill(0); p.textSize(13);
-    p.textAlign(p.RIGHT,p.CENTER);
-    p.text(DATA1.vmax.toFixed(2), leftX-6, pad);
-    p.text(DATA1.vmin.toFixed(2), leftX-6, H-pad);
-    p.textAlign(p.LEFT,p.TOP);
-    p.text(DATA1.title, W*0.18, 8);
+    p.line(pad, yAxis, W-pad, yAxis);
+    p.noStroke(); p.fill(0); p.textSize(12); p.textAlign(p.CENTER,p.TOP);
+    p.text(DATA1.title, W/2, 8);
+    p.textAlign(p.LEFT,p.TOP);  p.text(DATA1.vmin.toFixed(2), pad, yAxis+8);
+    p.textAlign(p.RIGHT,p.TOP); p.text(DATA1.vmax.toFixed(2), W-pad, yAxis+8);
 
     const sel = new Set(DATA1.sel_indices);
+    // 겹침 완화: 약간의 수직 난수 지터
     for (let i=0;i<DATA1.values.length;i++){
       const v = DATA1.values[i];
-      const y = p.map(v, DATA1.vmax, DATA1.vmin, pad, H-pad);
-      if(sel.has(i)){ p.fill(230,49,70); p.circle(leftX, y, 7); }
-      else          { p.fill(160);       p.circle(leftX, y, 5); }
+      const x = p.map(v, DATA1.vmin, DATA1.vmax, pad, W-pad);
+      const jitter = (Math.random()-0.5)*8;
+      if(sel.has(i)){ p.fill(230,49,70); p.circle(x, yAxis+jitter, 7); }
+      else          { p.fill(160);       p.circle(x, yAxis+jitter, 5); }
     }
   };
 });
 </script>
 """
-    components.html(html1, height=280)
+    components.html(html1, height=240)
 
     # 6) 정규곡선(모집단 vs 표본평균) + 표본평균 점 (p5.js)
-    st.subheader("📈 정규곡선: 모집단 N(μ,σ) vs 표본평균 N(μ, σ/√n)")
+    st.subheader("📈 정규곡선: 모집단 N(μ, σ²) vs 표본평균 N(μ, σ²/n)")
     sample_means = [float(np.mean(s)) for s in samples]
     highlight = float(np.mean(samples[sel_idx]))
 
-    theo_sigma = pop_sigma / np.sqrt(float(n))
+    theo_sigma = pop_sigma / np.sqrt(float(n))  # 표본평균의 표준편차
     payload2 = {
         "mu_pop": pop_mu, "sd_pop": pop_sigma,
         "mu_bar": pop_mu, "sd_bar": theo_sigma,
@@ -274,11 +288,11 @@ new p5((p)=>{
     p.noStroke(); p.fill(0); p.textSize(12); p.textAlign(p.LEFT,p.TOP);
     p.text(D2.title, left, 6);
 
-    // 모집단 곡선(파랑)
+    // 모집단 곡선(파랑)  N(μ, σ²)
     p.noFill(); p.stroke(35,102,235); p.strokeWeight(2); p.beginShape();
     for(let i=0;i<600;i++){ const x=xmin+(xmax-xmin)*i/599; p.vertex(X(x), Y(pdf(x,mu,sd))); } p.endShape();
 
-    // 표본평균 곡선(주황)
+    // 표본평균 곡선(주황)  N(μ, σ²/n)
     p.noFill(); p.stroke(245,128,37); p.strokeWeight(2); p.beginShape();
     for(let i=0;i<600;i++){ const x=xmin+(xmax-xmin)*i/599; p.vertex(X(x), Y(pdf(x,muB,sdB))); } p.endShape();
 
@@ -293,8 +307,8 @@ new p5((p)=>{
 
     // 범례
     p.textAlign(p.LEFT,p.BOTTOM);
-    p.fill(35,102,235); p.rect(left, H-28, 18, 3); p.fill(0); p.text('모집단 N(μ,σ)', left+26, H-34);
-    p.fill(245,128,37); p.rect(left+140, H-28, 18, 3); p.fill(0); p.text('표본평균 N(μ,σ/√n)', left+168, H-34);
+    p.fill(35,102,235); p.rect(left, H-28, 18, 3); p.fill(0); p.text('모집단 N(μ, σ²)', left+26, H-34);
+    p.fill(245,128,37); p.rect(left+140, H-28, 18, 3); p.fill(0); p.text('표본평균 N(μ, σ²/n)', left+168, H-34);
   };
 });
 </script>
@@ -310,15 +324,15 @@ new p5((p)=>{
 
     comp = pd.DataFrame(
         [
-            ["모집단(이론)", pop_mu, pop_sigma**2, pop_sigma],
-            ["표본평균(이론)", pop_mu, (pop_sigma**2)/float(n), pop_sigma/np.sqrt(float(n))],
+            ["모집단(이론)", pop_mu, pop_var, pop_sigma],
+            ["표본평균(이론)", pop_mu, (pop_var)/float(n), pop_sigma/np.sqrt(float(n))],
             ["표본평균(경험)", mean_of_means, var_of_means, std_of_means],
         ],
-        columns=["항목", "평균", "분산", "표준편차"]
+        columns=["항목", "평균(μ)", "분산(σ²)", "표준편차(σ)"]
     )
     st.dataframe(comp, use_container_width=True, hide_index=True)
 
     st.caption(
-        "- 표본평균의 이론 분산은 σ²/n, 표준편차는 σ/√n 입니다.  \n"
+        "- 표본평균의 **이론 분산**은 σ²/n, **이론 표준편차**는 σ/√n 입니다.  \n"
         "- ‘경험’ 값은 방금 만든 m개의 표본평균으로 계산한 결과입니다."
     )
