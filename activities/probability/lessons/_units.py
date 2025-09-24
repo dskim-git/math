@@ -351,7 +351,15 @@ CURRICULUM = [
       {
         "key": "3-3",
         "label": "(3) 대단원 문제",
-        "items": [],
+        "items": [
+                {
+                    "type": "pdf",
+                    "title": "단원평가문제",
+                    "src": "https://drive.google.com/file/d/1GzpmbrVEvP48zQ60gkh7TYDKJAV31Hsv/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1GzpmbrVEvP48zQ60gkh7TYDKJAV31Hsv"  # (선택) 다운로드 버튼 표시용
+                }
+        ],
       },
     ],
   },
@@ -361,8 +369,40 @@ CURRICULUM = [
     "key": "X",
     "label": "교육과정 외",
     "children": [
-      {"key": "X-1", "label": "분할", "items": []},
-      {"key": "X-2", "label": "모비율의 추정", "items": []},
+      {"key": "X-1", "label": "분할", "items": [
+                {
+                    "type": "canva",
+                    "title": "자연수의 분할",
+                    "src": "https://www.canva.com/design/DAGS9swrMnU/-MrWr69kFUAK2DiiJ-nZOA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "집합의 분할",
+                    "src": "https://www.canva.com/design/DAGS9oZDjH0/fNsFxjitrj0nTZrAwmBccA/view?embed",
+                    "height": 800
+                }
+      ]},
+      {"key": "X-2", "label": "모비율의 추정", "items": [
+                {
+                    "type": "canva",
+                    "title": "모비율과 표본비율",
+                    "src": "https://www.canva.com/design/DAGS90stL6s/rMetpkhThK6Ji_AHJuYAeQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "집합의 분할",
+                    "src": "https://www.canva.com/design/DAGS99UW0Mg/8ZKtl84JYgpW9KBrW32hPg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "집합의 분할",
+                    "src": "https://www.canva.com/design/DAGS99puNoY/FYgb8JOvqHhlPQgS0TGebQ/view?embed",
+                    "height": 800
+                }
+      ]},
     ],
   },
 ]
