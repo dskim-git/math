@@ -192,26 +192,35 @@ new p5((p) => {{
     p.endShape();
   }}
 
-  function drawLegend() {{
-    const Lx = margin.l, Ly = margin.t - 2;
-    p.noStroke(); p.fill(0);
-    p.textAlign(p.LEFT, p.BOTTOM);
+  function drawLegend() drawLegend() {
+    const Lx = margin.l;
+    const Ly = margin.t - 2;
+
+    const s1 = `μ₁=${P.mu1.toFixed(2)}, σ₁=${P.sigma1.toFixed(2)}`;
+    const s2 = `μ₂=${P.mu2.toFixed(2)}, σ₂=${P.sigma2.toFixed(2)}`;
+
     p.textSize(12);
-    p.fill(blue);   p.rect(Lx, Ly-10, 14, 3, 2); p.fill(0); p.text(`  μ₁={{{{P.mu1}}}}, σ₁={{{{P.sigma1}}}}`, Lx+20, Ly);
-    p.fill(orange); p.rect(Lx+150, Ly-10, 14, 3, 2); p.fill(0); p.text(`  μ₂={{{{P.mu2}}}}, σ₂={{{{P.sigma2}}}}`, Lx+170, Ly);
-  }}
+    p.noStroke();
+    p.fill(0);
+    p.textAlign(p.LEFT, p.BOTTOM);
 
-  function drawScene() {{
-    p.clear(); p.background(255);
-    const [x0, x1] = getDomain();
-    const y1 = getYMax();
+    // 파랑 레전드
+    p.stroke(blue);
+    p.strokeWeight(3);
+    p.line(Lx, Ly - 6, Lx + 18, Ly - 6);
+    p.noStroke();
+    p.fill(0);
+    p.text(`  ${s1}`, Lx + 22, Ly);
 
-    if (P.showGrid) drawGrid(x0, x1, 0, y1);
-
-    drawCurve(P.mu1, P.sigma1, blue,   x0, x1, y1, P.fillAlpha);
-    drawCurve(P.mu2, P.sigma2, orange, x0, x1, y1, P.fillAlpha);
-    drawLegend();
-  }}
+    // 주황 레전드
+    const offsetX = 180; // 필요하면 간격 조정
+    p.stroke(orange);
+    p.strokeWeight(3);
+    p.line(Lx + offsetX, Ly - 6, Lx + offsetX + 18, Ly - 6);
+    p.noStroke();
+    p.fill(0);
+    p.text(`  ${s2}`, Lx + offsetX + 22, Ly);
+  }
 }});
 </script>
     """
