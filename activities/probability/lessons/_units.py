@@ -438,6 +438,12 @@ CURRICULUM = [
                     "title": "이항분포와 정규분포의 관계",
                     "src": "https://www.canva.com/design/DAGPleUNg4U/51nlL9mmKChTXvKFKr55GQ/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "이항분포의 정규 근사", 
+                    "subject": "probability",
+                    "slug": "mini/binomial_normal_approx",
                 }
           ]},
         ],
