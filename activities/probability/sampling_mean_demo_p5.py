@@ -84,7 +84,7 @@ def _draw_samples(values: np.ndarray, n: int, m: int, seed: int):
 
 # ─────────────────────────────────────────────────────────────────────────────
 def render():
-    st.title("모평균과 표본평균의 관계 (p5.js)")
+    st.title("모평균과 표본평균의 관계")
 
     default_sheet_url = "https://docs.google.com/spreadsheets/d/1APFg3_bk6NdclVvpjwzCKGXBq86u9732/edit?usp=sharing"
     with st.sidebar:
