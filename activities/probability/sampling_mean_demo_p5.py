@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import json
 from typing import List, Tuple
+from urllib.parse import urlparse, parse_qs, quote
 
 import numpy as np
 import pandas as pd
@@ -12,7 +13,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "모평균 vs 표본평균 (p5.js)",
+    "title": "모평균과 표본평균의 관계 (p5.js)",
     "description": "구글시트의 모집단에서 표본을 여러 번 추출해 표본평균 분포를 시각화합니다.",
     "order": 50,
 }
@@ -23,36 +24,58 @@ def to_csv_url(url: str, sheet: str = "원본") -> str:
     """
     사용자가 보통 복사해 오는 형태들을 모두 CSV 주소로 바꿔줍니다.
 
-    1) '파일 > 웹에 게시' 주소 예:
+    1) '파일 > 웹에 게시' 주소(이미 CSV):
        https://docs.google.com/spreadsheets/d/e/2P.../pub?gid=0&single=true&output=csv
        → 그대로 사용
 
     2) 상단 공유 URL(문서 화면의 /edit 주소):
        https://docs.google.com/spreadsheets/d/<ID>/edit#gid=123456789
-       → https://docs.google.com/spreadsheets/d/<ID>/gviz/tq?tqx=out:csv&sheet=<sheet>
+       → gid가 있으면: https://docs.google.com/spreadsheets/d/<ID>/export?format=csv&gid=<gid>
+       → gid가 없으면: https://docs.google.com/spreadsheets/d/<ID>/gviz/tq?tqx=out:csv&sheet=<sheet 인코딩>
 
-    3) export 형식:
-       https://docs.google.com/spreadsheets/d/<ID>/export?format=csv&gid=...
+    3) export 형식(/export?format=csv ...):
        → 그대로 사용
     """
-    s = url.strip()
+    s = (url or "").strip()
     if not s:
         return s
 
-    # 이미 CSV export 형태면 그대로
-    if ("output=csv" in s) or ("/export?format=csv" in s) or ("/gviz/tq?tqx=out:csv" in s):
+    # 이미 CSV export/gviz면 그대로 사용
+    sl = s.lower()
+    if ("output=csv" in sl) or ("/export?format=csv" in sl) or ("/gviz/tq?tqx=out:csv" in sl):
         return s
 
     m = re.search(r"/spreadsheets/d/([a-zA-Z0-9-_]+)", s)
     if not m:
         return s
     doc_id = m.group(1)
-    # sheet 이름 기반 gviz CSV
-    return f"https://docs.google.com/spreadsheets/d/{doc_id}/gviz/tq?tqx=out:csv&sheet={sheet}"
+
+    # gid가 있으면 export?format=csv&gid=... 사용 (탭명이 한글이어도 안전)
+    parsed = urlparse(s)
+    # google 링크는 '#gid=...' 형태가 많아 fragment에도 gid가 들어있을 수 있음
+    gid = None
+    # fragment에서 gid 추출
+    frag = parsed.fragment or ""
+    m_gid = re.search(r"gid=(\d+)", frag)
+    if m_gid:
+        gid = m_gid.group(1)
+    # query에도 있을 수 있음
+    if not gid:
+        qs = parse_qs(parsed.query or "")
+        if "gid" in qs and len(qs["gid"]) > 0:
+            gid = qs["gid"][0]
+
+    if gid:
+        return f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv&gid={gid}"
+
+    # gid가 없으면 gviz + sheet 사용 (sheet는 반드시 퍼센트 인코딩!)
+    sheet_enc = quote(sheet, safe="")
+    return f"https://docs.google.com/spreadsheets/d/{doc_id}/gviz/tq?tqx=out:csv&sheet={sheet_enc}"
 
 # ─────────────────────────────────────────────────────────────────────────────
 def _load_population(csv_url: str) -> Tuple[pd.DataFrame, np.ndarray]:
     """구글시트 CSV를 읽어 원본 DF와 '키' 값 1차원 배열을 반환."""
+    # 구글시트 CSV는 UTF-8이므로 기본 read_csv로 충분
     df = pd.read_csv(csv_url)
     # 완전 빈 열 제거
     df = df.dropna(axis=1, how="all")
@@ -89,8 +112,11 @@ def render():
     default_sheet_url = "https://docs.google.com/spreadsheets/d/1APFg3_bk6NdclVvpjwzCKGXBq86u9732/edit?usp=sharing"
     with st.sidebar:
         st.subheader("📥 데이터 소스")
-        raw_url = st.text_input("구글시트 주소", value=default_sheet_url,
-                                help="상단 공유 URL을 그대로 붙여넣어도 됩니다. 코드가 CSV 주소로 변환합니다.")
+        raw_url = st.text_input(
+            "구글시트 주소",
+            value=default_sheet_url,
+            help="상단 공유 URL을 그대로 붙여넣어도 됩니다. 코드가 CSV 주소로 변환합니다."
+        )
         sheet_name = st.text_input("시트 탭 이름", value="원본")
         csv_url = to_csv_url(raw_url, sheet=sheet_name)
 
@@ -277,8 +303,9 @@ new p5((p)=>{
 
     # 7) 모수 vs 표본평균(경험적) 비교
     st.subheader("📊 모수 vs 표본평균(경험적) 비교")
-    mean_of_means = float(np.mean(sample_means))
-    var_of_means = float(np.var(sample_means, ddof=1)) if len(sample_means) > 1 else float("nan")
+    sample_means_list = [float(np.mean(s)) for s in samples]
+    mean_of_means = float(np.mean(sample_means_list))
+    var_of_means = float(np.var(sample_means_list, ddof=1)) if len(sample_means_list) > 1 else float("nan")
     std_of_means = float(np.sqrt(var_of_means)) if np.isfinite(var_of_means) else float("nan")
 
     comp = pd.DataFrame(
