@@ -13,7 +13,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "모평균과 표본평균의 관계 (p5.js)",
+    "title": "모평균과 표본평균의 관계",
     "description": "구글시트의 모집단에서 표본을 여러 번 추출해 표본평균 분포를 시각화합니다.",
     "order": 50,
 }
@@ -21,12 +21,6 @@ META = {
 # ─────────────────────────────────────────────────────────────────────────────
 # 유틸: 구글시트 공유 URL → CSV 주소로 정규화
 def to_csv_url(url: str, sheet: str = "원본") -> str:
-    """
-    1) '웹에 게시' CSV 주소는 그대로 사용
-    2) /export?format=csv 도 그대로
-    3) 공유 /edit 주소는 gid가 있으면 export?format=csv&gid=... 로,
-       없으면 gviz/tq?tqx=out:csv&sheet=... (sheet는 URL 인코딩)
-    """
     s = (url or "").strip()
     if not s:
         return s
@@ -41,11 +35,9 @@ def to_csv_url(url: str, sheet: str = "원본") -> str:
 
     parsed = urlparse(s)
     gid = None
-    # #gid=... (fragment)에서 추출
     m_gid = re.search(r"gid=(\d+)", parsed.fragment or "")
     if m_gid:
         gid = m_gid.group(1)
-    # query에도 있을 수 있음
     if not gid:
         qs = parse_qs(parsed.query or "")
         if "gid" in qs and qs["gid"]:
@@ -59,41 +51,34 @@ def to_csv_url(url: str, sheet: str = "원본") -> str:
 
 # ─────────────────────────────────────────────────────────────────────────────
 def _load_population(csv_url: str) -> pd.DataFrame:
-    """원본 CSV를 DataFrame으로 로드(숫자열만 따로 선택 가능)."""
     df = pd.read_csv(csv_url)
     df = df.dropna(axis=1, how="all")
     return df
 
-def _guess_numeric_columns(df: pd.DataFrame) -> Tuple[List[str], List[str]]:
-    """
-    숫자열 후보 반환 + 기본 선택 추천.
-    - 첫 번째 숫자열이 '반/학급'처럼 범주가 적은 정수열이면 **자동 제외**.
-    """
+def _guess_numeric_columns(df: pd.DataFrame):
+    """숫자열 후보와 기본 선택(첫 숫자열이 '반/학급' 같으면 제외)."""
     num_cols = df.select_dtypes(include=["number"]).columns.tolist()
     if not num_cols:
         return [], []
-
     default = num_cols.copy()
     first = num_cols[0]
     s = df[first].dropna()
     looks_class = (
         str(first).strip() in ("반", "학급", "class", "Class")
-        or (s.nunique() <= max(30, int(len(s) * 0.1)))  # 범주가 매우 적으면 학급/분반으로 가정
+        or (s.nunique() <= max(30, int(len(s) * 0.1)))
     )
     if looks_class and len(num_cols) >= 2:
-        default = num_cols[1:]  # 첫 숫자열 제외
+        default = num_cols[1:]
     return num_cols, default
 
-def _draw_samples(values: np.ndarray, n: int, m: int, seed: int) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+def _draw_samples(values: np.ndarray, n: int, m: int, seed: int):
     """values(모집단)에서 크기 n 표본을 m개 생성(복원추출)."""
     rng = np.random.default_rng(seed)
     N = len(values)
-    samples = []
-    idx_lists = []
+    samples, idx_lists = [], []
     for _ in range(m):
-        idx = rng.integers(0, N, size=n)  # 복원추출
-        samp = values[idx]
-        samples.append(samp)
+        idx = rng.integers(0, N, size=n)
+        samples.append(values[idx])
         idx_lists.append(idx)
     return samples, idx_lists
 
@@ -101,7 +86,6 @@ def _draw_samples(values: np.ndarray, n: int, m: int, seed: int) -> Tuple[List[n
 def render():
     st.title("모평균과 표본평균의 관계 (p5.js)")
 
-    # 기본 시트(질문에서 주신 주소)
     default_sheet_url = "https://docs.google.com/spreadsheets/d/1APFg3_bk6NdclVvpjwzCKGXBq86u9732/edit?usp=sharing"
     with st.sidebar:
         st.subheader("📥 데이터 소스")
@@ -124,28 +108,23 @@ def render():
         st.error(f"모집단 데이터를 불러오는 중 오류가 발생했습니다: {e}")
         return
 
-    # 사용할 열 선택(숫자열 중)
+    # 숫자열 선택(덜 눈에 띄게: 접기)
     num_cols, default_sel = _guess_numeric_columns(df)
-    with st.sidebar:
-        st.subheader("📊 사용할 열 선택")
+    with st.sidebar.expander("➕ (선택) 사용할 숫자열 직접 선택", expanded=False):
         sel_cols = st.multiselect(
-            "키(숫자) 데이터가 들어있는 열을 선택하세요.",
+            "키가 들어있는 열(한 개 이상)",
             options=num_cols,
-            default=default_sel
+            default=default_sel,
+            help="A열이 '반/학급' 등으로 숫자로 보이는 경우 기본에서 제외됩니다."
         )
-
-        st.subheader("🎲 표본 설정")
-        n = st.number_input("표본 크기 n", 2, 1000, 30, step=1)
-        m = st.number_input("표본 개수 m", 1, 300, 30, step=1)
-        seed = st.number_input("난수 시드", 0, 10_000, 0, step=1)
-        go = st.button("표본 추출/새로고침")
-
-    if not sel_cols:
-        st.warning("숫자 열을 한 개 이상 선택해 주세요. (A열 '반/학급'은 기본 제외됩니다)")
+    if not num_cols:
+        st.warning("시트에 숫자 데이터가 없습니다.")
         st.dataframe(df, use_container_width=True)
         return
+    if not sel_cols:
+        sel_cols = default_sel
 
-    # 선택한 열만 펼쳐서 1차원 벡터로
+    # 숫자열만 펼쳐서 벡터화
     num_df = df[sel_cols].select_dtypes(include=["number"])
     values = num_df.to_numpy().ravel()
     values = values[~np.isnan(values)].astype(float)
@@ -156,36 +135,46 @@ def render():
         st.dataframe(df, use_container_width=True)
         return
 
-    # 1) 모집단의 로우 데이터 보기 (숫자열만)
-    st.subheader("📄 모집단 원본 데이터(선택한 숫자 열)")
-    st.caption("A열의 '반/학급' 등 범주형 숫자열은 기본으로 제외했으며, 좌측에서 직접 열을 선택할 수 있습니다.")
-    st.dataframe(num_df, use_container_width=True, height=300)
-    with st.expander("전체 원본 보기"):
-        st.dataframe(df, use_container_width=True, height=400)
+    # 표본 설정
+    with st.sidebar:
+        st.subheader("🎲 표본 설정")
+        n = st.number_input("표본 크기 n", 2, 1000, 30, step=1)
+        m = st.number_input("표본 개수 m", 1, 300, 30, step=1)
+        seed = st.number_input("난수 시드", 0, 10_000, 0, step=1)
+        show_5ticks = st.checkbox("가로축 5의 배수 눈금 표시", True)
+        go = st.button("표본 추출/새로고침")
 
-    # 모집단 기술통계
+    # 모집단 통계
     pop_mu = float(np.mean(values))
-    pop_sigma = float(np.std(values, ddof=0))          # 표준편차 σ
-    pop_var = float(pop_sigma ** 2)                    # 분산 σ^2
-    st.markdown(
-        f"**모집단 크기** N = {N:,}  \n"
-        f"**모평균** μ = {pop_mu:.3f} , **모분산** σ² = {pop_var:.3f} (σ = {pop_sigma:.3f})"
-    )
+    pop_sigma = float(np.std(values, ddof=0))
+    pop_var = float(pop_sigma ** 2)
 
-    # 2) 3) 표본 추출
+    # 2·3) 표본 추출
     if go:
         st.session_state["smd_samples"], st.session_state["smd_idxlists"] = _draw_samples(values, int(n), int(m), int(seed))
 
-    samples: List[np.ndarray] = st.session_state.get("smd_samples")
-    idx_lists: List[np.ndarray] = st.session_state.get("smd_idxlists")
-
+    samples = st.session_state.get("smd_samples")
+    idx_lists = st.session_state.get("smd_idxlists")
     if not samples:
-        # 초기 렌더에서 자동 생성
         samples, idx_lists = _draw_samples(values, int(n), int(m), int(seed))
         st.session_state["smd_samples"] = samples
         st.session_state["smd_idxlists"] = idx_lists
 
-    # 4) 각 표본 표 + 표본 통계
+    # 1) 모집단 원본 데이터(행: 번호 / 열: 학반) 보기
+    st.subheader("📄 모집단 원본(선택한 숫자 열)")
+    disp = df[sel_cols].copy()
+    # 열 이름에 '반' 명시
+    disp.columns = [f"{c}반" if not re.search(r"(반|학급|class)", str(c), flags=re.I) else str(c) for c in disp.columns]
+    disp.index = pd.RangeIndex(1, len(disp) + 1, name="번호")
+    st.caption("열 = **학반**,  행 = **번호**  (필요 열만 표시)")
+    st.dataframe(disp, use_container_width=True, height=300)
+
+    with st.expander("전체 원본 보기"):
+        tmp = df.copy()
+        tmp.index = pd.RangeIndex(1, len(tmp) + 1, name="번호")
+        st.dataframe(tmp, use_container_width=True, height=400)
+
+    # 4) 표본 표 + 요약
     st.subheader("🧪 표본 표와 요약")
     sample_rows = []
     for i, samp in enumerate(samples, start=1):
@@ -193,7 +182,7 @@ def render():
     summary_df = pd.DataFrame(sample_rows, columns=["표본#", "크기", "표본평균", "표본표준편차"])
     st.dataframe(summary_df, use_container_width=True, height=min(300, 40 + 28 * len(samples)))
 
-    with st.expander("각 표본의 원소 보기(상위 8개 표본만 미리보기)"):
+    with st.expander("각 표본의 원소 보기(상위 8개 표본만)"):
         cap = min(8, len(samples))
         cols = st.columns(2)
         for i in range(cap):
@@ -201,60 +190,89 @@ def render():
                 st.markdown(f"**표본 #{i+1} (n={len(samples[i])})**")
                 st.dataframe(pd.DataFrame({"값": samples[i]}), use_container_width=True, height=200)
 
-    # 5) 가로 수직선(모집단) + 선택 표본 강조 (p5.js)
+    # 5) 모집단 가로 수직선 + 표본 강조 (드롭박스 → 슬라이더)
     st.subheader("📍 모집단 가로 수직선에서 표본의 위치(강조)")
-    sel_idx = st.selectbox("강조할 표본 선택", options=list(range(len(samples))), format_func=lambda i: f"표본 #{i+1}", index=0)
+    sel_idx = st.slider("강조할 표본 선택", 1, len(samples), value=1, help="아래 그래프를 가리지 않도록 슬라이더로 선택합니다.") - 1
 
     vmin, vmax = float(np.min(values)), float(np.max(values))
     payload1 = {
         "values": values.tolist(),
         "sel_indices": [int(x) for x in idx_lists[sel_idx].tolist()],
         "vmin": vmin, "vmax": vmax,
-        "title": f"모집단({N}명) 가로 수직선과 표본 #{sel_idx+1} (n={len(samples[sel_idx])})"
+        "title": f"모집단({N}명) 가로 수직선과 표본 #{sel_idx+1} (n={len(samples[sel_idx])})",
+        "showTicks": bool(show_5ticks)
     }
+    # 빨간 점 + 짧은 수직막대(캔버스 높이의 1/4 길이)
     html1 = """
 <div id="popline" style="width:100%;max-width:980px;margin:0 auto;"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script>
 const DATA1 = """ + json.dumps(payload1) + """;
 new p5((p)=>{
-  let W=980,H=220, pad=40;
+  let W=980,H=260, pad=40;
   p.setup=()=>{ p.createCanvas(W,H).parent("popline"); p.noLoop(); p.textFont('sans-serif'); };
   p.draw=()=>{
     p.background(255);
-    const yAxis = H*0.6;
+    const yAxis = H*0.60;
     // 축(가로)
     p.stroke(50); p.strokeWeight(2);
     p.line(pad, yAxis, W-pad, yAxis);
+
+    // 제목
     p.noStroke(); p.fill(0); p.textSize(12); p.textAlign(p.CENTER,p.TOP);
     p.text(DATA1.title, W/2, 8);
-    p.textAlign(p.LEFT,p.TOP);  p.text(DATA1.vmin.toFixed(2), pad, yAxis+8);
-    p.textAlign(p.RIGHT,p.TOP); p.text(DATA1.vmax.toFixed(2), W-pad, yAxis+8);
 
+    // 좌우 끝값
+    p.textAlign(p.LEFT,p.TOP);  p.text(DATA1.vmin.toFixed(1), pad, yAxis+10);
+    p.textAlign(p.RIGHT,p.TOP); p.text(DATA1.vmax.toFixed(1), W-pad, yAxis+10);
+
+    // 5의 배수 눈금 표시(옵션)
+    if (DATA1.showTicks){
+      const min5 = Math.floor(DATA1.vmin/5)*5;
+      const max5 = Math.ceil(DATA1.vmax/5)*5;
+      p.textAlign(p.CENTER,p.TOP);
+      for(let v=min5; v<=max5; v+=5){
+        if (v>DATA1.vmin && v<DATA1.vmax){
+          const x = p.map(v, DATA1.vmin, DATA1.vmax, pad, W-pad);
+          p.stroke(180); p.strokeWeight(1); p.line(x, yAxis-6, x, yAxis+6);
+          p.noStroke(); p.fill(90); p.text(v.toFixed(0), x, yAxis+16);
+        }
+      }
+    }
+
+    // 점들
     const sel = new Set(DATA1.sel_indices);
-    // 겹침 완화: 약간의 수직 난수 지터
     for (let i=0;i<DATA1.values.length;i++){
       const v = DATA1.values[i];
       const x = p.map(v, DATA1.vmin, DATA1.vmax, pad, W-pad);
-      const jitter = (Math.random()-0.5)*8;
-      if(sel.has(i)){ p.fill(230,49,70); p.circle(x, yAxis+jitter, 7); }
-      else          { p.fill(160);       p.circle(x, yAxis+jitter, 5); }
+      const jitter = (Math.random()-0.5)*8;  // 겹침 완화
+      if(sel.has(i)){
+        // 빨간 점 + 수직 막대(캔버스 높이의 1/4 길이)
+        const half = (H*0.25)/2.0;
+        p.stroke(230,49,70); p.strokeWeight(2);
+        p.line(x, yAxis-half, x, yAxis+half);
+        p.noStroke(); p.fill(230,49,70);
+        p.circle(x, yAxis+jitter, 7);
+      }else{
+        p.noStroke(); p.fill(160);
+        p.circle(x, yAxis+jitter, 5);
+      }
     }
   };
 });
 </script>
 """
-    components.html(html1, height=240)
+    components.html(html1, height=280)
 
     # 6) 정규곡선(모집단 vs 표본평균) + 표본평균 점 (p5.js)
     st.subheader("📈 정규곡선: 모집단 N(μ, σ²) vs 표본평균 N(μ, σ²/n)")
     sample_means = [float(np.mean(s)) for s in samples]
     highlight = float(np.mean(samples[sel_idx]))
+    theo_sigma = pop_sigma / np.sqrt(float(n))
 
-    theo_sigma = pop_sigma / np.sqrt(float(n))  # 표본평균의 표준편차
     payload2 = {
-        "mu_pop": pop_mu, "sd_pop": pop_sigma,
-        "mu_bar": pop_mu, "sd_bar": theo_sigma,
+        "mu_pop": float(pop_mu), "sd_pop": float(pop_sigma),
+        "mu_bar": float(pop_mu), "sd_bar": float(theo_sigma),
         "sample_means": sample_means,
         "highlight": highlight,
         "title": "정규곡선과 표본평균 위치 표시"
@@ -271,8 +289,6 @@ new p5((p)=>{
   p.draw=()=>{
     p.background(255);
     const mu=D2.mu_pop, sd=D2.sd_pop, muB=D2.mu_bar, sdB=D2.sd_bar||1e-6;
-
-    // x범위 & y최댓값
     const xmin=Math.min(mu-4*sd, muB-6*sdB), xmax=Math.max(mu+4*sd, muB+6*sdB);
     let ymax=0;
     for(let i=0;i<600;i++){
@@ -315,7 +331,7 @@ new p5((p)=>{
 """
     components.html(html2, height=360)
 
-    # 7) 모수 vs 표본평균(경험적) 비교
+    # 7) 모수 vs 표본평균(경험) 비교
     st.subheader("📊 모수 vs 표본평균(경험적) 비교")
     sample_means_list = [float(np.mean(s)) for s in samples]
     mean_of_means = float(np.mean(sample_means_list))
@@ -331,8 +347,4 @@ new p5((p)=>{
         columns=["항목", "평균(μ)", "분산(σ²)", "표준편차(σ)"]
     )
     st.dataframe(comp, use_container_width=True, hide_index=True)
-
-    st.caption(
-        "- 표본평균의 **이론 분산**은 σ²/n, **이론 표준편차**는 σ/√n 입니다.  \n"
-        "- ‘경험’ 값은 방금 만든 m개의 표본평균으로 계산한 결과입니다."
-    )
+    st.caption("- 표본평균의 **이론 분산**은 σ²/n, **이론 표준편차**는 σ/√n 입니다.")
