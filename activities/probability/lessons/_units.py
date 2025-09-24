@@ -282,8 +282,8 @@ CURRICULUM = [
                 {
                     "type": "youtube",
                     "title": "상금 분배 문제",
-                    "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b",
-                    "height": 420
+                    "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b&start=535",
+                    "height": 800
                 }
           ]},
           {"key": "2-2-4", "label": "4. 독립시행의 확률", "items": []},
