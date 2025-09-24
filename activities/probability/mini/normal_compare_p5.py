@@ -3,14 +3,14 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "정규분포 비교 (p5.js)",
+    "title": "정규분포 비교",
     "description": "평균(μ)과 표준편차(σ)를 조절하며 두 정규분포 곡선을 비교합니다.",
     "order": 50,
     "hidden": True,  # mini 폴더용: 사이드바 목록에서는 숨김
 }
 
 def render():
-    st.subheader("정규분포 비교 (p5.js)")
+    st.subheader("정규분포 비교")
     st.caption("슬라이더로 μ, σ를 조절해 두 정규분포의 모양을 비교해 보세요.")
 
     components.html(
