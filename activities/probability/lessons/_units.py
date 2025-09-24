@@ -252,7 +252,14 @@ CURRICULUM = [
                     "slug": "mini/odd_prime_convergence",
                 }
           ]},
-          {"key": "2-2-2", "label": "2. 확률의 곱셈정리", "items": []},
+          {"key": "2-2-2", "label": "2. 확률의 곱셈정리", "items": [
+                {
+                    "type": "canva",
+                    "title": "확률의 곱셈정리",
+                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
+                    "height": 800
+                }
+          ]},
           {"key": "2-2-3", "label": "3. 사건의 독립과 종속", "items": []},
           {"key": "2-2-4", "label": "4. 독립시행의 확률", "items": []},
         ],
