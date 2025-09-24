@@ -418,7 +418,7 @@ CURRICULUM = [
                     "title": "정규분포곡선 비교", 
                     "subject": "probability",
                     "slug": "mini/normal_compare_p5",
-                }
+                },
                 {
                     "type": "canva",
                     "title": "표준정규분포",
