@@ -278,6 +278,12 @@ CURRICULUM = [
                     "title": "사건의 독립과 종속",
                     "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "youtube",
+                    "title": "베르누이 시행 개념",
+                    "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b",
+                    "height": 420
                 }
           ]},
           {"key": "2-2-4", "label": "4. 독립시행의 확률", "items": []},
@@ -351,3 +357,24 @@ UNITS = {
 
 # 3) 반응형(열 폭 가득)
 #{"type":"image", "title":"반응형", "src":"assets/foo.png"}  # use_container_width=True가 기본
+
+
+#<유튜브>
+      #{
+      #  "type": "youtube",
+      #  "title": "베르누이 시행 개념",
+      #  "src": "https://www.youtube.com/watch?v=VIDEO_ID",   # youtu.be/… , shorts/… 도 OK
+      #  "height": 420
+      #},
+      #{
+      #  "type": "youtube",
+      #  "title": "플레이리스트(전체 강의)",
+      #  "src": "https://www.youtube.com/playlist?list=PLAYLIST_ID",
+      #  "height": 420
+      #},
+      #{
+      #  "type": "youtube",
+      #  "title": "시작 1분 뒤부터",
+      #  "src": "https://www.youtube.com/watch?v=VIDEO_ID&start=60",  # 60초부터
+      #  "height": 420
+      #}
