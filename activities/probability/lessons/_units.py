@@ -286,7 +286,26 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "2-2-4", "label": "4. 독립시행의 확률", "items": []},
+          {"key": "2-2-4", "label": "4. 독립시행의 확률", "items": [
+                {
+                    "type": "canva",
+                    "title": "독립시행",
+                    "src": "https://www.canva.com/design/DAGNl8UMPCw/ksQ3KQ4X1iM2Oqkeaph6AA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "독립시행의 확률",
+                    "src": "https://www.canva.com/design/DAGNl5tpm-U/FDixwJ7G4_sU_sDAq0SB_A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "몬테카를로 시뮬레이션",
+                    "subject": "probability",
+                    "slug": "binomial_simulator"
+                }
+          ]},
         ],
       },
       {
