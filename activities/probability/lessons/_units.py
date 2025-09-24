@@ -452,8 +452,40 @@ CURRICULUM = [
         "key": "3-2",
         "label": "(2) 통계적 추정",
         "children": [
-          {"key": "3-2-1", "label": "1. 모집단과 표본", "items": []},
-          {"key": "3-2-2", "label": "2. 모평균의 추정", "items": []},
+          {"key": "3-2-1", "label": "1. 모집단과 표본", "items": [
+                {
+                    "type": "canva",
+                    "title": "모집단과 표본",
+                    "src": "https://www.canva.com/design/DAGS9opzh4Y/uefQkrReWXgNcqXPqPmD9g/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "표본추출",
+                    "src": "https://www.canva.com/design/DAGS9xLh_3g/BXrxqAs_K6enUC7eEfXEeg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "모평균과 표본평균",
+                    "src": "https://www.canva.com/design/DAGS91-b3vE/4oH3vpKWWgEPdmSKWo7flg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "표본평균의 분포",
+                    "src": "https://www.canva.com/design/DAGS9z4Un_I/01aa-XnuOLe4unwLzFniBQ/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-2-2", "label": "2. 모평균의 추정", "items": [
+                {
+                    "type": "canva",
+                    "title": "모평균의 추정",
+                    "src": "https://www.canva.com/design/DAGS90gRVbo/9uH90_qTyrhm2goy6M41Ug/view?embed",
+                    "height": 800
+                }
+          ]},
         ],
       },
       {
