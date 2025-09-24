@@ -258,6 +258,12 @@ CURRICULUM = [
                     "title": "확률의 곱셈정리",
                     "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 주사위 실험(애니메이션)", 
+                    "subject": "probability",
+                    "slug": "mini/dice_lab",
                 }
           ]},
           {"key": "2-2-3", "label": "3. 사건의 독립과 종속", "items": []},
