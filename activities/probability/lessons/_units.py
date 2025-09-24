@@ -374,9 +374,66 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-1-4", "label": "4. 이항분포", "items": []},
-          {"key": "3-1-5", "label": "5. 정규분포", "items": []},
-          {"key": "3-1-6", "label": "6. 이항분포와 정규분포의 관계", "items": []},
+          {"key": "3-1-4", "label": "4. 이항분포", "items": [
+                {
+                    "type": "canva",
+                    "title": "이항분포",
+                    "src": "https://www.canva.com/design/DAGPla1Cvro/HtiMM_RVFELx46wGvk76iw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이항분포의 평균과 표준편차",
+                    "src": "https://www.canva.com/design/DAGPlRem8xg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이항분포의 그래프",
+                    "src": "https://www.canva.com/design/DAGPlWgz3UQ/0GLwwGBBhQRa5JafSZ55cQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "iframe",
+                    "title": "이항분포의 그래프 (통그라미)",
+                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "큰 수의 법칙",
+                    "src": "https://www.canva.com/design/DAGPlZbIltE/uDkL0_1Qcg5b4A_tj6fQuw/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-1-5", "label": "5. 정규분포", "items": [
+                {
+                    "type": "canva",
+                    "title": "정규분포",
+                    "src": "https://www.canva.com/design/DAGPlbH_5JI/ubpH_t_WTPU99u-sB-Rjew/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "표준정규분포",
+                    "src": "https://www.canva.com/design/DAGPlg-qoNE/P2cinoqT-ioXTFKQvLtb6Q/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "정규분포의 표준화",
+                    "src": "https://www.canva.com/design/DAGPlvghs60/OysmhTfWoIpbxX35Q2abzQ/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-1-6", "label": "6. 이항분포와 정규분포의 관계", "items": [
+                {
+                    "type": "canva",
+                    "title": "이항분포와 정규분포의 관계",
+                    "src": "https://www.canva.com/design/DAGPleUNg4U/51nlL9mmKChTXvKFKr55GQ/view?embed",
+                    "height": 800
+                }
+          ]},
         ],
       },
       {
