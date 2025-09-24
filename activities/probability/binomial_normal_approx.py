@@ -95,15 +95,41 @@ def render():
     pmf = binom.pmf(k, n, p)
     approx_pmf = _normal_pmf_approx(k, mu, sd, cc=cc)
 
-    # ---- 시각화 ----
-    fig = go.Figure()
-    fig.add_bar(x=k, y=pmf, name="이항 pmf(정확)", opacity=0.65)
+    # ─────────────────────────────
+    # 그래프: 선택 구간 [a,b] 막대만 강조
+    # ─────────────────────────────
+    if a > b:
+        a, b = b, a
+    a_clip = max(0, min(n, a))
+    b_clip = max(0, min(n, b))
+    in_mask = (k >= a_clip) & (k <= b_clip)
 
+    fig = go.Figure()
+
+    # 1) 기본 pmf(회색) - 전체
+    fig.add_bar(
+        x=k, y=pmf,
+        name="이항 pmf(정확)",
+        marker=dict(color="rgba(156,163,175,0.55)"),  # gray-400
+        hovertemplate="k=%{x}<br>pmf=%{y:.6f}<extra></extra>",
+    )
+
+    # 2) 강조 구간만 색상 덧칠(위에 얹음)
+    if in_mask.any():
+        fig.add_bar(
+            x=k[in_mask], y=pmf[in_mask],
+            name=f"선택 구간 [{a_clip}, {b_clip}]",
+            marker=dict(color="rgba(239,68,68,0.9)"),   # red-500
+            hovertemplate="k=%{x}<br>pmf=%{y:.6f}<extra></extra>",
+        )
+
+    # 근사 pmf 곡선
     if show_curve:
         fig.add_scatter(
             x=k, y=approx_pmf, mode="lines+markers",
             name=f"정규 근사 pmf ({'CC' if cc else 'no CC'})",
-            line=dict(width=2)
+            line=dict(width=2, color="rgba(37, 99, 235, 1)"),  # blue-600
+            marker=dict(size=5),
         )
 
     fig.update_layout(
@@ -116,11 +142,6 @@ def render():
     st.plotly_chart(fig, use_container_width=True)
 
     # ---- 구간확률: 정확 vs 근사 ----
-    if a > b:
-        a, b = b, a
-    a_clip = max(0, min(n, a))
-    b_clip = max(0, min(n, b))
-
     exact = float(binom.cdf(b_clip, n, p) - (binom.cdf(a_clip - 1, n, p) if a_clip > 0 else 0.0))
 
     if cc:
@@ -140,34 +161,22 @@ def render():
 
     # ---- 📘 개념 설명 (연속성 보정) ----
     with st.expander("📘 개념 설명: 연속성 보정(continuity correction)", expanded=False):
-        # 설명은 텍스트로, 수식은 모두 st.latex로 따로 렌더
         st.markdown(
             "**왜 보정이 필요한가?**  \n"
             "이항분포는 *이산* 분포(정수 k), 정규분포는 *연속* 분포이기 때문에, "
             "이항의 “막대 하나(폭=1)”를 정규의 “면적”으로 바꿔야 합니다."
         )
-
         st.markdown("**핵심 공식(정규근사)**")
         st.latex(r"Y \sim \mathcal{N}(\mu,\sigma)")
         st.latex(r"P(X=k)\ \approx\ P\!\left(k-\tfrac{1}{2}\ \le\ Y\ \le\ k+\tfrac{1}{2}\right)")
         st.latex(r"P(X\le b)\ \approx\ P(Y \le b+\tfrac{1}{2}),\quad P(X\ge a)\ \approx\ P(Y \ge a-\tfrac{1}{2})")
         st.latex(r"P(a\le X\le b)\ \approx\ P\!\left(a-\tfrac{1}{2}\ \le\ Y\ \le\ b+\tfrac{1}{2}\right)")
-
-        # 현재 설정을 수식으로 한 번에
         st.markdown("**현재 설정**:")
         st.latex(fr"n={n},\ p={p:.3f}\ \Rightarrow\ \mu=np={mu:.2f},\ \sigma=\sqrt{{np(1-p)}}={sd:.2f}")
-
         st.info(
             f"정규 근사가 타당하려면 보통 **np ≥ 10**, **n(1−p) ≥ 10** 정도가 권장됩니다. "
             f"(현재: np = {n*p:.1f}, n(1−p) = {n*(1-p):.1f})"
         )
-
-        #st.markdown(
-        #    "**수업용 질문(토론거리)**  \n"
-        #    "1) 보정을 켤수록 왜 꼬리 확률(작은 k, 큰 k)에서 효과가 더 커질까요?  \n"
-        #    "2) p가 0.5에서 멀어질수록 근사 정밀도는 어떻게 변하나요?  \n"
-        #    "3) 비율 $\\hat p=X/n$을 정규로 근사한다면, 경계 보정은 왜 **±0.5/n**이 되는지 설명해보세요."
-        #)
 
     # ---- 점프 ----
     if st.session_state.get(JUMP) == "graph":
