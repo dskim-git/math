@@ -476,6 +476,12 @@ CURRICULUM = [
                     "title": "표본평균의 분포",
                     "src": "https://www.canva.com/design/DAGS9z4Un_I/01aa-XnuOLe4unwLzFniBQ/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "표본평균의 분포", 
+                    "subject": "probability",
+                    "slug": "sampling_mean_demo_p5",
                 }
           ]},
           {"key": "3-2-2", "label": "2. 모평균의 추정", "items": [
