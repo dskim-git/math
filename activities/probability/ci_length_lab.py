@@ -8,14 +8,12 @@ import streamlit.components.v1 as components
 from scipy.stats import norm, t
 
 META = {
-    "title": "신뢰구간 길이 실험실 (모분산·표본크기·신뢰도의 영향)",
+    "title": "모분산·표본크기·신뢰도에 따른 신뢰구간 길이",
     "description": "가상 모집단을 만들고 표본을 여러 번 뽑아 평균의 신뢰구간을 그리며, 길이가 세 요인에 따라 어떻게 변하는지 확인합니다.",
     "order": 56,
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
 def _sample_intervals(pop: np.ndarray, m: int, n: int, conf: float, known_sigma: bool, sigma: float, seed: int):
-    """표본 m개를 뽑아 평균의 신뢰구간(lo, hi), 길이, 포함여부를 반환."""
     rng = np.random.default_rng(seed)
     mu = float(np.mean(pop))
     rows = []
@@ -34,7 +32,6 @@ def _sample_intervals(pop: np.ndarray, m: int, n: int, conf: float, known_sigma:
     return pd.DataFrame(rows, columns=["lo", "hi", "length", "contains", "xbar"]), mu
 
 def _theory_length(conf: float, n: int, sigma: float, known_sigma: bool):
-    """이론(또는 근사) 길이. 모분산 알려짐: 2*z*σ/√n, 모분산 미지: 2*t_{n-1}*σ/√n (σ→대푯값 근사)."""
     alpha = 1 - conf
     if known_sigma:
         crit = norm.ppf(1 - alpha/2)
@@ -42,15 +39,15 @@ def _theory_length(conf: float, n: int, sigma: float, known_sigma: bool):
         crit = t.ppf(1 - alpha/2, df=max(n-1, 1))
     return float(2.0 * crit * sigma / np.sqrt(n))
 
-# ─────────────────────────────────────────────────────────────────────────────
 def render():
     st.title("신뢰구간 길이 실험실")
 
     # ── 사이드바 설정
     with st.sidebar:
         st.subheader("⚙️ 가상 모집단")
-        mu = st.number_input("모평균 μ", -100.0, 100.0, 170.0, step=0.5)
-        sigma = st.number_input("모표준편차 σ", 0.1, 50.0, 6.0, step=0.1)
+        # ✅ 기본값 170이 범위 안에 들어가도록 max 값을 넉넉히(300)로 조정
+        mu = st.number_input("모평균 μ", min_value=-100.0, max_value=300.0, value=170.0, step=0.5)
+        sigma = st.number_input("모표준편차 σ", min_value=0.1, max_value=50.0, value=6.0, step=0.1)
         N = st.slider("모집단 크기(표본추출용)", 1_000, 100_000, 20_000, step=1_000)
 
         st.subheader("🎯 신뢰구간 설정")
@@ -59,7 +56,7 @@ def render():
         conf_pct = st.slider("신뢰도(%)", 50, 99, 95)
         conf = conf_pct / 100.0
         m = st.slider("표본 세트 수 m", 10, 300, 100, step=10)
-        seed = st.number_input("난수 시드", 0, 9999, 0, step=1)
+        seed = st.number_input("난수 시드", min_value=0, max_value=9999, value=0, step=1)
         run = st.button("표본 뽑고 신뢰구간 그리기", use_container_width=True)
 
     # ── 가상 모집단 생성
@@ -96,7 +93,7 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # ── ① p5.js로 100개(또는 m개) 신뢰구간 그리드
+    # ── ① p5.js로 신뢰구간 그리드
     st.subheader("① 표본들의 평균 신뢰구간(수평선)과 모평균(수직선)")
     payload = {
         "intervals": [{"lo": float(a), "hi": float(b), "ok": bool(c), "xbar": float(x)}
@@ -150,40 +147,37 @@ new p5((p)=>{
 """ % (json.dumps(payload), row_h, H)
     components.html(html, height=H)
 
-    # ── ② 길이 분포(히스토그램) + 이론 길이 마커
+    # ── ② 길이 분포
     st.subheader("② 신뢰구간 길이 분포")
     try:
-        import plotly.graph_objects as go
         import plotly.express as px
         fig = px.histogram(df, x="length", nbins=25, title="신뢰구간 길이 히스토그램")
-        fig.add_vline(x=theo_len, line_width=2, line_dash="dash", line_color="royalblue",
+        fig.add_vline(x=theory_len := _theory_length(conf, n, sigma, known_sigma),
+                      line_width=2, line_dash="dash", line_color="royalblue",
                       annotation_text="이론 길이", annotation_position="top right")
-        fig.add_vline(x=mean_len, line_width=2, line_color="seagreen",
+        fig.add_vline(x=df["length"].mean(), line_width=2, line_color="seagreen",
                       annotation_text="표본 평균 길이", annotation_position="top left")
         st.plotly_chart(fig, use_container_width=True)
     except Exception:
         st.line_chart(df["length"])
 
-    # ── ③ 요인별 길이 변화 곡선 (n / σ / 신뢰도)
+    # ── ③ 요인별 길이 변화
     st.subheader("③ 세 요인에 따른 이론 길이 변화(다른 값 고정)")
     try:
         import plotly.graph_objects as go
         cols = st.columns(3)
-        # n 효과
         with cols[0]:
             n_grid = np.arange(2, max(3, n*2+10))
             y = [_theory_length(conf, int(k), sigma, known_sigma) for k in n_grid]
             st.plotly_chart(go.Figure(data=[go.Scatter(x=n_grid, y=y, mode="lines")])
                             .update_layout(title="n(표본크기) ↑ → 길이 ↓", xaxis_title="n", yaxis_title="길이"),
                             use_container_width=True)
-        # sigma 효과
         with cols[1]:
             s_grid = np.linspace(max(0.2, sigma*0.3), sigma*2.0, 80)
             y = [_theory_length(conf, n, float(s), known_sigma) for s in s_grid]
             st.plotly_chart(go.Figure(data=[go.Scatter(x=s_grid, y=y, mode="lines")])
                             .update_layout(title="σ(모표준편차) ↑ → 길이 ↑", xaxis_title="σ", yaxis_title="길이"),
                             use_container_width=True)
-        # 신뢰도 효과
         with cols[2]:
             c_grid = np.linspace(0.60, 0.99, 120)
             y = [_theory_length(float(c), n, sigma, known_sigma) for c in c_grid]
@@ -193,7 +187,6 @@ new p5((p)=>{
     except Exception:
         st.info("Plotly가 없으면 선 그래프 대신 수치를 위에서 확인하세요.")
 
-    # ── ④ 개념 요약
     with st.expander("📘 수업용 메모: 길이를 좌우하는 세 요인", expanded=False):
         st.markdown(
             r"""
