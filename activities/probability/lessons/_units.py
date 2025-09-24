@@ -332,7 +332,26 @@ CURRICULUM = [
         "key": "3-1",
         "label": "(1) 확률분포",
         "children": [
-          {"key": "3-1-1", "label": "1. 확률변수와 확률분포", "items": []},
+          {"key": "3-1-1", "label": "1. 확률변수와 확률분포", "items": [
+                {
+                    "type": "canva",
+                    "title": "확률변수",
+                    "src": "https://www.canva.com/design/DAGPlXhzlhY/SxhvEidQ8E8E2NcPxBSXDw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이산확률변수와 확률질량함수",
+                    "src": "https://www.canva.com/design/DAGPlRs_7yA/CEbhOvfHuo8JL5PnKtbUiQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "연속확률변수와 확률밀도함수",
+                    "src": "https://www.canva.com/design/DAGPlflvccI/Ita2MhE6WA61T6wbNILfsA/view?embed",
+                    "height": 800
+                }
+          ]},
           {"key": "3-1-2", "label": "2. 이산확률변수의 기댓값과 표준편차", "items": []},
           {"key": "3-1-3", "label": "3. 이산확률변수 aX+b의 평균, 분산, 표준편차", "items": []},
           {"key": "3-1-4", "label": "4. 이항분포", "items": []},
