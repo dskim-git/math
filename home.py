@@ -122,13 +122,22 @@ class Activity:
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 유틸: 동적 모듈 로딩
+# --- 기존 load_module_from_path 를 아래 버전으로 교체 ---
 def load_module_from_path(py_path: Path):
     spec = importlib.util.spec_from_file_location(py_path.stem, py_path)
     if spec is None or spec.loader is None:
-        return None
+        raise ImportError(f"spec_from_file_location failed: {py_path}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)  # type: ignore
+    try:
+        spec.loader.exec_module(module)  # type: ignore
+    except SyntaxError as e:
+        # 어떤 파일 몇 번째 줄에서 문법오류인지 정확히 보여줌
+        raise SyntaxError(f"[{py_path}] {e.msg} (line {e.lineno}, col {e.offset})") from e
+    except Exception as e:
+        # 다른 예외도 파일경로를 붙여서 재전파
+        raise RuntimeError(f"Error while importing {py_path}: {e}") from e
     return module
+
 
 # lessons/_units.py 로더
 def load_units(subject_key: str) -> Dict[str, Any]:
@@ -289,9 +298,14 @@ def discover_activities() -> Dict[str, List[Activity]]:
             name = py_file.name
             if name.startswith("_") or name == "__init__.py":
                 continue
-            module = load_module_from_path(py_file)
-            if module is None:
+            try:
+                module = load_module_from_path(py_file)
+            except Exception as e:
+                # 문제 파일을 사이드바/본문에 명확히 표시하고, 나머지 파일 로딩은 계속
+                st.sidebar.error(f"❌ 활동 로딩 실패: {py_file.name}\n\n{e}")
+                st.error(f"활동 로딩 실패: **{py_file}**\n\n```\n{e}\n```")
                 continue
+            
             meta = getattr(module, "META", {})
             title = meta.get("title") or py_file.stem.replace("_", " ").title()
             description = meta.get("description") or "활동 소개가 아직 없습니다."
