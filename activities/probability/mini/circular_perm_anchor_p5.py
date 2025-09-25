@@ -133,13 +133,15 @@ function setup(){
     rotDir = null; // 방향 힌트 초기화
   });
 
-  // 좌/우회전 → 현재 seating을 한 칸씩 회전 (셔플 없음)
+  // ✅ “사람이 보는” 기준으로 좌/우 회전 매핑
+  // 좌회전: 시계방향(+1)
   byId("rotL").addEventListener("click", ()=>{
-    seating = rotateArray(seating, -1); // 반시계 1칸
+    seating = rotateArray(seating, +1); // 시계 1칸
     rotDir = 'L';
   });
+  // 우회전: 반시계방향(-1)
   byId("rotR").addEventListener("click", ()=>{
-    seating = rotateArray(seating, +1); // 시계 1칸
+    seating = rotateArray(seating, -1); // 반시계 1칸
     rotDir = 'R';
   });
 }
@@ -226,25 +228,8 @@ function drawRings(){
     stroke(220,80,0); strokeWeight(2);
 
     if (rotDir === 'L'){
-      // 좌회전(CCW): 현재(aCur) → 위(aTop)를 반시계로 감
-      const need = idx1; // CCW로 필요한 칸 수
-      const angles = drawArcDirectional(0,0, R1*0.9, aCur, aTop, 'CCW');
-
-      // 화살촉(끝점: aTop, CCW 접선 방향)
-      const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
-      push(); translate(hx, hy); rotate(aTop + PI/2);
-      fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
-      pop();
-
-      // 캡션을 경로 중간에
-      const amid = angles[Math.floor(angles.length/2)];
-      noStroke(); fill(220,80,0);
-      textAlign(CENTER, TOP); textSize(13);
-      text(`좌회전 ${need}칸`, (R1*0.9)*cos(amid), (R1*0.9)*sin(amid)+2);
-
-    } else if (rotDir === 'R'){
-      // 우회전(CW): 현재(aCur) → 위(aTop)를 시계로 감
-      const need = (seating.length - idx1) % seating.length;
+      // ✅ 좌회전(시계방향): 현재(aCur) → 위(aTop)를 시계로 감
+      const need = (seating.length - idx1) % seating.length; // CW 필요칸
       const angles = drawArcDirectional(0,0, R1*0.9, aCur, aTop, 'CW');
 
       // 화살촉(끝점: aTop, CW 접선 방향)
@@ -253,7 +238,24 @@ function drawRings(){
       fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
       pop();
 
-      // 캡션을 경로 중간에
+      // 캡션
+      const amid = angles[Math.floor(angles.length/2)];
+      noStroke(); fill(220,80,0);
+      textAlign(CENTER, TOP); textSize(13);
+      text(`좌회전 ${need}칸`, (R1*0.9)*cos(amid), (R1*0.9)*sin(amid)+2);
+
+    } else if (rotDir === 'R'){
+      // ✅ 우회전(반시계방향): 현재(aCur) → 위(aTop)를 반시계로 감
+      const need = idx1; // CCW 필요칸
+      const angles = drawArcDirectional(0,0, R1*0.9, aCur, aTop, 'CCW');
+
+      // 화살촉(끝점: aTop, CCW 접선 방향)
+      const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
+      push(); translate(hx, hy); rotate(aTop + PI/2);
+      fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
+      pop();
+
+      // 캡션
       const amid = angles[Math.floor(angles.length/2)];
       noStroke(); fill(220,80,0);
       textAlign(CENTER, TOP); textSize(13);
