@@ -238,7 +238,7 @@ CURRICULUM = [
         "key": "2-2",
         "label": "(2) 조건부확률",
         "children": [
-          {"key": "2-2-1", "label": "1. 조건부확률", "items": [
+          {"key": "2-2-1", "label": "조건부확률", "items": [
                 {
                     "type": "canva",
                     "title": "조건부확률",
@@ -258,7 +258,7 @@ CURRICULUM = [
                     "slug": "mini/odd_prime_convergence",
                 }
           ]},
-          {"key": "2-2-2", "label": "2. 확률의 곱셈정리", "items": [
+          {"key": "2-2-2", "label": "확률의 곱셈정리", "items": [
                 {
                     "type": "canva",
                     "title": "확률의 곱셈정리",
@@ -272,7 +272,7 @@ CURRICULUM = [
                     "slug": "mini/nontransitive_dice_lab",
                 }
           ]},
-          {"key": "2-2-3", "label": "3. 사건의 독립과 종속", "items": [
+          {"key": "2-2-3", "label": "사건의 독립과 종속", "items": [
                 {
                     "type": "canva",
                     "title": "사건의 독립과 종속",
@@ -286,7 +286,7 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "2-2-4", "label": "4. 독립시행의 확률", "items": [
+          {"key": "2-2-4", "label": "독립시행의 확률", "items": [
                 {
                     "type": "canva",
                     "title": "독립시행",
@@ -332,7 +332,7 @@ CURRICULUM = [
         "key": "3-1",
         "label": "(1) 확률분포",
         "children": [
-          {"key": "3-1-1", "label": "1. 확률변수와 확률분포", "items": [
+          {"key": "3-1-1", "label": "확률변수와 확률분포", "items": [
                 {
                     "type": "canva",
                     "title": "확률변수",
@@ -352,7 +352,7 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-1-2", "label": "2. 이산확률변수의 기댓값과 표준편차", "items": [
+          {"key": "3-1-2", "label": "이산확률변수의 기댓값과 표준편차", "items": [
                 {
                     "type": "canva",
                     "title": "이산확률변수의 기댓값과 표준편차",
@@ -360,7 +360,7 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-1-3", "label": "3. 이산확률변수 aX+b의 평균, 분산, 표준편차", "items": [
+          {"key": "3-1-3", "label": "이산확률변수 aX+b의 평균, 분산, 표준편차", "items": [
                 {
                     "type": "canva",
                     "title": "이산확률변수 aX+b의 평균과 표준편차",
@@ -374,7 +374,7 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-1-4", "label": "4. 이항분포", "items": [
+          {"key": "3-1-4", "label": "이항분포", "items": [
                 {
                     "type": "canva",
                     "title": "이항분포",
@@ -406,7 +406,7 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-1-5", "label": "5. 정규분포", "items": [
+          {"key": "3-1-5", "label": "정규분포", "items": [
                 {
                     "type": "canva",
                     "title": "정규분포",
@@ -432,7 +432,7 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-1-6", "label": "6. 이항분포와 정규분포의 관계", "items": [
+          {"key": "3-1-6", "label": "이항분포와 정규분포의 관계", "items": [
                 {
                     "type": "canva",
                     "title": "이항분포와 정규분포의 관계",
@@ -452,7 +452,7 @@ CURRICULUM = [
         "key": "3-2",
         "label": "(2) 통계적 추정",
         "children": [
-          {"key": "3-2-1", "label": "1. 모집단과 표본", "items": [
+          {"key": "3-2-1", "label": "모집단과 표본", "items": [
                 {
                     "type": "canva",
                     "title": "모집단과 표본",
@@ -484,7 +484,7 @@ CURRICULUM = [
                     "slug": "sampling_mean_demo_p5",
                 }
           ]},
-          {"key": "3-2-2", "label": "2. 모평균의 추정", "items": [
+          {"key": "3-2-2", "label": "모평균의 추정", "items": [
                 {
                     "type": "canva",
                     "title": "모평균의 추정",
