@@ -9,7 +9,7 @@ ORDER = [
     "binomial_simulator",
     "binomial_galton_board",
     "binomial_normal_approx",
-    "normal_sampling"
+    "normal_sampling",
     "sampling_mean_demo_p5",
     "clt_sample_mean",
     "ci_mean_demo_p5",
