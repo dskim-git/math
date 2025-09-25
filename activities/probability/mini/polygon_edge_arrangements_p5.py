@@ -12,17 +12,14 @@ META = {
 }
 
 def _stirling_log10_factorial(n: int) -> float:
-    """log10(n!) — n이 크면 스털링, 작으면 정확 합산."""
     if n <= 1:
         return 0.0
     if n <= 5000:
         return float(np.sum(np.log10(np.arange(2, n + 1))))
-    # very large - Stirling approximation in base10
     return (n * (math.log10(n) - math.log10(math.e))
             + 0.5 * math.log10(2 * math.pi * n))
 
 def _sci_from_log10(log10x: float) -> str:
-    """log10(x) -> 대략 mantissa*10^exp 형태 문자열"""
     if log10x < -6:
         return "≈ 0"
     exp = int(math.floor(log10x))
@@ -32,57 +29,42 @@ def _sci_from_log10(log10x: float) -> str:
 def render():
     st.header("⚪ 다각형 변 위 원(칩) 배열 — 서로 다른 배치 수")
 
-    # ─────────────────────────────────────────────────
-    # 좌측 설정
     with st.sidebar:
         st.subheader("⚙️ 설정")
         n_sides = st.slider("다각형 변의 수 n", 3, 12, 8)
         is_regular = st.checkbox("정다각형", True)
-
         if is_regular:
             k_per_edge = st.slider("한 변에 놓을 원(칩) 개수 k", 1, 8, 3)
         else:
-            # 문제에서 “정다각형일 때 k를 세팅”이라 했으므로, 비정다각형은 k=1로 고정
             k_per_edge = 1
             st.caption("※ 비정다각형에서는 한 변당 원(칩) 1개로 고정합니다.")
-
         consider_reflection = st.checkbox("거울대칭(반사)도 같은 배열로 본다", False)
 
-        # 재배열(난수 시드)
         if "poly_arr_seed" not in st.session_state:
             st.session_state["poly_arr_seed"] = np.random.randint(0, 10**9)
         if st.button("🔀 원(칩) 번호 재배열(무작위)"):
             st.session_state["poly_arr_seed"] = np.random.randint(0, 10**9)
 
-    # ─────────────────────────────────────────────────
-    # 경우의 수 계산(수식 비교)
-    M = n_sides * k_per_edge   # 전체 원(칩) 수
-    # (A) 직순열 관점: M!에서 회전 중복(정다각형일 때 n*k개 시작점)과 선택 시 반사까지 동일시하면 ×2까지 제거
-    #     비정다각형이면 회전/반사 대칭이 없음 → 나눌 게 없음.
+    M = n_sides * k_per_edge
     divisor = 1
     if is_regular:
-        divisor *= (n_sides * k_per_edge)  # 회전 동일
+        divisor *= (n_sides * k_per_edge)
         if consider_reflection and M >= 3:
             divisor *= 2
 
-    # 숫자로 직접 factorial은 폭발 → log10로 표기
     log10_Mfact = _stirling_log10_factorial(M)
     log10_div = math.log10(divisor) if divisor > 1 else 0.0
     log10_unique_A = log10_Mfact - log10_div
 
-    # (B) 원순열 관점: 회전만 무시하면 (M-1)!, 반사까지 무시하면 (M-1)!/2.
-    #     정다각형일 때만 의미가 있고, 비정다각형이면 “원순열” 의미가 사라짐(모든 위치가 구분됨).
     if is_regular:
         log10_circ = _stirling_log10_factorial(M - 1)
         if consider_reflection and M >= 3:
             log10_circ -= math.log10(2)
-        # 원순열 × (n*k) = 직선 배열(M!) 과 동치 (반사 같은 처리는 동일하게).
         log10_linear_from_circ = log10_circ + math.log10(n_sides * k_per_edge)
     else:
         log10_circ = None
         log10_linear_from_circ = None
 
-    # 소제목/설명
     st.markdown(
         f"""
 **문제 세팅**  
@@ -106,10 +88,7 @@ def render():
                 st.latex(fr"\;=\; \dfrac{{{M}!}}{{({n_sides}\times{k_per_edge})}}")
         else:
             st.latex(fr"\;=\; {M}!")
-
-        # 값 표기(너무 크면 과학표기)
         if M <= 20:
-            # 직접 정수 출력
             import math as _m
             valA = _m.factorial(M) // (divisor if divisor > 0 else 1)
             st.code(f"= {valA:,}")
@@ -124,7 +103,6 @@ def render():
                 st.latex(fr"\Rightarrow\ \text{{직선배열}} = \dfrac{{({M}-1)!}}{{2}}\;\times\;({n_sides}\times{k_per_edge})")
             else:
                 st.latex(fr"\Rightarrow\ \text{{직선배열}} = ({M}-1)!\;\times\;({n_sides}\times{k_per_edge})")
-
             if M <= 20:
                 import math as _m
                 circ = _m.factorial(M - 1)
@@ -139,9 +117,6 @@ def render():
 
     st.divider()
 
-    # ─────────────────────────────────────────────────
-    # p5.js 캔버스(그림) — 다각형 & 변 바깥쪽 원(칩) 배치, 무작위 라벨링
-    st.markdown("### 🖼️ 시각화 — 다각형과 변 바깥쪽 원(칩) 배치")
     seed = int(st.session_state["poly_arr_seed"])
     html = f"""
 <!doctype html>
@@ -175,7 +150,8 @@ let seed     = {seed};
 
 let W=960, H=560;
 let verts=[];        // polygon vertices in CCW
-let circles=[];      // {x,y,label}
+let circles=[];      // {{x,y,label}}   // ← 이 주석 중괄호 이스케이프
+
 let labels=[];       // shuffled [1..M]
 
 function setup(){{
@@ -206,7 +182,6 @@ function buildPolygon(){{
       verts.push({{x,y}});
     }}
   }} else {{
-    // 비정다각형: 반지름에 약간씩 변동
     for(let i=0;i<nSides;i++) {{
       let ang = -HALF_PI + TWO_PI*i/nSides;
       let r = R * (0.8 + 0.4*noise(i*0.17));
@@ -230,40 +205,29 @@ function placeCircles(){{
   for(let i=0;i<nSides;i++) {{
     const a = verts[i];
     const b = verts[(i+1)%nSides];
-    // edge mid outward normal
     let mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
     let ex=b.x-a.x, ey=b.y-a.y;
-    // outward normal: rotate (ex,ey) 90deg; decide sign by centroid
     let nx = -ey, ny = ex;
-    // normalize
     let len = Math.hypot(nx,ny); nx/=len; ny/=len;
-    // point from centroid to mid
     let vx = mx - C.x, vy = my - C.y;
-    // if normal points inward, flip
     if(nx*vx + ny*vy < 0) {{ nx=-nx; ny=-ny; }}
-    // per-edge circle count (정다각형 only -> kPerEdge, 비정다각형 -> 1)
     let K = isRegular ? kPerEdge : 1;
     for(let j=0;j<K;j++) {{
-      let t = (j+1)/(K+1); // equal gap on the edge
+      let t = (j+1)/(K+1);
       let px = a.x*(1-t) + b.x*t;
       let py = a.y*(1-t) + b.y*t;
-      // outward offset
       let off = 24;
       px += nx*off; py += ny*off;
       circles.push({{x:px, y:py}});
     }}
   }}
-  // CCW 둘레를 따라 labels 부여(그림에서 반시계 방향 진행)
-  // 이미 edge 순서(i)와 edge 내부 순서(j)가 CCW가 되도록 push 했음.
 }}
 
 function drawPolygon(){{
-  // poly
   noFill(); stroke(0); strokeWeight(1.5);
   beginShape();
   for(const v of verts) vertex(v.x, v.y);
   endShape(CLOSE);
-  // edges index labels (작게)
   textAlign(CENTER, BOTTOM); noStroke(); fill(120); textSize(12);
   for(let i=0;i<nSides;i++) {{
     let a=verts[i], b=verts[(i+1)%nSides];
@@ -276,11 +240,9 @@ function drawEdgeCircles(){{
   textAlign(CENTER, CENTER); textSize(14);
   for(let i=0;i<circles.length;i++) {{
     const c = circles[i];
-    // dot
     noStroke(); fill(245);
     circle(c.x, c.y, 34);
     stroke(0); noFill(); circle(c.x, c.y, 34);
-    // label
     noStroke(); fill(20);
     text(labels[i], c.x, c.y+1);
   }}
@@ -292,21 +254,17 @@ function drawEdgeCircles(){{
     components.html(html, height=620)
 
     st.divider()
-
-    # ─────────────────────────────────────────────────
     st.markdown(
         """
 ### 🧠 두 가지 관점 요약
 
 1) **직선(일렬) 배치로 본 뒤, 대칭으로 생기는 ‘중복’을 나눠준다.**  
-   - (정다각형) 회전으로 같은 배치가 **n×k**개 생김 → `M! / (n·k)`  
-   - (선택) 거울대칭까지 같은 배치로 보면 → `M! / ((n·k)·2)`  
+   - (정다각형) 회전으로 같은 배치가 **n×k**개 → `M! / (n·k)`  
+   - (선택) 거울대칭까지 같으면 → `M! / ((n·k)·2)`  
    - (비정다각형) 모든 위치가 구분됨 → `M!`
 
 2) **원순열(회전 무시)로 본 뒤, ‘기준 선택’을 곱해준다.**  
    - 회전 무시면 `(M−1)!` (반사도 무시면 `(M−1)!/2`)  
-   - 직선(기준)으로 환산하려면, 기준 자리(‘어느 변의 어느 점에서 시작?’) **n·k**가지 곱해 `= (M−1)! · (n·k)` (반사 포함 시 `/2` 포함)  
-
-두 방식은 **같은 수**로 맞아야 하며, 위에서 숫자로도 확인할 수 있게 구성했어요.
+   - 직선(기준)으로 환산: 기준 자리 **n·k**가지 → `(M−1)! · (n·k)` (반사 포함 시 `/2`)
         """
     )
