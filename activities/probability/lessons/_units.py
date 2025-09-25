@@ -1,319 +1,608 @@
-# activities/probability/mini/circular_perm_anchor_p5.py
-import streamlit as st
-import streamlit.components.v1 as components
+# activities/probability/lessons/_units.py
 
-META = {
-    "title": "원순열: 한 자리(한 사람) 고정하면 (n−1)!",
-    "description": "p5.js로 회전 중복을 시각화하고, 한 사람을 고정해 (n−1)!이 되는 이유를 직관적으로 보여주는 미니 액티비티.",
-    "order": 9999,
-    # "hidden": True,
+# 계층형 커리큘럼(순서 보장용으로 list 사용)
+CURRICULUM = [
+  {
+    "key": "1",
+    "label": "[1] 경우의 수",
+    "children": [
+      {
+        "key": "1-1",
+        "label": "(1) 순열과 조합",
+        "children": [
+          {"key": "1-1-1", "label": "원순열", "items": [
+                {
+                    "type": "canva",
+                    "title": "원순열",
+                    "src": "https://www.canva.com/design/DAGNlyGJNp8/56f2EaBXpwemyaLtixXk8A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "원순열 이해하기", 
+                    "subject": "probability",
+                    "slug": "mini/circular_perm_anchor_p5",
+                }
+            ]},
+          {"key": "1-1-2", "label": "중복순열", "items": [
+                {
+                    "type": "canva",
+                    "title": "중복순열",
+                    "src": "https://www.canva.com/design/DAGNl8s3A0s/Nbs_N2gbTcqYSpIrfu6cBQ/view?embed",
+                    "height": 800
+                }
+            ]},
+          {"key": "1-1-3", "label": "같은 것이 있는 순열", "items": [
+                {
+                    "type": "canva",
+                    "title": "같은 것이 있는 순열",
+                    "src": "https://www.canva.com/design/DAGNl2vhKYA/ObtbLokxlZBoJgazUpFQYg/view?embed",
+                    "height": 800
+                }
+            ]},
+          {"key": "1-1-4", "label": "중복조합", "items": [
+                {
+                    "type": "canva",
+                    "title": "중복조합",
+                    "src": "https://www.canva.com/design/DAGNly2hs8o/pnOkCbXhNC0Ca0L-2hIObg/view?embed",
+                    "height": 800
+                }
+            ]},
+        ],
+      },
+      {
+        "key": "1-2",
+        "label": "(2) 이항정리",
+        "children": [
+          {"key": "1-2-1", "label": "이항정리", "items": [
+                {
+                    "type": "canva",
+                    "title": "이항정리",
+                    "src": "https://www.canva.com/design/DAGNl1q_da0/TXTFw1qR_ph2kjpXxzdivQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "파스칼의 삼각형",
+                    "src": "https://www.canva.com/design/DAGNlypGJuM/dZGjjww0s4Ix0bH_wUY5nQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "gsheet",
+                    "title": "엑셀로 만든 파스칼의 삼각형",
+                    "src": "https://docs.google.com/spreadsheets/d/17F8RhpLp8XNhiOICfUlxnFFjDEQCCjLVAQyUADkUjz8/edit?usp=drivesdk",
+                    "height": 800
+                }
+                # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
+                # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
+                # {"type":"url","title":"보충 설명","src":"https://..."},
+            ]},
+          {"key": "1-2-2", "label": "이항정리의 활용", "items": [
+                {
+                    "type": "canva",
+                    "title": "이항정리의 활용",
+                    "src": "https://www.canva.com/design/DAGNl0IVvy0/Sk5roP86VF-FxyTI3pZ6HQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이항계수의 성질",
+                    "src": "https://www.canva.com/design/DAGNl45UHuA/G9hddVZMCJM13F43M7hZYw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "파스칼의 삼각형에서 찾아보는 프랙털",
+                    "subject": "probability",
+                    "slug": "pascal_modulo_view"
+                }
+            ]},
+        ],
+      },
+      {
+        "key": "1-3",
+        "label": "(3) 대단원 문제",
+        # 소단원 없이 이 레벨에서 바로 items를 둘 수도 있습니다.
+        "items": [
+                {
+                    "type": "pdf",
+                    "title": "단원평가문제",
+                    "src": "https://drive.google.com/file/d/1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW"  # (선택) 다운로드 버튼 표시용
+                }
+        ],
+      },
+    ],
+  },
+
+  {
+    "key": "2",
+    "label": "[2] 확률",
+    "children": [
+      {
+        "key": "2-1",
+        "label": "(1) 확률의 뜻과 활용",
+        "children": [
+          {"key": "2-1-1", "label": "확률의 뜻", "items": [
+                {
+                    "type": "canva",
+                    "title": "시행과 사건",
+                    "src": "https://www.canva.com/design/DAGNl7Kpmdc/qH9Yd9_aa6jpJsh0TcVY2A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "수학적 확률",
+                    "src": "https://www.canva.com/design/DAGNl1df9hA/vZkiHQlTQrGwOUnAtdxe1Q/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "통계적 확률",
+                    "src": "https://www.canva.com/design/DAGNl3VnqaM/rJz9C3d1irXdI7fap2Mzjg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "gsheet",
+                    "title": "수학적 확률과 통계적 확률의 관계",
+                    "src": "https://docs.google.com/spreadsheets/d/1oz2DHhzrRxRFRn92RcGZdupPGvXUzWTk/edit?usp=drivesdk",
+                    "height": 800
+                },
+                {
+                    "type": "iframe",
+                    "title": "수학적 확률과 통계적 확률의 관계 (통그라미)",
+                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 주사위 실험(애니메이션)", 
+                    "subject": "probability",
+                    "slug": "mini/dice_lab",
+                },
+                {
+                    "type": "activity",
+                    "title": "뷔퐁의 바늘 실험",
+                    "subject": "probability",
+                    "slug": "buffon_needle_p5"
+                },
+                {
+                    "type": "iframe",
+                    "title": "뷔퐁의 바늘 실험(일리노이대)",
+                    "src": "https://mste.illinois.edu/activity/buffon/",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "베르트랑의 역설",
+                    "subject": "probability",
+                    "slug": "bertrand_paradox_p5"
+                }
+          ]},
+          {"key": "2-1-2", "label": "확률의 기본 성질", "items": [
+                {
+                    "type": "canva",
+                    "title": "확률의 기본 성질",
+                    "src": "https://www.canva.com/design/DAGNl4QjJQk/In6tmF5d2maLToc3tJkPwQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "몬티홀 문제",
+                    "subject": "probability",
+                    "slug": "monty_hall_p5"
+                },
+                {
+                    "type": "activity",
+                    "title": "몬티홀 문제(확장)",
+                    "subject": "probability",
+                    "slug": "monty_hall_extended_p5"
+                }
+          ]},
+          {"key": "2-1-3", "label": "확률의 덧셈정리", "items": [
+                {
+                    "type": "canva",
+                    "title": "배반사건",
+                    "src": "https://www.canva.com/design/DAGNl4WLA34/0B49FEc9BXaV-f033EiDrA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "확률의 덧셈정리",
+                    "src": "https://www.canva.com/design/DAGNl4dXCFU/wU2f46tNJIQxIAkx6WH_sw/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "2-1-4", "label": "여사건의 확률", "items": [
+                {
+                    "type": "canva",
+                    "title": "여사건",
+                    "src": "https://www.canva.com/design/DAGNlwRyb0Q/uFGi82VwEUHsPNn50t5RPg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "여사건의 확률",
+                    "src": "https://www.canva.com/design/DAGNlwT2t6Y/8nByHtuP-3HKQ_4WkCsN4A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "image",
+                    "title": "생일 예시",
+                    "src": "assets/birth.png",
+                    "width":640,
+                    "caption": "생일"
+                },
+          ]},
+        ],
+      },
+      {
+        "key": "2-2",
+        "label": "(2) 조건부확률",
+        "children": [
+          {"key": "2-2-1", "label": "조건부확률", "items": [
+                {
+                    "type": "canva",
+                    "title": "조건부확률",
+                    "src": "https://www.canva.com/design/DAGNl-3fzAo/dG6Ih5DHeLzB3_-3yFkWmw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
+                    "subject": "probability",
+                    "slug": "mini/odd_prime_conditional",   # 👈 파일명
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 확률 수렴 관찰(10,100,1,000...)", 
+                    "subject": "probability",
+                    "slug": "mini/odd_prime_convergence",
+                }
+          ]},
+          {"key": "2-2-2", "label": "확률의 곱셈정리", "items": [
+                {
+                    "type": "canva",
+                    "title": "확률의 곱셈정리",
+                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "신기한 주사위", 
+                    "subject": "probability",
+                    "slug": "mini/nontransitive_dice_lab",
+                }
+          ]},
+          {"key": "2-2-3", "label": "사건의 독립과 종속", "items": [
+                {
+                    "type": "canva",
+                    "title": "사건의 독립과 종속",
+                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "youtube",
+                    "title": "상금 분배 문제",
+                    "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b&start=535",
+                    "height": 800
+                }
+          ]},
+          {"key": "2-2-4", "label": "독립시행의 확률", "items": [
+                {
+                    "type": "canva",
+                    "title": "독립시행",
+                    "src": "https://www.canva.com/design/DAGNl8UMPCw/ksQ3KQ4X1iM2Oqkeaph6AA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "독립시행의 확률",
+                    "src": "https://www.canva.com/design/DAGNl5tpm-U/FDixwJ7G4_sU_sDAq0SB_A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "몬테카를로 시뮬레이션",
+                    "subject": "probability",
+                    "slug": "binomial_simulator"
+                }
+          ]},
+        ],
+      },
+      {
+        "key": "2-3",
+        "label": "(3) 대단원 문제",
+        "items": [
+                {
+                    "type": "pdf",
+                    "title": "단원평가문제",
+                    "src": "https://drive.google.com/file/d/1viXzZ3ETiz7kdmHfyLk91Lhfu-1HBUYu/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1viXzZ3ETiz7kdmHfyLk91Lhfu-1HBUYu"  # (선택) 다운로드 버튼 표시용
+                }
+        ],
+      },
+    ],
+  },
+
+  {
+    "key": "3",
+    "label": "[3] 통계",
+    "children": [
+      {
+        "key": "3-1",
+        "label": "(1) 확률분포",
+        "children": [
+          {"key": "3-1-1", "label": "확률변수와 확률분포", "items": [
+                {
+                    "type": "canva",
+                    "title": "확률변수",
+                    "src": "https://www.canva.com/design/DAGPlXhzlhY/SxhvEidQ8E8E2NcPxBSXDw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이산확률변수와 확률질량함수",
+                    "src": "https://www.canva.com/design/DAGPlRs_7yA/CEbhOvfHuo8JL5PnKtbUiQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "연속확률변수와 확률밀도함수",
+                    "src": "https://www.canva.com/design/DAGPlflvccI/Ita2MhE6WA61T6wbNILfsA/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-1-2", "label": "이산확률변수의 기댓값과 표준편차", "items": [
+                {
+                    "type": "canva",
+                    "title": "이산확률변수의 기댓값과 표준편차",
+                    "src": "https://www.canva.com/design/DAGPlVNYwTY/jVyt833FOWh8vvOxJpdNmg/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-1-3", "label": "이산확률변수 aX+b의 평균, 분산, 표준편차", "items": [
+                {
+                    "type": "canva",
+                    "title": "이산확률변수 aX+b의 평균과 표준편차",
+                    "src": "https://www.canva.com/design/DAGPlSwzIeE/R_uZ69JnP1om6lBeE5UijA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "iframe",
+                    "title": "확률변수 aX+b의 평균과 표준편차 확인 (통그라미)",
+                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-1-4", "label": "이항분포", "items": [
+                {
+                    "type": "canva",
+                    "title": "이항분포",
+                    "src": "https://www.canva.com/design/DAGPla1Cvro/HtiMM_RVFELx46wGvk76iw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이항분포의 평균과 표준편차",
+                    "src": "https://www.canva.com/design/DAGPlRem8xg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이항분포의 그래프",
+                    "src": "https://www.canva.com/design/DAGPlWgz3UQ/0GLwwGBBhQRa5JafSZ55cQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "iframe",
+                    "title": "이항분포의 그래프 (통그라미)",
+                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "큰 수의 법칙",
+                    "src": "https://www.canva.com/design/DAGPlZbIltE/uDkL0_1Qcg5b4A_tj6fQuw/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-1-5", "label": "정규분포", "items": [
+                {
+                    "type": "canva",
+                    "title": "정규분포",
+                    "src": "https://www.canva.com/design/DAGPlbH_5JI/ubpH_t_WTPU99u-sB-Rjew/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "정규분포곡선 비교", 
+                    "subject": "probability",
+                    "slug": "mini/normal_compare_p5",
+                },
+                {
+                    "type": "canva",
+                    "title": "표준정규분포",
+                    "src": "https://www.canva.com/design/DAGPlg-qoNE/P2cinoqT-ioXTFKQvLtb6Q/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "정규분포의 표준화",
+                    "src": "https://www.canva.com/design/DAGPlvghs60/OysmhTfWoIpbxX35Q2abzQ/view?embed",
+                    "height": 800
+                }
+          ]},
+          {"key": "3-1-6", "label": "이항분포와 정규분포의 관계", "items": [
+                {
+                    "type": "canva",
+                    "title": "이항분포와 정규분포의 관계",
+                    "src": "https://www.canva.com/design/DAGPleUNg4U/51nlL9mmKChTXvKFKr55GQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "이항분포의 정규 근사", 
+                    "subject": "probability",
+                    "slug": "binomial_normal_approx",
+                }
+          ]},
+        ],
+      },
+      {
+        "key": "3-2",
+        "label": "(2) 통계적 추정",
+        "children": [
+          {"key": "3-2-1", "label": "모집단과 표본", "items": [
+                {
+                    "type": "canva",
+                    "title": "모집단과 표본",
+                    "src": "https://www.canva.com/design/DAGS9opzh4Y/uefQkrReWXgNcqXPqPmD9g/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "표본추출",
+                    "src": "https://www.canva.com/design/DAGS9xLh_3g/BXrxqAs_K6enUC7eEfXEeg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "모평균과 표본평균",
+                    "src": "https://www.canva.com/design/DAGS91-b3vE/4oH3vpKWWgEPdmSKWo7flg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "표본평균의 분포",
+                    "src": "https://www.canva.com/design/DAGS9z4Un_I/01aa-XnuOLe4unwLzFniBQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "표본평균의 분포", 
+                    "subject": "probability",
+                    "slug": "sampling_mean_demo_p5",
+                }
+          ]},
+          {"key": "3-2-2", "label": "모평균의 추정", "items": [
+                {
+                    "type": "canva",
+                    "title": "모평균의 추정",
+                    "src": "https://www.canva.com/design/DAGS90gRVbo/9uH90_qTyrhm2goy6M41Ug/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "신뢰도의 의미", 
+                    "subject": "probability",
+                    "slug": "ci_mean_demo_p5",
+                },
+                {
+                    "type": "activity",
+                    "title": "신뢰구간의 길이에 영향을 주는 요인", 
+                    "subject": "probability",
+                    "slug": "ci_length_lab",
+                }
+          ]},
+        ],
+      },
+      {
+        "key": "3-3",
+        "label": "(3) 대단원 문제",
+        "items": [
+                {
+                    "type": "pdf",
+                    "title": "단원평가문제",
+                    "src": "https://drive.google.com/file/d/1GzpmbrVEvP48zQ60gkh7TYDKJAV31Hsv/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1GzpmbrVEvP48zQ60gkh7TYDKJAV31Hsv"  # (선택) 다운로드 버튼 표시용
+                }
+        ],
+      },
+    ],
+  },
+
+  # 교육과정 외
+  {
+    "key": "X",
+    "label": "교육과정 외",
+    "children": [
+      {"key": "X-1", "label": "분할", "items": [
+                {
+                    "type": "canva",
+                    "title": "자연수의 분할",
+                    "src": "https://www.canva.com/design/DAGS9swrMnU/-MrWr69kFUAK2DiiJ-nZOA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "집합의 분할",
+                    "src": "https://www.canva.com/design/DAGS9oZDjH0/fNsFxjitrj0nTZrAwmBccA/view?embed",
+                    "height": 800
+                }
+      ]},
+      {"key": "X-2", "label": "모비율의 추정", "items": [
+                {
+                    "type": "canva",
+                    "title": "모비율과 표본비율",
+                    "src": "https://www.canva.com/design/DAGS90stL6s/rMetpkhThK6Ji_AHJuYAeQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "집합의 분할",
+                    "src": "https://www.canva.com/design/DAGS99UW0Mg/8ZKtl84JYgpW9KBrW32hPg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "집합의 분할",
+                    "src": "https://www.canva.com/design/DAGS99puNoY/FYgb8JOvqHhlPQgS0TGebQ/view?embed",
+                    "height": 800
+                }
+      ]},
+    ],
+  },
+]
+
+# (선택) 기존 단일 레벨 UNITS도 함께 둘 수 있습니다. 있으면 lessons_view가 자동 인식하여 사용.
+UNITS = {
+    # "freepack": {"label": "예시 단원", "items": [ ... ]},
 }
 
-def render():
-    st.header("🔁 원순열: ‘한 자리(한 사람) 고정’의 의미 (p5.js)")
 
-    st.markdown(
-        """
-- **목표**: 원형 자리 배치에서 회전은 같은 배치로 본다 → **중복을 없애려면 한 사람(혹은 한 자리 기준)을 고정**하면 된다.  
-- **핵심 결과**: 서로 다른 원배치 수 = **(n−1)!**  
 
-아래 인터랙티브 그림에서 사람 **1번**을 항상 **맨 위 고정**(앵커)으로 두고, 나머지 사람의 순서만 바꿔 보세요.
-    """
-    )
 
-    st.latex(r"\text{서로 다른 원배치 수} \;=\; \frac{n!}{n}\;=\;(n-1)!")
+#<이미지 넣는 법>
+# 1) 픽셀 고정
+#{"type":"image", "title":"도형 예", "src":"assets/geom/a.png", "width":640, "caption":"정다각형"}
 
-    components.html(
-        """
-<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.0/lib/p5.min.js"></script>
-  <style>
-    :root { --fg:#0f172a; --muted:#64748b; --ink:#111827;}
-    body{margin:0;font-family:system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;}
-    #wrap{max-width:1000px;margin:0 auto;padding:8px 10px 24px 10px;}
-    .ui{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 12px 0;}
-    .ui label{font-size:14px;color:var(--muted);}
-    .chip{background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:4px 8px;font-size:13px;}
-    .btn{padding:6px 10px;border-radius:8px;border:1px solid #cbd5e1;background:white;cursor:pointer}
-    .btn:hover{background:#f8fafc}
-    .btn:active{transform:translateY(1px)}
-    .hstack{display:flex;gap:8px;align-items:center}
-    .card{border:1px solid #e5e7eb;border-radius:12px;padding:10px;margin-top:10px}
-    .note{font-size:13px;color:var(--muted)}
-    canvas{border-radius:12px;border:1px solid #e5e7eb}
-    .kpi{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-    .kpi .box{border:1px solid #e5e7eb;border-radius:12px;padding:10px;text-align:center}
-    .kpi .val{font-size:22px;font-weight:700;color:var(--ink)}
-    .kpi .lab{font-size:12px;color:var(--muted)}
-    .badge{display:inline-block;padding:4px 8px;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:12px;color:#0f172a}
-  </style>
-</head>
-<body>
-<div id="wrap">
-  <div class="ui">
-    <div class="hstack">
-      <label>사람 수 n</label>
-      <input id="nSel" type="range" min="3" max="12" value="6" />
-      <span id="nVal" class="chip">6</span>
-    </div>
-    <div class="hstack">
-      <button class="btn" id="shuffleBtn">무작위 섞기</button>
-      <button class="btn" id="rotL">좌회전</button>
-      <button class="btn" id="rotR">우회전</button>
-    </div>
-  </div>
+# 2) 여러 장을 한 줄에 3칸
+#{"type":"image", "title":"예제 모음", "srcs":["a.png","b.png","c.png"], "cols":3}
 
-  <div id="canvasHolder"></div>
+# 3) 반응형(열 폭 가득)
+#{"type":"image", "title":"반응형", "src":"assets/foo.png"}  # use_container_width=True가 기본
 
-  <div class="kpi">
-    <div class="box">
-      <div class="val" id="linCnt">720</div>
-      <div class="lab">선형 배치 수 <span class="note">(n!)</span></div>
-    </div>
-    <div class="box">
-      <div class="val" id="cirCnt">120</div>
-      <div class="lab">서로 다른 원배치 수 <span class="note">((n−1)!)</span></div>
-    </div>
-  </div>
 
-  <div class="card note">
-    ◻︎ 시각화 방법  
-    <ul>
-      <li>바깥 원: 임의(무작위)로 섞은 현재 배치 (시작 좌석은 위쪽으로 표시)</li>
-      <li>안쪽 원(색이 진함): 회전 중복을 제거한 <b>정준형(canonical)</b>—<b>사람 1번</b>이 항상 위쪽 고정</li>
-      <li><b>좌/우회전</b>을 누르면, <b>바깥 원의 ‘1’</b>에서 <b>안쪽 원의 ‘1’(맨 위)</b>까지의 <b>원호</b>와
-          해당 방향으로 <b>누적한 칸 수</b>를 표시합니다.</li>
-    </ul>
-  </div>
-</div>
-
-<script>
-let n = 6;                 // 사람 수
-let seating = [];          // 시계방향 좌석에 앉은 사람 라벨(1..n)
-let W = 960, H = 560;
-
-// 회전 힌트 표시 제어
-let rotHintOn = false;     // 원호/문구 표시 여부
-let rotDir = null;         // 'L' | 'R' (최근에 누른 방향)
-let rotCount = 0;          // 해당 방향으로 누적 누른 횟수
-
-function factorial(k){ let r=1; for(let i=2;i<=k;i++) r*=i; return r; }
-function fyShuffle(a){
-  for(let i=a.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
-  }
-}
-function rotateArray(a, k){ // k>0 오른쪽(시계), k<0 왼쪽(반시계)
-  const m = ((k%a.length)+a.length)%a.length;
-  return a.slice(-m).concat(a.slice(0,-m));
-}
-function canonicalByPerson1(a){
-  const idx = a.indexOf(1);
-  return rotateArray(a, a.length-idx); // 1이 index 0으로 오도록 시계 회전
-}
-
-function setup(){
-  let c = createCanvas(W, H);
-  c.parent("canvasHolder");
-  textFont("Arial");
-  resetSeating();
-  updateKPI();
-
-  byId("nSel").addEventListener("input", e=>{
-    n = +e.target.value;
-    byId("nVal").innerText = n;
-    resetSeating();
-    updateKPI();
-  });
-
-  byId("shuffleBtn").addEventListener("click", ()=>{
-    fyShuffle(seating);
-    // 섞으면 힌트 초기화
-    rotHintOn = false; rotDir = null; rotCount = 0;
-  });
-
-  byId("rotL").addEventListener("click", ()=>{
-    const prevDir = rotDir;
-    seating = rotateArray(seating, -1);   // 반시계 1칸
-    rotDir = 'L';
-    rotCount = (prevDir==='L') ? (rotCount+1) : 1;
-    rotHintOn = true;
-    // 정렬되면 힌트 자동 숨김
-    if (seating.indexOf(1) === 0){ rotHintOn=false; }
-  });
-
-  byId("rotR").addEventListener("click", ()=>{
-    const prevDir = rotDir;
-    seating = rotateArray(seating, +1);   // 시계 1칸
-    rotDir = 'R';
-    rotCount = (prevDir==='R') ? (rotCount+1) : 1;
-    rotHintOn = true;
-    // 정렬되면 힌트 자동 숨김
-    if (seating.indexOf(1) === 0){ rotHintOn=false; }
-  });
-}
-
-function resetSeating(){
-  seating = [];
-  for(let i=1;i<=n;i++) seating.push(i);
-  rotHintOn = false; rotDir = null; rotCount = 0;
-}
-
-function updateKPI(){
-  byId("linCnt").innerText = factorial(n).toLocaleString();
-  byId("cirCnt").innerText = factorial(n-1).toLocaleString();
-}
-
-function draw(){
-  background(255);
-  drawRings();
-}
-
-function drawRings(){
-  push();
-  translate(width/2, height/2);
-  noFill();
-
-  const R1 = 210;   // 바깥 원
-  const R2 = 140;   // 안쪽 원
-  const startAng = -HALF_PI;   // 위쪽이 index 0
-  const angStep = TWO_PI / seating.length;
-
-  // 기준 좌석(시작점) 마커
-  stroke(160); strokeWeight(2);
-  line(0, -R1-10, 0, -R1+8);
-  fill(0); noStroke();
-  textAlign(CENTER, BOTTOM);
-  textSize(12);
-  text("시작 좌석", 0, -R1-14);
-
-  // 바깥 원: 현재 배치
-  stroke(220); strokeWeight(2); noFill();
-  circle(0,0, 2*R1);
-  drawSeating(seating, R1, startAng, labelColor=color(30), diskColor=color(230), bold=false);
-
-  // 안쪽 원: 정준형(1을 위로 고정)
-  const canon = canonicalByPerson1(seating);
-  stroke(210); strokeWeight(2); noFill();
-  circle(0,0, 2*R2);
-  drawSeating(canon, R2, startAng, labelColor=color(10,80,220), diskColor=color(180,210,255), bold=true);
-
-  // 🔶 원호 힌트: 바깥의 1 → 안쪽의 1(맨 위) 까지
-  const idx1 = seating.indexOf(1);
-  const aligned = (idx1 === 0);
-  if (rotHintOn && rotDir && rotCount>0 && !aligned){
-    const aCur = startAng + angStep * idx1; // 바깥 1의 현재 각도
-    const aTop = startAng;                  // 안쪽 1의 각도(맨 위)
-
-    stroke(220,80,0); strokeWeight(2); noFill();
-
-    if (rotDir === 'L'){
-      // 좌회전(반시계): 현재 위치 → 위쪽 방향으로 CCW
-      let s = aCur, e = aTop;
-      if (e <= s) e += TWO_PI; // CCW 보장
-      arc(0,0, R1*1.8, R1*1.8, s, e);
-
-      // 화살촉(끝: 위쪽)
-      const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
-      push();
-      translate(hx, hy);
-      rotate(aTop + PI/2); // CCW 접선
-      fill(220,80,0); noStroke();
-      triangle(0,0, -8,-12, 8,-12);
-      pop();
-
-      // 캡션
-      noStroke(); fill(220,80,0);
-      textAlign(CENTER, TOP); textSize(13);
-      const mid = (s+e)/2;
-      text(`좌회전 ${rotCount}칸`, (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
-
-    } else if (rotDir === 'R'){
-      // 우회전(시계): 현재 위치에서 위쪽까지 CW == CCW로 위쪽→현재를 그리면 시각적으로 CW
-      let s = aTop, e = aCur;
-      if (e <= s) e += TWO_PI; // CCW 보장(위쪽→현재)
-      arc(0,0, R1*1.8, R1*1.8, s, e);
-
-      // 화살촉(끝: 위쪽, CW 접선)
-      const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
-      push();
-      translate(hx, hy);
-      rotate(aTop - PI/2); // CW 접선
-      fill(220,80,0); noStroke();
-      triangle(0,0, -8,-12, 8,-12);
-      pop();
-
-      // 캡션
-      noStroke(); fill(220,80,0);
-      textAlign(CENTER, TOP); textSize(13);
-      const mid = (s+e)/2;
-      text(`우회전 ${rotCount}칸`, (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
-    }
-  }
-
-  pop();
-
-  // 정렬 완료 뱃지
-  if (seating.indexOf(1) === 0){
-    noStroke(); fill(20,120,60);
-    textAlign(CENTER, TOP); textSize(13);
-    text("정렬 완료", width/2, height-28);
-  }
-
-  // 캡션
-  noStroke(); fill(60);
-  textAlign(CENTER, TOP);
-  textSize(14);
-  text("바깥 원: 현재 배치  ·  안쪽 원: 사람 1을 위로 고정한 정준형(회전 중복 제거)", width/2, height-30);
-}
-
-function drawSeating(arr, R, startAng, labelColor, diskColor, bold){
-  const angStep = TWO_PI / arr.length;
-  textAlign(CENTER, CENTER);
-  for(let i=0;i<arr.length;i++){
-    const a = startAng + angStep*i;
-    const x = R*cos(a), y = R*sin(a);
-
-    // 좌석 표시
-    stroke(200); strokeWeight(1);
-    line(x, y, 0.92*x, 0.92*y);
-
-    // 사람(원)
-    noStroke(); fill(diskColor);
-    const r = (bold? 20:16);
-    circle(x, y, r*2);
-
-    // 라벨
-    fill(labelColor); textSize(bold? 16: 14);
-    text(arr[i], x, y+1);
-  }
-
-  // 사람 1 강조(링)
-  const idx1 = arr.indexOf(1);
-  if(idx1 >= 0){
-    const a1 = startAng + angStep*idx1;
-    const x1 = R*cos(a1), y1 = R*sin(a1);
-    noFill(); stroke(0,120,255); strokeWeight(2.2);
-    circle(x1, y1, (bold? 26:22)*2);
-  }
-}
-
-function byId(id){ return document.getElementById(id); }
-</script>
-</body>
-</html>
-        """,
-        height=720,
-    )
-
-    st.markdown(
-        """
-**수업 아이디어**  
-- 무작위로 섞은 뒤, 좌/우 회전을 눌러 **바깥의 1 → 안쪽의 1(맨 위)** 에 도달하기까지의 **방향(원호)** 과 **누적 칸 수**를 관찰하게 하세요.  
-- 이어서 **“사람 1번을 항상 맨 위”**로 고정한 안쪽 원(정준형)을 보며, 나머지 \(n-1\)명만 순서를 정하면 되므로 **\((n-1)!\)** 이 되는 이유를 연결합니다.
-        """
-    )
+#<유튜브>
+      #{
+      #  "type": "youtube",
+      #  "title": "베르누이 시행 개념",
+      #  "src": "https://www.youtube.com/watch?v=VIDEO_ID",   # youtu.be/… , shorts/… 도 OK
+      #  "height": 420
+      #},
+      #{
+      #  "type": "youtube",
+      #  "title": "플레이리스트(전체 강의)",
+      #  "src": "https://www.youtube.com/playlist?list=PLAYLIST_ID",
+      #  "height": 420
+      #},
+      #{
+      #  "type": "youtube",
+      #  "title": "시작 1분 뒤부터",
+      #  "src": "https://www.youtube.com/watch?v=VIDEO_ID&start=60",  # 60초부터
+      #  "height": 420
+      #}
