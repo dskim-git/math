@@ -496,6 +496,12 @@ CURRICULUM = [
                     "title": "신뢰도의 의미", 
                     "subject": "probability",
                     "slug": "ci_mean_demo_p5",
+                },
+                {
+                    "type": "activity",
+                    "title": "신뢰구간의 길이에 영향을 주는 요인", 
+                    "subject": "probability",
+                    "slug": "ci_length_lab",
                 }
           ]},
         ],
