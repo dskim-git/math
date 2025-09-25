@@ -1,7 +1,6 @@
 # activities/probability/mini/circular_perm_anchor_p5.py
 import streamlit as st
 import streamlit.components.v1 as components
-import math
 
 META = {
     "title": "원순열: 한 자리(한 사람) 고정하면 (n−1)!",
@@ -84,7 +83,7 @@ def render():
     <ul>
       <li>바깥 원: 임의(무작위)로 섞은 현재 배치 (시작 좌석은 위쪽으로 표시)</li>
       <li>안쪽 원(색이 진함): 회전 중복을 제거한 <b>정준형(canonical)</b>—<b>사람 1번</b>이 항상 위쪽 고정</li>
-      <li>회전 화살표는 현재 배치를 정준형으로 만들기 위해 회전한 각도를 의미(좌/우회전 눌렀을 때 표시)</li>
+      <li><b>좌/우회전</b>을 누르면, <b>외곽 원에서 1의 위치가 실제로 움직인 방향</b>과 <b>칸 수</b>를 화살표로 표시합니다.</li>
     </ul>
   </div>
 </div>
@@ -94,12 +93,15 @@ let n = 6;                 // 사람 수
 let seating = [];          // 시계방향 좌석에 앉은 사람 라벨(1..n)
 let W = 960, H = 560;
 
-// ✅ 회전 힌트(화살표/“회전 n칸”)를 표시할지 여부
+// 회전 힌트(화살표/텍스트) 표시 여부 & 정보(직전 회전)
 let showRotationHint = false;
+let lastRotDir = null;   // 'L' | 'R'
+let lastOldIdx1 = null;  // 회전 전 1의 인덱스
+let lastNewIdx1 = null;  // 회전 후 1의 인덱스
 
 function factorial(k){ let r=1; for(let i=2;i<=k;i++) r*=i; return r; }
 
-// Fisher–Yates 셔플(제자리)
+// 제자리 Fisher–Yates
 function fyShuffle(a){ 
   for(let i=a.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
@@ -107,7 +109,8 @@ function fyShuffle(a){
   }
 }
 
-function rotateArray(a, k){ // k>0 오른쪽 회전
+// k>0 → 오른쪽(시계) 회전, k<0 → 왼쪽(반시계) 회전
+function rotateArray(a, k){
   const m = ((k%a.length)+a.length)%a.length;
   return a.slice(-m).concat(a.slice(0,-m));
 }
@@ -125,28 +128,43 @@ function setup(){
   resetSeating();
   updateKPI();
 
-  // UI 연결
+  // UI
   byId("nSel").addEventListener("input", e=>{
     n = +e.target.value;
     byId("nVal").innerText = n;
     resetSeating();
     updateKPI();
-    showRotationHint = false;  // n 변경 시 힌트 숨김
+    showRotationHint = false;  // n 변경시 힌트 숨김
   });
 
-  // ✅ 무작위 섞기: 현재 배열만 섞고, 회전 힌트는 숨김
+  // 무작위 섞기 → 화살표 숨김
   byId("shuffleBtn").addEventListener("click", ()=>{
     fyShuffle(seating);
-    showRotationHint = false;  // 섞기 후 화살표 비표시
+    showRotationHint = false;
+    lastRotDir = null;
+    lastOldIdx1 = null;
+    lastNewIdx1 = null;
   });
 
-  // 좌/우 회전: 이때만 회전 힌트 표시
+  // 좌회전(반시계): 한 칸
   byId("rotL").addEventListener("click", ()=>{
-    seating = rotateArray(seating, 1);
+    const before = seating.slice();
+    // 왼쪽(반시계)으로 한 칸 => k = -1
+    seating = rotateArray(seating, -1);
+    lastRotDir = 'L';
+    lastOldIdx1 = before.indexOf(1);
+    lastNewIdx1 = seating.indexOf(1);
     showRotationHint = true;
   });
+
+  // 우회전(시계): 한 칸
   byId("rotR").addEventListener("click", ()=>{
-    seating = rotateArray(seating, -1);
+    const before = seating.slice();
+    // 오른쪽(시계)으로 한 칸 => k = +1
+    seating = rotateArray(seating, +1);
+    lastRotDir = 'R';
+    lastOldIdx1 = before.indexOf(1);
+    lastNewIdx1 = seating.indexOf(1);
     showRotationHint = true;
   });
 }
@@ -154,6 +172,10 @@ function setup(){
 function resetSeating(){
   seating = [];
   for(let i=1;i<=n;i++) seating.push(i);
+  showRotationHint = false;
+  lastRotDir = null;
+  lastOldIdx1 = null;
+  lastNewIdx1 = null;
 }
 
 function updateKPI(){
@@ -174,6 +196,7 @@ function drawRings(){
   const R1 = 210;   // 바깥 원
   const R2 = 140;   // 안쪽 원
   const startAng = -HALF_PI;   // 위쪽이 index 0
+  const angStep = TWO_PI / seating.length;
 
   // 기준 좌석(시작점) 마커
   stroke(160); strokeWeight(2);
@@ -190,26 +213,30 @@ function drawRings(){
   // 좌석 눈금 & 라벨
   drawSeating(seating, R1, startAng, labelColor=color(30), diskColor=color(230), bold=false);
 
-  // 정준형(사람1을 위로 고정) — 라벨만 진하게
+  // 정준형(사람1을 위로 고정)
   const canon = canonicalByPerson1(seating);
   stroke(210); strokeWeight(2); noFill();
   circle(0,0, 2*R2);
   drawSeating(canon, R2, startAng, labelColor=color(10,80,220), diskColor=color(180,210,255), bold=true);
 
-  // ✅ 회전 화살표(현재→정준형): 좌/우회전 버튼을 눌렀을 때만 보여준다
-  if (showRotationHint){
-    const idx1 = seating.indexOf(1);
-    let rotStep = (n - idx1) % n;       // 오른쪽 회전 스텝
-    if(rotStep!==0){
-      stroke(220,80,0); strokeWeight(2); noFill();
-      const a0 = startAng;
-      const a1 = startAng + TWO_PI*(rotStep/n);
-      arc(0,0, R1*1.8, R1*1.8, a0, a1);
-      // 화살촉
-      const hx = (R1*0.9)*cos(a1), hy = (R1*0.9)*sin(a1);
+  // 🔶 회전 힌트(직전 클릭 1칸): 외곽 원에서 1의 이동 방향/거리 표시
+  if (showRotationHint && lastRotDir && lastOldIdx1 != null && lastNewIdx1 != null){
+    const aOld = startAng + angStep * lastOldIdx1;
+    const aNew = startAng + angStep * lastNewIdx1;
+
+    stroke(220,80,0); strokeWeight(2); noFill();
+
+    if (lastRotDir === 'L'){
+      // 좌회전(반시계, CCW): aOld -> aNew 로 CCW 호
+      let s = aOld, e = aNew;
+      if (e <= s) e += TWO_PI;         // CCW 진행을 보장
+      arc(0,0, R1*1.8, R1*1.8, s, e);
+
+      // 화살촉(끝점)
+      const hx = (R1*0.9)*cos(aNew), hy = (R1*0.9)*sin(aNew);
       push();
       translate(hx, hy);
-      rotate(a1 + PI/2);
+      rotate(aNew + PI/2);
       fill(220,80,0); noStroke();
       triangle(0,0, -8,-12, 8,-12);
       pop();
@@ -217,7 +244,29 @@ function drawRings(){
       noStroke(); fill(220,80,0);
       textAlign(CENTER, TOP);
       textSize(13);
-      text(`회전 ${rotStep}칸`, (R1*0.9)*cos((a0+a1)/2), (R1*0.9)*sin((a0+a1)/2)+2);
+      const mid = (s + e)/2;
+      text("좌회전 1칸", (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
+
+    } else if (lastRotDir === 'R'){
+      // 우회전(시계, CW): aOld -> aNew 로 CW 호 == aNew -> aOld 로 CCW 호
+      let s = aNew, e = aOld;
+      if (e <= s) e += TWO_PI;         // CCW 진행을 보장 (그리기는 aNew -> aOld)
+      arc(0,0, R1*1.8, R1*1.8, s, e);
+
+      // 화살촉(끝점 = aNew 방향을 가리키도록)
+      const hx = (R1*0.9)*cos(aNew), hy = (R1*0.9)*sin(aNew);
+      push();
+      translate(hx, hy);
+      rotate(aNew - PI/2);             // 시계 방향 화살촉
+      fill(220,80,0); noStroke();
+      triangle(0,0, -8,-12, 8,-12);
+      pop();
+
+      noStroke(); fill(220,80,0);
+      textAlign(CENTER, TOP);
+      textSize(13);
+      const mid = (s + e)/2;
+      text("우회전 1칸", (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
     }
   }
 
@@ -272,7 +321,7 @@ function byId(id){ return document.getElementById(id); }
     st.markdown(
         """
 **수업 아이디어**  
-- 먼저 무작위 배치를 여러 번 섞어 본 뒤, 회전만 다르고 본질은 같은 배치가 많다는 걸 관찰시킵니다.  
-- 그 다음 **“사람 1번을 항상 맨 위에”** 고정해서 중복을 없애면, 나머지 \(n-1\)명만 순서를 정하면 되므로 **\((n-1)!\)** 이 됨을 자연스럽게 연결하세요.
+- 무작위로 섞어 보고, 좌/우 회전을 눌러 **외곽 원에서 1의 실제 이동 방향**을 관찰하게 하세요.  
+- 이어서 **“사람 1번을 항상 맨 위”**로 고정한 안쪽 원(정준형)을 보며, 나머지 \(n-1\)명만 순서를 정하면 되므로 **\((n-1)!\)** 이 되는 이유를 연결합니다.
         """
     )
