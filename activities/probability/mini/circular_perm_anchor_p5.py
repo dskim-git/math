@@ -63,9 +63,6 @@ def render():
       <button class="btn" id="shuffleBtn">무작위 섞기</button>
       <button class="btn" id="rotL">좌회전</button>
       <button class="btn" id="rotR">우회전</button>
-      <label class="hstack"><input type="checkbox" id="showAllRot" />
-        <span class="note">현재 배치의 회전 동치들을 희미하게 모두 보기</span>
-      </label>
     </div>
   </div>
 
@@ -87,8 +84,7 @@ def render():
     <ul>
       <li>바깥 원: 임의(무작위)로 섞은 현재 배치 (시작 좌석은 위쪽으로 표시)</li>
       <li>안쪽 원(색이 진함): 회전 중복을 제거한 <b>정준형(canonical)</b>—<b>사람 1번</b>이 항상 위쪽 고정</li>
-      <li>회전 화살표는 현재 배치를 정준형으로 만들기 위해 회전한 각도를 의미</li>
-      <li>“회전 동치 모두 보기”를 켜면, 현재 배치의 n개 회전 결과가 희미하게 겹쳐집니다(전부 같은 원배치)</li>
+      <li>회전 화살표는 현재 배치를 정준형으로 만들기 위해 회전한 각도를 의미(좌/우회전 눌렀을 때 표시)</li>
     </ul>
   </div>
 </div>
@@ -96,12 +92,14 @@ def render():
 <script>
 let n = 6;                 // 사람 수
 let seating = [];          // 시계방향 좌석에 앉은 사람 라벨(1..n)
-let ghostRot = false;      // 회전 동치 표시
 let W = 960, H = 560;
+
+// ✅ 회전 힌트(화살표/“회전 n칸”)를 표시할지 여부
+let showRotationHint = false;
 
 function factorial(k){ let r=1; for(let i=2;i<=k;i++) r*=i; return r; }
 
-// ✅ Fisher–Yates 셔플(제자리): p5의 shuffle과 이름 충돌 피하기 위해 별도 이름 사용
+// Fisher–Yates 셔플(제자리)
 function fyShuffle(a){ 
   for(let i=a.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
@@ -133,21 +131,23 @@ function setup(){
     byId("nVal").innerText = n;
     resetSeating();
     updateKPI();
+    showRotationHint = false;  // n 변경 시 힌트 숨김
   });
 
-  // ✅ 현재 배열을 그대로 섞도록 수정 (이전: resetSeating(true)로 1..n 재생성 후 섞음)
+  // ✅ 무작위 섞기: 현재 배열만 섞고, 회전 힌트는 숨김
   byId("shuffleBtn").addEventListener("click", ()=>{
-    fyShuffle(seating);     // 제자리 섞기
+    fyShuffle(seating);
+    showRotationHint = false;  // 섞기 후 화살표 비표시
   });
 
+  // 좌/우 회전: 이때만 회전 힌트 표시
   byId("rotL").addEventListener("click", ()=>{
     seating = rotateArray(seating, 1);
+    showRotationHint = true;
   });
   byId("rotR").addEventListener("click", ()=>{
     seating = rotateArray(seating, -1);
-  });
-  byId("showAllRot").addEventListener("change", e=>{
-    ghostRot = e.target.checked;
+    showRotationHint = true;
   });
 }
 
@@ -190,43 +190,35 @@ function drawRings(){
   // 좌석 눈금 & 라벨
   drawSeating(seating, R1, startAng, labelColor=color(30), diskColor=color(230), bold=false);
 
-  // 정준형(사람1을 위로 고정)
+  // 정준형(사람1을 위로 고정) — 라벨만 진하게
   const canon = canonicalByPerson1(seating);
-
-  // 회전동치 전체(희미)
-  if(ghostRot){
-    for(let k=0;k<n;k++){
-      const rot = rotateArray(seating, -k);
-      drawSeating(rot, R2, startAng, labelColor=color(120,120,120,120), diskColor=color(220,220,220,80), bold=false);
-    }
-  }
-
-  // 안쪽 원: 정준형 강조
   stroke(210); strokeWeight(2); noFill();
   circle(0,0, 2*R2);
   drawSeating(canon, R2, startAng, labelColor=color(10,80,220), diskColor=color(180,210,255), bold=true);
 
-  // 회전 화살표(현재→정준형)
-  const idx1 = seating.indexOf(1);
-  let rotStep = (n - idx1) % n;       // 오른쪽 회전 스텝
-  if(rotStep!==0){
-    stroke(220,80,0); strokeWeight(2); noFill();
-    const a0 = startAng;
-    const a1 = startAng + TWO_PI*(rotStep/n);
-    arc(0,0, R1*1.8, R1*1.8, a0, a1);
-    // 화살촉
-    const hx = (R1*0.9)*cos(a1), hy = (R1*0.9)*sin(a1);
-    push();
-    translate(hx, hy);
-    rotate(a1 + PI/2);
-    fill(220,80,0); noStroke();
-    triangle(0,0, -8,-12, 8,-12);
-    pop();
+  // ✅ 회전 화살표(현재→정준형): 좌/우회전 버튼을 눌렀을 때만 보여준다
+  if (showRotationHint){
+    const idx1 = seating.indexOf(1);
+    let rotStep = (n - idx1) % n;       // 오른쪽 회전 스텝
+    if(rotStep!==0){
+      stroke(220,80,0); strokeWeight(2); noFill();
+      const a0 = startAng;
+      const a1 = startAng + TWO_PI*(rotStep/n);
+      arc(0,0, R1*1.8, R1*1.8, a0, a1);
+      // 화살촉
+      const hx = (R1*0.9)*cos(a1), hy = (R1*0.9)*sin(a1);
+      push();
+      translate(hx, hy);
+      rotate(a1 + PI/2);
+      fill(220,80,0); noStroke();
+      triangle(0,0, -8,-12, 8,-12);
+      pop();
 
-    noStroke(); fill(220,80,0);
-    textAlign(CENTER, TOP);
-    textSize(13);
-    text(`회전 ${rotStep}칸`, (R1*0.9)*cos((a0+a1)/2), (R1*0.9)*sin((a0+a1)/2)+2);
+      noStroke(); fill(220,80,0);
+      textAlign(CENTER, TOP);
+      textSize(13);
+      text(`회전 ${rotStep}칸`, (R1*0.9)*cos((a0+a1)/2), (R1*0.9)*sin((a0+a1)/2)+2);
+    }
   }
 
   pop();
@@ -281,7 +273,6 @@ function byId(id){ return document.getElementById(id); }
         """
 **수업 아이디어**  
 - 먼저 무작위 배치를 여러 번 섞어 본 뒤, 회전만 다르고 본질은 같은 배치가 많다는 걸 관찰시킵니다.  
-- 그 다음 **“사람 1번을 항상 맨 위에”** 고정해서 중복을 없애면, 나머지 \(n-1\)명만 순서를 정하면 되므로 **\((n-1)!\)** 이 됨을 자연스럽게 연결하세요.  
-- 필요 시 “회전 동치 모두 보기” 체크로 하나의 배치가 만드는 \(n\)개의 회전들이 실제로 같은 클래스를 이룸을 시각적으로 보여줄 수 있습니다.
+- 그 다음 **“사람 1번을 항상 맨 위에”** 고정해서 중복을 없애면, 나머지 \(n-1\)명만 순서를 정하면 되므로 **\((n-1)!\)** 이 됨을 자연스럽게 연결하세요.
         """
     )
