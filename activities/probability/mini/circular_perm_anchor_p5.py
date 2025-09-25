@@ -1,16 +1,15 @@
-# activities/probability/mini/circular_perm_anchor_p5.py
 import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
     "title": "원순열: 한 자리(한 사람) 고정하면 (n−1)!",
-    "description": "원순열에서 회전하면 중복이 생기는 현상을 시각화하고, 한 사람을 고정해 (n−1)!이 되는 이유를 직관적으로 보여주는 미니 액티비티.",
+    "description": "p5.js로 회전 중복을 시각화하고, 한 사람을 고정해 (n−1)!이 되는 이유를 직관적으로 보여주는 미니 액티비티.",
     "order": 9999,
     # "hidden": True,
 }
 
 def render():
-    st.header("🔁 원순열: ‘한 자리(한 사람) 고정’의 의미")
+    st.header("🔁 원순열: ‘한 자리(한 사람) 고정’의 의미 (p5.js)")
 
     st.markdown(
         """
@@ -18,7 +17,7 @@ def render():
 - **핵심 결과**: 서로 다른 원배치 수 = **(n−1)!**  
 
 아래 인터랙티브 그림에서 사람 **1번**을 항상 **맨 위 고정**(앵커)으로 두고, 나머지 사람의 순서만 바꿔 보세요.
-    """
+        """
     )
 
     st.latex(r"\text{서로 다른 원배치 수} \;=\; \frac{n!}{n}\;=\;(n-1)!")
@@ -97,7 +96,7 @@ let W = 960, H = 560;
 
 // 회전 힌트 표시 제어
 let rotHintOn = false;     // 원호/문구 표시 여부
-let rotDir = null;         // 'L' | 'R' (최근에 누른 방향)
+let rotDir = null;         // 'L' | 'R'
 let rotCount = 0;          // 해당 방향으로 누적 누른 횟수
 
 function factorial(k){ let r=1; for(let i=2;i<=k;i++) r*=i; return r; }
@@ -107,59 +106,57 @@ function fyShuffle(a){
     [a[i],a[j]]=[a[j],a[i]];
   }
 }
-function rotateArray(a, k){ // k>0 오른쪽(시계), k<0 왼쪽(반시계)
+function rotateArray(a, k){ // k>0 시계(우회전), k<0 반시계(좌회전)
   const m = ((k%a.length)+a.length)%a.length;
   return a.slice(-m).concat(a.slice(0,-m));
 }
 function canonicalByPerson1(a){
   const idx = a.indexOf(1);
-  return rotateArray(a, a.length-idx); // 1이 index 0으로 오도록 시계 회전
+  return rotateArray(a, a.length-idx); // 1을 index 0으로 오게 시계 회전
 }
 
 function setup(){
   let c = createCanvas(W, H);
   c.parent("canvasHolder");
   textFont("Arial");
-  resetSeating();
+  initSeating();
   updateKPI();
 
+  // 사람 수 슬라이더
   byId("nSel").addEventListener("input", e=>{
     n = +e.target.value;
     byId("nVal").innerText = n;
-    resetSeating();
+    initSeating();          // 🔒 슬라이더로 n만 바꿔도 셔플 없이 1..n 초기화
     updateKPI();
   });
 
+  // 무작위 섞기 → 셔플 전용, 회전 힌트/카운트 초기화
   byId("shuffleBtn").addEventListener("click", ()=>{
-    fyShuffle(seating);
-    // 섞으면 힌트 초기화
+    fyShuffle(seating);     // ✅ 셔플은 여기서만
     rotHintOn = false; rotDir = null; rotCount = 0;
   });
 
+  // 좌/우회전 → 현재 seating을 한 칸씩 회전 (셔플 금지)
   byId("rotL").addEventListener("click", ()=>{
     const prevDir = rotDir;
-    seating = rotateArray(seating, -1);   // 반시계 1칸
+    seating = rotateArray(seating, -1);     // 반시계 1칸
     rotDir = 'L';
     rotCount = (prevDir==='L') ? (rotCount+1) : 1;
-    rotHintOn = true;
-    // 정렬되면 힌트 자동 숨김
-    if (seating.indexOf(1) === 0){ rotHintOn=false; }
+    rotHintOn = (seating.indexOf(1)!==0);   // 정렬되면 힌트 끔
   });
 
   byId("rotR").addEventListener("click", ()=>{
     const prevDir = rotDir;
-    seating = rotateArray(seating, +1);   // 시계 1칸
+    seating = rotateArray(seating, +1);     // 시계 1칸
     rotDir = 'R';
     rotCount = (prevDir==='R') ? (rotCount+1) : 1;
-    rotHintOn = true;
-    // 정렬되면 힌트 자동 숨김
-    if (seating.indexOf(1) === 0){ rotHintOn=false; }
+    rotHintOn = (seating.indexOf(1)!==0);   // 정렬되면 힌트 끔
   });
 }
 
-function resetSeating(){
+function initSeating(){
   seating = [];
-  for(let i=1;i<=n;i++) seating.push(i);
+  for(let i=1;i<=n;i++) seating.push(i);  // 1..n
   rotHintOn = false; rotDir = null; rotCount = 0;
 }
 
@@ -202,7 +199,7 @@ function drawRings(){
   circle(0,0, 2*R2);
   drawSeating(canon, R2, startAng, labelColor=color(10,80,220), diskColor=color(180,210,255), bold=true);
 
-  // 🔶 원호 힌트: 바깥의 1 → 안쪽의 1(맨 위) 까지
+  // 원호 힌트: 바깥 1 → 안쪽 1(맨 위) 까지
   const idx1 = seating.indexOf(1);
   const aligned = (idx1 === 0);
   if (rotHintOn && rotDir && rotCount>0 && !aligned){
@@ -212,18 +209,15 @@ function drawRings(){
     stroke(220,80,0); strokeWeight(2); noFill();
 
     if (rotDir === 'L'){
-      // 좌회전(반시계): 현재 위치 → 위쪽 방향으로 CCW
+      // 좌회전(반시계): 현재 → 위쪽 (CCW)
       let s = aCur, e = aTop;
-      if (e <= s) e += TWO_PI; // CCW 보장
+      if (e <= s) e += TWO_PI;             // CCW 보장
       arc(0,0, R1*1.8, R1*1.8, s, e);
 
       // 화살촉(끝: 위쪽)
       const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
-      push();
-      translate(hx, hy);
-      rotate(aTop + PI/2); // CCW 접선
-      fill(220,80,0); noStroke();
-      triangle(0,0, -8,-12, 8,-12);
+      push(); translate(hx, hy); rotate(aTop + PI/2);
+      fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
       pop();
 
       // 캡션
@@ -233,18 +227,15 @@ function drawRings(){
       text(`좌회전 ${rotCount}칸`, (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
 
     } else if (rotDir === 'R'){
-      // 우회전(시계): 현재 위치에서 위쪽까지 CW == CCW로 위쪽→현재를 그리면 시각적으로 CW
+      // 우회전(시계): 현재에서 위쪽까지 CW → 위쪽→현재 CCW로 그리면 시각적 CW
       let s = aTop, e = aCur;
-      if (e <= s) e += TWO_PI; // CCW 보장(위쪽→현재)
+      if (e <= s) e += TWO_PI;             // CCW 보장(위쪽→현재)
       arc(0,0, R1*1.8, R1*1.8, s, e);
 
       // 화살촉(끝: 위쪽, CW 접선)
       const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
-      push();
-      translate(hx, hy);
-      rotate(aTop - PI/2); // CW 접선
-      fill(220,80,0); noStroke();
-      triangle(0,0, -8,-12, 8,-12);
+      push(); translate(hx, hy); rotate(aTop - PI/2);
+      fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
       pop();
 
       // 캡션
