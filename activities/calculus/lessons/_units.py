@@ -13,39 +13,52 @@ CURRICULUM = [
           {"key": "1-1-1", "label": "수열의 극한", "items": [
                 {
                     "type": "canva",
-                    "title": "원순열",
-                    "src": "https://www.canva.com/design/DAGNlyGJNp8/56f2EaBXpwemyaLtixXk8A/view?embed",
+                    "title": "수열의 수렴",
+                    "src": "https://www.canva.com/design/DAGTJINtKYU/Omd1Mu2Y_XJKnm44J_bk-g/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "activity",
-                    "title": "원순열 이해하기", 
-                    "subject": "probability",
-                    "slug": "mini/circular_perm_anchor_p5",
+                    "type": "canva",
+                    "title": "수열의 발산",
+                    "src": "https://www.canva.com/design/DAGTf3HgzqQ/_T3BOPY0NCtiVCxCq4A_Jg/view?embed",
+                    "height": 800
                 }
             ]},
           {"key": "1-1-2", "label": "수열의 극한값의 계산", "items": [
                 {
                     "type": "canva",
-                    "title": "중복순열",
-                    "src": "https://www.canva.com/design/DAGNl8s3A0s/Nbs_N2gbTcqYSpIrfu6cBQ/view?embed",
+                    "title": "수열의 극한에 대한 기본성질",
+                    "src": "https://www.canva.com/design/DAGTf5506F8/jqmAWGR-Fe_H0k3O-FU8BQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "수열의 극한값의 계산",
+                    "src": "https://www.canva.com/design/DAGTf8NezAE/FrGbQNUZjv_gCD6L7e8-lQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "수열의 극한의 대소 관계",
+                    "src": "https://www.canva.com/design/DAGTfwJ2rMo/XBGrfAbVC0CRibSHZFvydQ/view?embed",
                     "height": 800
                 }
             ]},
           {"key": "1-1-3", "label": "등비수열의 극한", "items": [
                 {
                     "type": "canva",
-                    "title": "같은 것이 있는 순열",
-                    "src": "https://www.canva.com/design/DAGNl2vhKYA/ObtbLokxlZBoJgazUpFQYg/view?embed",
+                    "title": "등비수열의 수렴과 발산",
+                    "src": "https://www.canva.com/design/DAGTf1cAoVk/Ji9iUiiw0BHsV9sedKvcSg/view?embed",
                     "height": 800
                 }
             ]},
           {"key": "1-1-4", "label": "중단원 마무리하기", "items": [
                 {
-                    "type": "canva",
-                    "title": "중복조합",
-                    "src": "https://www.canva.com/design/DAGNly2hs8o/pnOkCbXhNC0Ca0L-2hIObg/view?embed",
-                    "height": 800
+                    "type": "pdf",
+                    "title": "중단원 마무리하기",
+                    "src": "https://drive.google.com/file/d/1XitTrbBjh9z85lhvNqCOsYumdMFww9DD/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1XitTrbBjh9z85lhvNqCOsYumdMFww9DD"  # (선택) 다운로드 버튼 표시용
                 }
             ]},
         ],
@@ -57,84 +70,46 @@ CURRICULUM = [
           {"key": "1-2-1", "label": "급수", "items": [
                 {
                     "type": "canva",
-                    "title": "이항정리",
-                    "src": "https://www.canva.com/design/DAGNl1q_da0/TXTFw1qR_ph2kjpXxzdivQ/view?embed",
+                    "title": "급수의 수렴과 발산",
+                    "src": "https://www.canva.com/design/DAGTJPLiRrM/ouvXdrUIwaMhG0PoXdOwVA/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "파스칼의 삼각형",
-                    "src": "https://www.canva.com/design/DAGNlypGJuM/dZGjjww0s4Ix0bH_wUY5nQ/view?embed",
+                    "title": "급수와 일반항 사이의 관계",
+                    "src": "https://www.canva.com/design/DAGTf8_81gE/nTBONRA5I4whXQF6SZ0czg/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "gsheet",
-                    "title": "엑셀로 만든 파스칼의 삼각형",
-                    "src": "https://docs.google.com/spreadsheets/d/17F8RhpLp8XNhiOICfUlxnFFjDEQCCjLVAQyUADkUjz8/edit?usp=drivesdk",
+                    "type": "canva",
+                    "title": "급수의 성질",
+                    "src": "https://www.canva.com/design/DAGTf_-3v98/Pdxm2ulfjgH5hb_G-5iNvw/view?embed",
                     "height": 800
                 }
-                # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
-                # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
-                # {"type":"url","title":"보충 설명","src":"https://..."},
             ]},
           {"key": "1-2-2", "label": "등비급수", "items": [
                 {
                     "type": "canva",
-                    "title": "이항정리의 활용",
-                    "src": "https://www.canva.com/design/DAGNl0IVvy0/Sk5roP86VF-FxyTI3pZ6HQ/view?embed",
+                    "title": "등비급수의 수렴과 발산",
+                    "src": "https://www.canva.com/design/DAGTf7j07N4/LQgVszRRtQk8ED0sxDS3wQ/view?embed",
                     "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "이항계수의 성질",
-                    "src": "https://www.canva.com/design/DAGNl45UHuA/G9hddVZMCJM13F43M7hZYw/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "파스칼의 삼각형에서 찾아보는 프랙털",
-                    "subject": "probability",
-                    "slug": "pascal_modulo_view"
                 }
             ]},
           {"key": "1-2-3", "label": "등비급수의 활용", "items": [
                 {
                     "type": "canva",
-                    "title": "이항정리의 활용",
-                    "src": "https://www.canva.com/design/DAGNl0IVvy0/Sk5roP86VF-FxyTI3pZ6HQ/view?embed",
+                    "title": "등비급수의 활용",
+                    "src": "https://www.canva.com/design/DAGTf_W89GU/pB46cRNTKkHaM-ER6Ruw6w/view?embed",
                     "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "이항계수의 성질",
-                    "src": "https://www.canva.com/design/DAGNl45UHuA/G9hddVZMCJM13F43M7hZYw/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "파스칼의 삼각형에서 찾아보는 프랙털",
-                    "subject": "probability",
-                    "slug": "pascal_modulo_view"
                 }
             ]},
           {"key": "1-2-4", "label": "중단원 마무리하기", "items": [
                 {
-                    "type": "canva",
-                    "title": "이항정리의 활용",
-                    "src": "https://www.canva.com/design/DAGNl0IVvy0/Sk5roP86VF-FxyTI3pZ6HQ/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "이항계수의 성질",
-                    "src": "https://www.canva.com/design/DAGNl45UHuA/G9hddVZMCJM13F43M7hZYw/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "파스칼의 삼각형에서 찾아보는 프랙털",
-                    "subject": "probability",
-                    "slug": "pascal_modulo_view"
+                    "type": "pdf",
+                    "title": "중단원 마무리하기",
+                    "src": "https://drive.google.com/file/d/1UyLwsyPIMWWqCjz-BuNc-0eCZ6Lq2fiT/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1UyLwsyPIMWWqCjz-BuNc-0eCZ6Lq2fiT"  # (선택) 다운로드 버튼 표시용
                 }
             ]}
         ],
@@ -147,9 +122,9 @@ CURRICULUM = [
                 {
                     "type": "pdf",
                     "title": "단원평가문제",
-                    "src": "https://drive.google.com/file/d/1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW/preview",
+                    "src": "https://drive.google.com/file/d/1vUmdk6F_vLs4EBrMsw4YcvU1RTbm0fd1/preview",
                     #"height": 900,
-                    "download": "https://drive.google.com/uc?export=download&id=1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW"  # (선택) 다운로드 버튼 표시용
+                    "download": "https://drive.google.com/uc?export=download&id=1vUmdk6F_vLs4EBrMsw4YcvU1RTbm0fd1"  # (선택) 다운로드 버튼 표시용
                 }
         ],
       },
