@@ -4,6 +4,7 @@ import json
 import numpy as np
 import streamlit as st
 import streamlit.components.v1 as components
+from math import gcd
 
 META = {
     "title": "다각형 변 위 원(칩) 배열 — 대칭을 고려한 경우의수",
@@ -33,9 +34,6 @@ def _sci_from_log10(log10x: float) -> str:
 
 # ─────────────────────────────────────────────────────────────
 # 변 개수 배열 counts 의 대칭(회전/반사) 안정자 크기 |H| 계산
-# - 회전 안정자 크기 R = |{ s | rotate(counts, s) == counts }|
-# - 반사 안정자 여부: counts == reverse(rotate(counts, s)) (축이 꼭 꼭짓점/변 중앙 둘 다 가능)
-#   반사가 하나라도 존재하면 반사 수 = R (각 주기마다 축이 함께 이동)
 def _rot_count(counts: list[int]) -> int:
     n = len(counts)
     def eq_rot(s):
@@ -44,14 +42,13 @@ def _rot_count(counts: list[int]) -> int:
 
 def _has_reflection(counts: list[int]) -> bool:
     n = len(counts)
-    # (1) 꼭짓점-축 반사: counts == reverse(rotate(counts, s))
+    # 꼭짓점-축 반사
     def eq_ref_vtx(s):
         for i in range(n):
             if counts[(s + i) % n] != counts[(s - i) % n]:
                 return False
         return True
-    # (2) 변-중점 축 반사: counts == reverse(rotate(counts, s)) with half-step
-    # 구현상: reverse 후 한 칸 시프트 비교와 동일
+    # 변-중점 축 반사
     def eq_ref_edge(s):
         for i in range(n):
             if counts[(s + i) % n] != counts[(s - i - 1) % n]:
@@ -62,10 +59,10 @@ def _has_reflection(counts: list[int]) -> bool:
             return True
     return False
 
-def _stabilizer_size(counts: list[int]) -> int:
-    R = _rot_count(counts)           # 회전 안정자 크기
+def _stabilizer_size(counts: list[int], use_reflection: bool) -> int:
+    R = _rot_count(counts)
     has_ref = _has_reflection(counts)
-    return R * (2 if has_ref else 1)
+    return R * (2 if (use_reflection and has_ref) else 1)
 
 # ─────────────────────────────────────────────────────────────
 def render():
@@ -83,7 +80,6 @@ def render():
             edge_counts = [int(k)] * n_sides
         else:
             st.markdown("**비정다각형: 변마다 다른 개수 입력**")
-            # 일괄 채우기 값
             seed_all = st.number_input("모두 동일로 채우기", 0, 12, 2, key="fill_all_default")
             cols = st.columns(4)
             for i in range(n_sides):
@@ -98,10 +94,8 @@ def render():
                     st.session_state[f"edgecnt_{i}"] = int(seed_all)
                 st.experimental_rerun()
 
-        # 반사를 같은 것으로 볼지(=디헤드랄 부분군에 반사 포함시킬지)
         consider_reflection = st.checkbox("거울대칭(반사)도 같은 배열로 본다", False)
 
-        # 무작위 라벨링 시드
         if "poly_arr_seed" not in st.session_state:
             st.session_state["poly_arr_seed"] = np.random.randint(0, 10**9)
         if st.button("🔀 원(칩) 번호 재배열(무작위)"):
@@ -111,12 +105,11 @@ def render():
     M = int(sum(edge_counts))
     disp_counts = ", ".join(map(str, edge_counts))
 
-    # ── 안정자 크기 |H| 계산 (반사 포함/제외 선택 반영)
-    # 회전 안정자 R은 항상 고려. 반사 포함을 끄면 반사 부분은 제거.
+    # 안정자 크기 |H| 계산
     R = _rot_count(edge_counts)
     has_ref_all = _has_reflection(edge_counts)
-    H = R * (2 if (consider_reflection and has_ref_all) else 1)
-    H = max(1, H)   # 안전 가드
+    H = _stabilizer_size(edge_counts, consider_reflection)
+    H = max(1, H)
 
     st.markdown(
         f"""
@@ -125,37 +118,50 @@ def render():
 - 변별 원(칩) 개수: **[{disp_counts}]** → 총 원 수 **M = {M}**  
 - 변 개수 배열의 **회전 안정자 크기**: **R = {R}**  
 - **반사 안정자 존재**: {'예' if has_ref_all else '아니오'}  
-- 실제 사용한 안정자 크기(선택 반영): **|H| = {H}**  
+- 실제 사용한 안정자 크기(선택 반영): **|H| = {H}**
         """
     )
 
-    # ── (A) 직순열 ÷ 중복  :  M! / |H|
+    # ───────── A) 직순열 ÷ 중복 ─────────
     st.subheader("A) 직순열로 보고 **중복을 나눠주기**")
     st.latex(r"\text{서로 다른 배열 수} \;=\; \dfrac{M!}{\,|H|\,}")
+    # 숫자 대입 + 형태 유지(팩토리얼) 설명식
+    st.latex(fr"= \dfrac{{{M}!}}{{{H}}} \;=\; \dfrac{{{M}\cdot({M-1})!}}{{{H}}} \;=\; \left(\dfrac{{{M}}}{{{H}}}\right)\,({M-1})!")
+    g = gcd(M, H)
+    if g > 1:
+        # 간단한 약분 형태도 추가(보조)
+        st.latex(fr"= \left(\dfrac{{{M//g}}}{{{H//g}}}\right)\,({M-1})! \quad(\text{{{g}로 약분}})")
+    # 값 출력
     if M <= 20:
         import math as _m
-        valA = _m.factorial(M) // H
+        valA = _m.factorial(M) // H  # 정수
         st.code(f"= {valA:,}")
     else:
         logA = _log10_factorial(M) - math.log10(H)
         st.code(_sci_from_log10(logA))
 
-    # ── (B) 원순열 × 기준 : (M−1)! × (M/|H|)
-    st.subheader("B) 원순열로 보고 **기준(앵커 수)**을 곱하기")
+    # ───────── B) 원순열 × 기준 ─────────
+    st.subheader("B) 원순열로 보고 **기준(앵커 수)** 곱하기")
     st.latex(r"\text{서로 다른 배열 수} \;=\; (M-1)!\times\Big(\dfrac{M}{\,|H|\,}\Big)")
+    st.latex(fr"= ({M-1})!\times\left(\dfrac{{{M}}}{{{H}}}\right)")
+    if g > 1:
+        st.latex(fr"= ({M-1})!\times\left(\dfrac{{{M//g}}}{{{H//g}}}\right) \quad(\text{{{g}로 약분}})")
+    # 값 출력
     if M <= 20:
         import math as _m
-        valB = (_m.factorial(M-1) * (M // H)) if (M % H == 0) else (_m.factorial(M-1) * (M/H))
+        # 정수/분수 모두 처리(표시는 동일)
+        num = _m.factorial(M-1) * M
+        valB = num // H if num % H == 0 else num / H
         st.code(f"= {valB:,}" if isinstance(valB, int) else f"= {valB:.6g}")
     else:
         logB = _log10_factorial(M-1) + math.log10(M) - math.log10(H)
         st.code(_sci_from_log10(logB))
 
-    st.caption("두 값은 항상 같아야 합니다(Burnside 적용). 서로 다른 라벨(1..M)이라 비항등 대칭이 고정시키는 배치는 없기 때문입니다.")
+    st.caption("두 값은 항상 같습니다(Burnside). 라벨 1..M이 모두 서로 다르므로, 항등 이외의 대칭이 배치를 고정하지 않습니다.")
 
     st.divider()
 
-    # ── p5.js 시각화 (기존과 동일, counts를 그대로 사용)
+    # ── p5.js 시각화(기존 유지)
     seed = int(st.session_state["poly_arr_seed"])
     counts_json = json.dumps(edge_counts)
 
@@ -212,10 +218,9 @@ function draw(){{
 function buildPolygon(){{
   verts=[];
   let R = 180;
-  // 비정다각형은 반지름을 약간씩 다르게(시각적 구분용)
   for(let i=0;i<nSides;i++){{
     let ang = -HALF_PI + TWO_PI*i/nSides;
-    let r = R * (0.88 + 0.22*noise(i*0.251));
+    let r = R * (0.88 + 0.22*noise(i*0.251)); // 비정다각형 느낌
     verts.push({{x:r*Math.cos(ang), y:r*Math.sin(ang)}});
   }}
 }}
