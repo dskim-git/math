@@ -1,4 +1,4 @@
-# activities/probability/lessons/_units.py
+# activities/calculus/lessons/_units.py
 
 # 계층형 커리큘럼(순서 보장용으로 list 사용)
 CURRICULUM = [
