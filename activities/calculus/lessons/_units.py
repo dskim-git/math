@@ -501,7 +501,7 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-2-5", "label": "중단원 마무리하기기", "items": [
+          {"key": "3-2-5", "label": "중단원 마무리하기", "items": [
                 {
                     "type": "pdf",
                     "title": "중단원 마무리하기",
