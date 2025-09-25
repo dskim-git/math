@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from scipy.stats import norm
 
 META = {
-    "title": "신뢰구간 길이 실험실",
+    "title": "신뢰구간의 길이",
     "description": "정규모집단(σ 알려짐)에서 모평균 신뢰구간 길이 L = 2·z_{α/2}·σ/√n 변화를 시각화합니다.",
     "order": 40,
 }
@@ -20,7 +20,7 @@ def _ci_length(sig: float, n: int, conf_pct: float) -> float:
     return 2.0 * _z_from_conf(conf_pct) * (sig / math.sqrt(n))
 
 def render():
-    st.header("📏 신뢰구간 길이 실험실 (σ 알려짐)")
+    st.header("📏 신뢰구간의 길이에 영향을 주는 요인")
     st.caption("정규모집단에서 모평균의 신뢰구간 길이")
     st.latex(r"L \;=\; 2\, z_{\alpha/2}\, \frac{\sigma}{\sqrt{n}}")
 
