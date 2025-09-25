@@ -397,42 +397,48 @@ CURRICULUM = [
           {"key": "3-1-1", "label": "여러 가지 함수의 적분", "items": [
                 {
                     "type": "canva",
-                    "title": "확률변수",
-                    "src": "https://www.canva.com/design/DAGPlXhzlhY/SxhvEidQ8E8E2NcPxBSXDw/view?embed",
+                    "title": "함수 y=x^n (n은 실수)의 적분",
+                    "src": "https://www.canva.com/design/DAGTJHJN_bM/L8099vfE1E245CGqPuVSxw/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "이산확률변수와 확률질량함수",
-                    "src": "https://www.canva.com/design/DAGPlRs_7yA/CEbhOvfHuo8JL5PnKtbUiQ/view?embed",
+                    "title": "지수함수의 적분",
+                    "src": "https://www.canva.com/design/DAGTg2T8vR8/H-ty3Zwq9hrUlMRkMTflVg/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "연속확률변수와 확률밀도함수",
-                    "src": "https://www.canva.com/design/DAGPlflvccI/Ita2MhE6WA61T6wbNILfsA/view?embed",
+                    "title": "삼각함수의 적분",
+                    "src": "https://www.canva.com/design/DAGTg_QAMdo/wuX6I1l0bfD3suV8WgKiaQ/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "3-1-2", "label": "치환적분법", "items": [
                 {
                     "type": "canva",
-                    "title": "이산확률변수의 기댓값과 표준편차",
-                    "src": "https://www.canva.com/design/DAGPlVNYwTY/jVyt833FOWh8vvOxJpdNmg/view?embed",
+                    "title": "치환적분법",
+                    "src": "https://www.canva.com/design/DAGTg03ppAU/IBXk8PDzDh5MbVSoLmiq6A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "치환적분법을 이용한 정적분",
+                    "src": "https://www.canva.com/design/DAGTg4Y-wv4/3AgYhKIedasYXyUIRNKFCg/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "3-1-3", "label": "부분적분법", "items": [
                 {
                     "type": "canva",
-                    "title": "이산확률변수 aX+b의 평균과 표준편차",
-                    "src": "https://www.canva.com/design/DAGPlSwzIeE/R_uZ69JnP1om6lBeE5UijA/view?embed",
+                    "title": "부분적분법",
+                    "src": "https://www.canva.com/design/DAGTgwd3y_I/P00ci4eUY-U_bpj426RKLg/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "iframe",
-                    "title": "확률변수 aX+b의 평균과 표준편차 확인 (통그라미)",
-                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
+                    "type": "canva",
+                    "title": "부분적분법을 이용한 정적분",
+                    "src": "https://www.canva.com/design/DAGTgzywsZc/9wPDnElvGxvc0DThowHU5A/view?embed",
                     "height": 800
                 }
           ]},
@@ -440,9 +446,9 @@ CURRICULUM = [
                 {
                     "type": "pdf",
                     "title": "중단원 마무리하기",
-                    "src": "https://drive.google.com/file/d/13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb/preview",
+                    "src": "https://drive.google.com/file/d/1iN4OqmoOGZchITbYHyeTK5EeKa9MBUqe/preview",
                     #"height": 900,
-                    "download": "https://drive.google.com/uc?export=download&id=13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb"  # (선택) 다운로드 버튼 표시용
+                    "download": "https://drive.google.com/uc?export=download&id=1iN4OqmoOGZchITbYHyeTK5EeKa9MBUqe"  # (선택) 다운로드 버튼 표시용
                 }
           ]}
         ],
@@ -454,102 +460,54 @@ CURRICULUM = [
           {"key": "3-2-1", "label": "정적분과 급수의 합 사이의 관계", "items": [
                 {
                     "type": "canva",
-                    "title": "모집단과 표본",
-                    "src": "https://www.canva.com/design/DAGS9opzh4Y/uefQkrReWXgNcqXPqPmD9g/view?embed",
+                    "title": "정적분과 급수의 합 사이의 관계",
+                    "src": "https://www.canva.com/design/DAGTJHAa_KU/NWDdDrRXUTOJYRQpJ1xZvQ/view?embed",
                     "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "표본추출",
-                    "src": "https://www.canva.com/design/DAGS9xLh_3g/BXrxqAs_K6enUC7eEfXEeg/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "모평균과 표본평균",
-                    "src": "https://www.canva.com/design/DAGS91-b3vE/4oH3vpKWWgEPdmSKWo7flg/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "표본평균의 분포",
-                    "src": "https://www.canva.com/design/DAGS9z4Un_I/01aa-XnuOLe4unwLzFniBQ/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "표본평균의 분포", 
-                    "subject": "probability",
-                    "slug": "sampling_mean_demo_p5",
                 }
           ]},
           {"key": "3-2-2", "label": "넓이", "items": [
                 {
                     "type": "canva",
-                    "title": "모평균의 추정",
-                    "src": "https://www.canva.com/design/DAGS90gRVbo/9uH90_qTyrhm2goy6M41Ug/view?embed",
+                    "title": "넓이",
+                    "src": "https://www.canva.com/design/DAGTg1BM4Z4/VHjU7GSHT5-UhLeOwJxeLg/view?embed",
                     "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "신뢰도의 의미", 
-                    "subject": "probability",
-                    "slug": "ci_mean_demo_p5",
-                },
-                {
-                    "type": "activity",
-                    "title": "신뢰구간의 길이에 영향을 주는 요인", 
-                    "subject": "probability",
-                    "slug": "ci_length_lab",
                 }
           ]},
           {"key": "3-2-3", "label": "부피", "items": [
                 {
                     "type": "canva",
-                    "title": "모평균의 추정",
-                    "src": "https://www.canva.com/design/DAGS90gRVbo/9uH90_qTyrhm2goy6M41Ug/view?embed",
+                    "title": "부피",
+                    "src": "https://www.canva.com/design/DAGTg7I-ciI/VeXAUXWwmurELIw0nqColw/view?embed",
                     "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "신뢰도의 의미", 
-                    "subject": "probability",
-                    "slug": "ci_mean_demo_p5",
-                },
-                {
-                    "type": "activity",
-                    "title": "신뢰구간의 길이에 영향을 주는 요인", 
-                    "subject": "probability",
-                    "slug": "ci_length_lab",
                 }
           ]},
           {"key": "3-2-4", "label": "속도와 거리", "items": [
                 {
                     "type": "canva",
-                    "title": "모평균의 추정",
-                    "src": "https://www.canva.com/design/DAGS90gRVbo/9uH90_qTyrhm2goy6M41Ug/view?embed",
+                    "title": "직선 위를 움직이는 점의 위치와 움직인 거리",
+                    "src": "https://www.canva.com/design/DAGTgxrX8M8/T2ffI4HKp2qoLfgoyVfsbw/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "activity",
-                    "title": "신뢰도의 의미", 
-                    "subject": "probability",
-                    "slug": "ci_mean_demo_p5",
+                    "type": "canva",
+                    "title": "평면 위를 움직이는 점의 움직인 거리",
+                    "src": "https://www.canva.com/design/DAGThF0uDpw/wGfWqyXVIOOmF7Wx3cg_uw/view?embed",
+                    "height": 800
                 },
                 {
-                    "type": "activity",
-                    "title": "신뢰구간의 길이에 영향을 주는 요인", 
-                    "subject": "probability",
-                    "slug": "ci_length_lab",
+                    "type": "canva",
+                    "title": "좌표평면 위의 곡선의 길이",
+                    "src": "https://www.canva.com/design/DAGThPpqIgQ/x8U79oTyqKPBbYitBSYZbA/view?embed",
+                    "height": 800
                 }
           ]},
           {"key": "3-2-5", "label": "중단원 마무리하기기", "items": [
                 {
                     "type": "pdf",
                     "title": "중단원 마무리하기",
-                    "src": "https://drive.google.com/file/d/13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb/preview",
+                    "src": "https://drive.google.com/file/d/1lNNsGdhYax8_s3k9zSQDq2_UtIlpaQtP/preview",
                     #"height": 900,
-                    "download": "https://drive.google.com/uc?export=download&id=13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb"  # (선택) 다운로드 버튼 표시용
+                    "download": "https://drive.google.com/uc?export=download&id=1lNNsGdhYax8_s3k9zSQDq2_UtIlpaQtP"  # (선택) 다운로드 버튼 표시용
                 }
           ]}
         ],
@@ -561,9 +519,9 @@ CURRICULUM = [
                 {
                     "type": "pdf",
                     "title": "단원평가문제",
-                    "src": "https://drive.google.com/file/d/1GzpmbrVEvP48zQ60gkh7TYDKJAV31Hsv/preview",
+                    "src": "https://drive.google.com/file/d/1zAjdLe0F6n16SuGd8XC0EFZhTud1_LZy/preview",
                     #"height": 900,
-                    "download": "https://drive.google.com/uc?export=download&id=1GzpmbrVEvP48zQ60gkh7TYDKJAV31Hsv"  # (선택) 다운로드 버튼 표시용
+                    "download": "https://drive.google.com/uc?export=download&id=1zAjdLe0F6n16SuGd8XC0EFZhTud1_LZy"  # (선택) 다운로드 버튼 표시용
                 }
         ],
       },
