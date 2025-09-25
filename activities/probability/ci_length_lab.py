@@ -8,7 +8,7 @@ import streamlit.components.v1 as components
 from scipy.stats import norm, t
 
 META = {
-    "title": "모분산·표본크기·신뢰도에 따른 신뢰구간 길이",
+    "title": "신뢰구간 길이 실험실 (모분산·표본크기·신뢰도의 영향)",
     "description": "가상 모집단을 만들고 표본을 여러 번 뽑아 평균의 신뢰구간을 그리며, 길이가 세 요인에 따라 어떻게 변하는지 확인합니다.",
     "order": 56,
 }
