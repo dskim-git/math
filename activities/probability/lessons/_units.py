@@ -17,9 +17,12 @@ CURRICULUM = [
                     "src": "https://www.canva.com/design/DAGNlyGJNp8/56f2EaBXpwemyaLtixXk8A/view?embed",
                     "height": 800
                 },
-                # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
-                # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
-                # {"type":"url","title":"보충 설명","src":"https://..."},
+                {
+                    "type": "activity",
+                    "title": "원순열 이해하기", 
+                    "subject": "probability",
+                    "slug": "mini/circular_perm_anchor_p5",
+                }
             ]},
           {"key": "1-1-2", "label": "중복순열", "items": [
                 {
