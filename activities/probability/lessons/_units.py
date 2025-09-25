@@ -22,6 +22,12 @@ CURRICULUM = [
                     "title": "원순열 이해하기", 
                     "subject": "probability",
                     "slug": "mini/circular_perm_anchor_p5",
+                },
+                {
+                    "type": "activity",
+                    "title": "다각형 변 위에 숫자 배열하기", 
+                    "subject": "probability",
+                    "slug": "mini/polygon_edge_arrangements_p5",
                 }
             ]},
           {"key": "1-1-2", "label": "중복순열", "items": [
