@@ -4,13 +4,13 @@ import streamlit.components.v1 as components
 
 META = {
     "title": "원순열: 한 자리(한 사람) 고정하면 (n−1)!",
-    "description": "p5.js로 회전 중복을 시각화하고, 한 사람을 고정해 (n−1)!이 되는 이유를 직관적으로 보여주는 미니 액티비티.",
-    "order": 9999,  # 미니는 보통 숨김이지만, 보이게 하고 싶으면 order 조정
-    # "hidden": True,  # 미니로 숨기려면 주석 해제
+    "description": "원순열에서 회전하면 중복이 생기는 현상을 시각화하고, 한 사람을 고정해 (n−1)!이 되는 이유를 직관적으로 보여주는 미니 액티비티.",
+    "order": 9999,
+    # "hidden": True,
 }
 
 def render():
-    st.header("🔁 원순열: ‘한 자리(한 사람) 고정’의 의미 (p5.js)")
+    st.header("🔁 원순열: ‘한 자리(한 사람) 고정’의 의미")
 
     st.markdown(
         """
@@ -48,6 +48,7 @@ def render():
     .kpi .box{border:1px solid #e5e7eb;border-radius:12px;padding:10px;text-align:center}
     .kpi .val{font-size:22px;font-weight:700;color:var(--ink)}
     .kpi .lab{font-size:12px;color:var(--muted)}
+    .badge{display:inline-block;padding:4px 8px;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:12px;color:#0f172a}
   </style>
 </head>
 <body>
@@ -83,7 +84,8 @@ def render():
     <ul>
       <li>바깥 원: 임의(무작위)로 섞은 현재 배치 (시작 좌석은 위쪽으로 표시)</li>
       <li>안쪽 원(색이 진함): 회전 중복을 제거한 <b>정준형(canonical)</b>—<b>사람 1번</b>이 항상 위쪽 고정</li>
-      <li><b>좌/우회전</b>을 누르면, <b>외곽 원에서 1의 위치가 실제로 움직인 방향</b>과 <b>칸 수</b>를 화살표로 표시합니다.</li>
+      <li><b>좌/우회전</b>을 누르면, <b>바깥 원의 ‘1’</b>에서 <b>안쪽 원의 ‘1’(맨 위)</b>까지의 <b>원호</b>와
+          해당 방향으로 <b>누적한 칸 수</b>를 표시합니다.</li>
     </ul>
   </div>
 </div>
@@ -93,32 +95,25 @@ let n = 6;                 // 사람 수
 let seating = [];          // 시계방향 좌석에 앉은 사람 라벨(1..n)
 let W = 960, H = 560;
 
-// 회전 힌트(화살표/텍스트) 표시 여부 & 정보(직전 회전)
-let showRotationHint = false;
-let lastRotDir = null;   // 'L' | 'R'
-let lastOldIdx1 = null;  // 회전 전 1의 인덱스
-let lastNewIdx1 = null;  // 회전 후 1의 인덱스
+// 회전 힌트 표시 제어
+let rotHintOn = false;     // 원호/문구 표시 여부
+let rotDir = null;         // 'L' | 'R' (최근에 누른 방향)
+let rotCount = 0;          // 해당 방향으로 누적 누른 횟수
 
 function factorial(k){ let r=1; for(let i=2;i<=k;i++) r*=i; return r; }
-
-// 제자리 Fisher–Yates
-function fyShuffle(a){ 
+function fyShuffle(a){
   for(let i=a.length-1;i>0;i--){
     const j=Math.floor(Math.random()*(i+1));
     [a[i],a[j]]=[a[j],a[i]];
   }
 }
-
-// k>0 → 오른쪽(시계) 회전, k<0 → 왼쪽(반시계) 회전
-function rotateArray(a, k){
+function rotateArray(a, k){ // k>0 오른쪽(시계), k<0 왼쪽(반시계)
   const m = ((k%a.length)+a.length)%a.length;
   return a.slice(-m).concat(a.slice(0,-m));
 }
-
-// 정준형(사람 1번을 항상 위쪽 인덱스 0으로 회전)
 function canonicalByPerson1(a){
   const idx = a.indexOf(1);
-  return rotateArray(a, a.length-idx); // 1이 index 0으로 오도록 오른쪽 회전
+  return rotateArray(a, a.length-idx); // 1이 index 0으로 오도록 시계 회전
 }
 
 function setup(){
@@ -128,54 +123,44 @@ function setup(){
   resetSeating();
   updateKPI();
 
-  // UI
   byId("nSel").addEventListener("input", e=>{
     n = +e.target.value;
     byId("nVal").innerText = n;
     resetSeating();
     updateKPI();
-    showRotationHint = false;  // n 변경시 힌트 숨김
   });
 
-  // 무작위 섞기 → 화살표 숨김
   byId("shuffleBtn").addEventListener("click", ()=>{
     fyShuffle(seating);
-    showRotationHint = false;
-    lastRotDir = null;
-    lastOldIdx1 = null;
-    lastNewIdx1 = null;
+    // 섞으면 힌트 초기화
+    rotHintOn = false; rotDir = null; rotCount = 0;
   });
 
-  // 좌회전(반시계): 한 칸
   byId("rotL").addEventListener("click", ()=>{
-    const before = seating.slice();
-    // 왼쪽(반시계)으로 한 칸 => k = -1
-    seating = rotateArray(seating, -1);
-    lastRotDir = 'L';
-    lastOldIdx1 = before.indexOf(1);
-    lastNewIdx1 = seating.indexOf(1);
-    showRotationHint = true;
+    const prevDir = rotDir;
+    seating = rotateArray(seating, -1);   // 반시계 1칸
+    rotDir = 'L';
+    rotCount = (prevDir==='L') ? (rotCount+1) : 1;
+    rotHintOn = true;
+    // 정렬되면 힌트 자동 숨김
+    if (seating.indexOf(1) === 0){ rotHintOn=false; }
   });
 
-  // 우회전(시계): 한 칸
   byId("rotR").addEventListener("click", ()=>{
-    const before = seating.slice();
-    // 오른쪽(시계)으로 한 칸 => k = +1
-    seating = rotateArray(seating, +1);
-    lastRotDir = 'R';
-    lastOldIdx1 = before.indexOf(1);
-    lastNewIdx1 = seating.indexOf(1);
-    showRotationHint = true;
+    const prevDir = rotDir;
+    seating = rotateArray(seating, +1);   // 시계 1칸
+    rotDir = 'R';
+    rotCount = (prevDir==='R') ? (rotCount+1) : 1;
+    rotHintOn = true;
+    // 정렬되면 힌트 자동 숨김
+    if (seating.indexOf(1) === 0){ rotHintOn=false; }
   });
 }
 
 function resetSeating(){
   seating = [];
   for(let i=1;i<=n;i++) seating.push(i);
-  showRotationHint = false;
-  lastRotDir = null;
-  lastOldIdx1 = null;
-  lastNewIdx1 = null;
+  rotHintOn = false; rotDir = null; rotCount = 0;
 }
 
 function updateKPI(){
@@ -209,68 +194,75 @@ function drawRings(){
   // 바깥 원: 현재 배치
   stroke(220); strokeWeight(2); noFill();
   circle(0,0, 2*R1);
-
-  // 좌석 눈금 & 라벨
   drawSeating(seating, R1, startAng, labelColor=color(30), diskColor=color(230), bold=false);
 
-  // 정준형(사람1을 위로 고정)
+  // 안쪽 원: 정준형(1을 위로 고정)
   const canon = canonicalByPerson1(seating);
   stroke(210); strokeWeight(2); noFill();
   circle(0,0, 2*R2);
   drawSeating(canon, R2, startAng, labelColor=color(10,80,220), diskColor=color(180,210,255), bold=true);
 
-  // 🔶 회전 힌트(직전 클릭 1칸): 외곽 원에서 1의 이동 방향/거리 표시
-  if (showRotationHint && lastRotDir && lastOldIdx1 != null && lastNewIdx1 != null){
-    const aOld = startAng + angStep * lastOldIdx1;
-    const aNew = startAng + angStep * lastNewIdx1;
+  // 🔶 원호 힌트: 바깥의 1 → 안쪽의 1(맨 위) 까지
+  const idx1 = seating.indexOf(1);
+  const aligned = (idx1 === 0);
+  if (rotHintOn && rotDir && rotCount>0 && !aligned){
+    const aCur = startAng + angStep * idx1; // 바깥 1의 현재 각도
+    const aTop = startAng;                  // 안쪽 1의 각도(맨 위)
 
     stroke(220,80,0); strokeWeight(2); noFill();
 
-    if (lastRotDir === 'L'){
-      // 좌회전(반시계, CCW): aOld -> aNew 로 CCW 호
-      let s = aOld, e = aNew;
-      if (e <= s) e += TWO_PI;         // CCW 진행을 보장
+    if (rotDir === 'L'){
+      // 좌회전(반시계): 현재 위치 → 위쪽 방향으로 CCW
+      let s = aCur, e = aTop;
+      if (e <= s) e += TWO_PI; // CCW 보장
       arc(0,0, R1*1.8, R1*1.8, s, e);
 
-      // 화살촉(끝점)
-      const hx = (R1*0.9)*cos(aNew), hy = (R1*0.9)*sin(aNew);
+      // 화살촉(끝: 위쪽)
+      const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
       push();
       translate(hx, hy);
-      rotate(aNew + PI/2);
+      rotate(aTop + PI/2); // CCW 접선
       fill(220,80,0); noStroke();
       triangle(0,0, -8,-12, 8,-12);
       pop();
 
+      // 캡션
       noStroke(); fill(220,80,0);
-      textAlign(CENTER, TOP);
-      textSize(13);
-      const mid = (s + e)/2;
-      text("좌회전 1칸", (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
+      textAlign(CENTER, TOP); textSize(13);
+      const mid = (s+e)/2;
+      text(`좌회전 ${rotCount}칸`, (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
 
-    } else if (lastRotDir === 'R'){
-      // 우회전(시계, CW): aOld -> aNew 로 CW 호 == aNew -> aOld 로 CCW 호
-      let s = aNew, e = aOld;
-      if (e <= s) e += TWO_PI;         // CCW 진행을 보장 (그리기는 aNew -> aOld)
+    } else if (rotDir === 'R'){
+      // 우회전(시계): 현재 위치에서 위쪽까지 CW == CCW로 위쪽→현재를 그리면 시각적으로 CW
+      let s = aTop, e = aCur;
+      if (e <= s) e += TWO_PI; // CCW 보장(위쪽→현재)
       arc(0,0, R1*1.8, R1*1.8, s, e);
 
-      // 화살촉(끝점 = aNew 방향을 가리키도록)
-      const hx = (R1*0.9)*cos(aNew), hy = (R1*0.9)*sin(aNew);
+      // 화살촉(끝: 위쪽, CW 접선)
+      const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
       push();
       translate(hx, hy);
-      rotate(aNew - PI/2);             // 시계 방향 화살촉
+      rotate(aTop - PI/2); // CW 접선
       fill(220,80,0); noStroke();
       triangle(0,0, -8,-12, 8,-12);
       pop();
 
+      // 캡션
       noStroke(); fill(220,80,0);
-      textAlign(CENTER, TOP);
-      textSize(13);
-      const mid = (s + e)/2;
-      text("우회전 1칸", (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
+      textAlign(CENTER, TOP); textSize(13);
+      const mid = (s+e)/2;
+      text(`우회전 ${rotCount}칸`, (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
     }
   }
 
   pop();
+
+  // 정렬 완료 뱃지
+  if (seating.indexOf(1) === 0){
+    noStroke(); fill(20,120,60);
+    textAlign(CENTER, TOP); textSize(13);
+    text("정렬 완료", width/2, height-28);
+  }
 
   // 캡션
   noStroke(); fill(60);
@@ -300,7 +292,7 @@ function drawSeating(arr, R, startAng, labelColor, diskColor, bold){
     text(arr[i], x, y+1);
   }
 
-  // 사람 1을 강조(링)
+  // 사람 1 강조(링)
   const idx1 = arr.indexOf(1);
   if(idx1 >= 0){
     const a1 = startAng + angStep*idx1;
@@ -321,7 +313,7 @@ function byId(id){ return document.getElementById(id); }
     st.markdown(
         """
 **수업 아이디어**  
-- 무작위로 섞어 보고, 좌/우 회전을 눌러 **외곽 원에서 1의 실제 이동 방향**을 관찰하게 하세요.  
+- 무작위로 섞은 뒤, 좌/우 회전을 눌러 **바깥의 1 → 안쪽의 1(맨 위)** 에 도달하기까지의 **방향(원호)** 과 **누적 칸 수**를 관찰하게 하세요.  
 - 이어서 **“사람 1번을 항상 맨 위”**로 고정한 안쪽 원(정준형)을 보며, 나머지 \(n-1\)명만 순서를 정하면 되므로 **\((n-1)!\)** 이 되는 이유를 연결합니다.
         """
     )
