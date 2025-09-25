@@ -142,115 +142,74 @@ CURRICULUM = [
           {"key": "2-1-1", "label": "지수함수와 로그함수의 극한", "items": [
                 {
                     "type": "canva",
-                    "title": "시행과 사건",
-                    "src": "https://www.canva.com/design/DAGNl7Kpmdc/qH9Yd9_aa6jpJsh0TcVY2A/view?embed",
+                    "title": "지수함수와 로그함수의 극한",
+                    "src": "https://www.canva.com/design/DAGTJOLHg9k/-TdpYRAftQG5NZnYUZP35A/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "수학적 확률",
-                    "src": "https://www.canva.com/design/DAGNl1df9hA/vZkiHQlTQrGwOUnAtdxe1Q/view?embed",
+                    "title": "무리수 e와 자연로그",
+                    "src": "https://www.canva.com/design/DAGTgFsAY9E/mcl3wIIc1y5H5iWcdDHYMg/view?embed",
                     "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "통계적 확률",
-                    "src": "https://www.canva.com/design/DAGNl3VnqaM/rJz9C3d1irXdI7fap2Mzjg/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "gsheet",
-                    "title": "수학적 확률과 통계적 확률의 관계",
-                    "src": "https://docs.google.com/spreadsheets/d/1oz2DHhzrRxRFRn92RcGZdupPGvXUzWTk/edit?usp=drivesdk",
-                    "height": 800
-                },
-                {
-                    "type": "iframe",
-                    "title": "수학적 확률과 통계적 확률의 관계 (통그라미)",
-                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
-                    "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "미니: 주사위 실험(애니메이션)", 
-                    "subject": "probability",
-                    "slug": "mini/dice_lab",
-                },
-                {
-                    "type": "activity",
-                    "title": "뷔퐁의 바늘 실험",
-                    "subject": "probability",
-                    "slug": "buffon_needle_p5"
-                },
-                {
-                    "type": "iframe",
-                    "title": "뷔퐁의 바늘 실험(일리노이대)",
-                    "src": "https://mste.illinois.edu/activity/buffon/",
-                    "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "베르트랑의 역설",
-                    "subject": "probability",
-                    "slug": "bertrand_paradox_p5"
                 }
           ]},
           {"key": "2-1-2", "label": "지수함수와 로그함수의 미분", "items": [
                 {
                     "type": "canva",
-                    "title": "확률의 기본 성질",
-                    "src": "https://www.canva.com/design/DAGNl4QjJQk/In6tmF5d2maLToc3tJkPwQ/view?embed",
+                    "title": "지수함수의 도함수",
+                    "src": "https://www.canva.com/design/DAGTf5uDEKo/7PXATsA2bmb6cgcgXZKiGA/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "activity",
-                    "title": "몬티홀 문제",
-                    "subject": "probability",
-                    "slug": "monty_hall_p5"
-                },
-                {
-                    "type": "activity",
-                    "title": "몬티홀 문제(확장)",
-                    "subject": "probability",
-                    "slug": "monty_hall_extended_p5"
+                    "type": "canva",
+                    "title": "로그함수의 도함수",
+                    "src": "https://www.canva.com/design/DAGTgN5nxvU/7MLGgHJhsKkZFv0oIwE0XQ/view?embed",
+                    "height": 800
                 }
           ]},
           {"key": "2-1-3", "label": "삼각함수의 덧셈정리", "items": [
                 {
                     "type": "canva",
-                    "title": "배반사건",
-                    "src": "https://www.canva.com/design/DAGNl4WLA34/0B49FEc9BXaV-f033EiDrA/view?embed",
+                    "title": "삼각함수 csc, sec, cot",
+                    "src": "https://www.canva.com/design/DAGTfxyahrw/sxF-q74yaBouWz2fgR5kzA/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "확률의 덧셈정리",
-                    "src": "https://www.canva.com/design/DAGNl4dXCFU/wU2f46tNJIQxIAkx6WH_sw/view?embed",
+                    "title": "삼각함수의 덧셈정리",
+                    "src": "https://www.canva.com/design/DAGTgFqtQIs/kG10fPbCb4fF_Sr3T9lQaA/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "2-1-4", "label": "삼각함수의 극한", "items": [
                 {
                     "type": "canva",
-                    "title": "여사건",
-                    "src": "https://www.canva.com/design/DAGNlwRyb0Q/uFGi82VwEUHsPNn50t5RPg/view?embed",
+                    "title": "삼각함수의 극한",
+                    "src": "https://www.canva.com/design/DAGTfzOmRw8/Ey8xu_Jx_jluzgfKUNGMiQ/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "함수 sinx/x의 극한",
+                    "src": "https://www.canva.com/design/DAGTgOvpQvE/K73Y4tEgwQbqPdSWnIKZ_A/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "2-1-5", "label": "삼각함수의 미분", "items": [
                 {
                     "type": "canva",
-                    "title": "여사건",
-                    "src": "https://www.canva.com/design/DAGNlwRyb0Q/uFGi82VwEUHsPNn50t5RPg/view?embed",
+                    "title": "삼각함수의 도함수",
+                    "src": "https://www.canva.com/design/DAGTfz-tZaU/eL-ZCerVU523qt2Ozwwj_Q/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "2-1-6", "label": "중단원 마무리하기", "items": [
                 {
-                    "type": "canva",
-                    "title": "여사건",
-                    "src": "https://www.canva.com/design/DAGNlwRyb0Q/uFGi82VwEUHsPNn50t5RPg/view?embed",
-                    "height": 800
+                    "type": "pdf",
+                    "title": "중단원 마무리하기",
+                    "src": "https://drive.google.com/file/d/13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb"  # (선택) 다운로드 버튼 표시용
                 }
           ]}
         ],
@@ -262,73 +221,74 @@ CURRICULUM = [
           {"key": "2-2-1", "label": "함수의 몫의 미분법", "items": [
                 {
                     "type": "canva",
-                    "title": "조건부확률",
-                    "src": "https://www.canva.com/design/DAGNl-3fzAo/dG6Ih5DHeLzB3_-3yFkWmw/view?embed",
+                    "title": "함수의 몫의 미분법",
+                    "src": "https://www.canva.com/design/DAGTJCfzwUs/xsmP_1x7-N1jGOan8vwr_Q/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "activity",
-                    "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
-                    "subject": "probability",
-                    "slug": "mini/odd_prime_conditional",   # 👈 파일명
-                },
-                {
-                    "type": "activity",
-                    "title": "미니: 확률 수렴 관찰(10,100,1,000...)", 
-                    "subject": "probability",
-                    "slug": "mini/odd_prime_convergence",
+                    "type": "canva",
+                    "title": "함수 y=x^n (n은 정수)의 도함수",
+                    "src": "https://www.canva.com/design/DAGTgP2DKTg/HPMYK6i-1fDYfxl99MENKg/view?embed",
+                    "height": 800
                 }
           ]},
           {"key": "2-2-2", "label": "합성함수의 미분법", "items": [
                 {
                     "type": "canva",
-                    "title": "확률의 곱셈정리",
-                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
+                    "title": "합성함수의 미분법",
+                    "src": "https://www.canva.com/design/DAGTgA55y9Y/TqfP4VjJJ6A5O9HJij39iw/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "activity",
-                    "title": "신기한 주사위", 
-                    "subject": "probability",
-                    "slug": "mini/nontransitive_dice_lab",
+                    "type": "canva",
+                    "title": "함수 y=x^n (n은 실수)의 도함수",
+                    "src": "https://www.canva.com/design/DAGTgK1QPik/B4MoH-lJtuLl9Wp6_BPKiQ/view?embed",
+                    "height": 800
                 }
           ]},
           {"key": "2-2-3", "label": "매개변수로 나타낸 함수의 미분법", "items": [
                 {
                     "type": "canva",
-                    "title": "사건의 독립과 종속",
-                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
+                    "title": "매개변수로 나타낸 함수",
+                    "src": "https://www.canva.com/design/DAGTgEykzsU/0DNM-bJ5FwB1SyoDpXBwAg/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "youtube",
-                    "title": "상금 분배 문제",
-                    "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b&start=535",
+                    "type": "canva",
+                    "title": "매개변수로 나타낸 함수의 미분법",
+                    "src": "https://www.canva.com/design/DAGTgO71PFU/RvDE9TFYZIcv3nxRCzekPw/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "2-2-4", "label": "음함수와 역함수의 미분법", "items": [
                 {
                     "type": "canva",
-                    "title": "독립시행",
-                    "src": "https://www.canva.com/design/DAGNl8UMPCw/ksQ3KQ4X1iM2Oqkeaph6AA/view?embed",
+                    "title": "음함수의 미분법",
+                    "src": "https://www.canva.com/design/DAGTgPzQEI0/UFXL0KGeJlhVDEc1QbFiAw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "역함수의 미분법",
+                    "src": "https://www.canva.com/design/DAGTgHmGH2o/9Kwr_MGN66woxTtl0cZI3w/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "2-2-5", "label": "이계도함수", "items": [
                 {
                     "type": "canva",
-                    "title": "독립시행",
-                    "src": "https://www.canva.com/design/DAGNl8UMPCw/ksQ3KQ4X1iM2Oqkeaph6AA/view?embed",
+                    "title": "이계도함수",
+                    "src": "https://www.canva.com/design/DAGTgH_lLFw/2wzCQXPoA60ecz0KnB01SQ/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "2-2-6", "label": "중단원 마무리하기", "items": [
                 {
-                    "type": "canva",
-                    "title": "독립시행",
-                    "src": "https://www.canva.com/design/DAGNl8UMPCw/ksQ3KQ4X1iM2Oqkeaph6AA/view?embed",
-                    "height": 800
+                    "type": "pdf",
+                    "title": "중단원 마무리하기",
+                    "src": "https://drive.google.com/file/d/1O2SbanhKp3fOwVrgWOoA7bwwfkKurDhA/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1O2SbanhKp3fOwVrgWOoA7bwwfkKurDhA"  # (선택) 다운로드 버튼 표시용
                 }
           ]}
         ],
@@ -340,65 +300,72 @@ CURRICULUM = [
           {"key": "2-3-1", "label": "접선의 방정식", "items": [
                 {
                     "type": "canva",
-                    "title": "조건부확률",
-                    "src": "https://www.canva.com/design/DAGNl-3fzAo/dG6Ih5DHeLzB3_-3yFkWmw/view?embed",
+                    "title": "접선의 방정식",
+                    "src": "https://www.canva.com/design/DAGTJFATDO4/RFej0XWGWp5Ni1TeRbBFKg/view?embed",
                     "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
-                    "subject": "probability",
-                    "slug": "mini/odd_prime_conditional",   # 👈 파일명
-                },
-                {
-                    "type": "activity",
-                    "title": "미니: 확률 수렴 관찰(10,100,1,000...)", 
-                    "subject": "probability",
-                    "slug": "mini/odd_prime_convergence",
                 }
           ]},
           {"key": "2-3-2", "label": "함수의 그래프", "items": [
                 {
                     "type": "canva",
-                    "title": "확률의 곱셈정리",
-                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
+                    "title": "함수의 증가와 감소, 극대와 극소",
+                    "src": "https://www.canva.com/design/DAGTg9Snfts/azVJqiUxdzCcF7kwgIS_Hg/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "activity",
-                    "title": "신기한 주사위", 
-                    "subject": "probability",
-                    "slug": "mini/nontransitive_dice_lab",
+                    "type": "canva",
+                    "title": "곡선의 오목과 볼록",
+                    "src": "https://www.canva.com/design/DAGTg4nd_bY/s140hd92wu7B4ngZvhPKcg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "함수의 그래프",
+                    "src": "https://www.canva.com/design/DAGTg6TRReM/gK5YTlkucfOm0q4741PFHg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "함수의 최대와 최소",
+                    "src": "https://www.canva.com/design/DAGTg_Z2WfQ/bQwiYC1S0Ftwf-Zcrmt9-w/view?embed",
+                    "height": 800
                 }
           ]},
           {"key": "2-3-3", "label": "방정식과 부등식에의 활용", "items": [
                 {
                     "type": "canva",
-                    "title": "사건의 독립과 종속",
-                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
+                    "title": "방정식에의 활용",
+                    "src": "https://www.canva.com/design/DAGTgwmUeY4/J0_m3exRzgeJEnLuPGkk9g/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "youtube",
-                    "title": "상금 분배 문제",
-                    "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b&start=535",
+                    "type": "canva",
+                    "title": "부등식에의 활용",
+                    "src": "https://www.canva.com/design/DAGTg3oijls/RLgzbWDOki614QsiR9jiVQ/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "2-3-4", "label": "속도와 가속도", "items": [
                 {
                     "type": "canva",
-                    "title": "독립시행",
-                    "src": "https://www.canva.com/design/DAGNl8UMPCw/ksQ3KQ4X1iM2Oqkeaph6AA/view?embed",
+                    "title": "직선 운동에서의 속도와 가속도",
+                    "src": "https://www.canva.com/design/DAGTgz882-M/O-R6dhouOg4qJQ5h_LfIew/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "평면 운동에서의 속도와 가속도",
+                    "src": "https://www.canva.com/design/DAGTg9FTQNg/BNC4m0pTXDZgFdjuH5kHCQ/view?embed",
                     "height": 800
                 }
           ]},
           {"key": "2-3-5", "label": "중단원 마무리하기", "items": [
                 {
-                    "type": "canva",
-                    "title": "독립시행",
-                    "src": "https://www.canva.com/design/DAGNl8UMPCw/ksQ3KQ4X1iM2Oqkeaph6AA/view?embed",
-                    "height": 800
+                    "type": "pdf",
+                    "title": "중단원 마무리하기",
+                    "src": "https://drive.google.com/file/d/12NgdxTgz5I0mD0z2bWwezfbidZgKR3MJ/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=12NgdxTgz5I0mD0z2bWwezfbidZgKR3MJ"  # (선택) 다운로드 버튼 표시용
                 }
           ]}
         ],
@@ -410,9 +377,9 @@ CURRICULUM = [
                 {
                     "type": "pdf",
                     "title": "단원평가문제",
-                    "src": "https://drive.google.com/file/d/1viXzZ3ETiz7kdmHfyLk91Lhfu-1HBUYu/preview",
+                    "src": "https://drive.google.com/file/d/1msRUWn2RP7RG9zdmrik6o8-FMORM0wIC/preview",
                     #"height": 900,
-                    "download": "https://drive.google.com/uc?export=download&id=1viXzZ3ETiz7kdmHfyLk91Lhfu-1HBUYu"  # (선택) 다운로드 버튼 표시용
+                    "download": "https://drive.google.com/uc?export=download&id=1msRUWn2RP7RG9zdmrik6o8-FMORM0wIC"  # (선택) 다운로드 버튼 표시용
                 }
         ],
       },
@@ -471,10 +438,11 @@ CURRICULUM = [
           ]},
           {"key": "3-1-4", "label": "중단원 마무리하기", "items": [
                 {
-                    "type": "canva",
-                    "title": "이항분포",
-                    "src": "https://www.canva.com/design/DAGPla1Cvro/HtiMM_RVFELx46wGvk76iw/view?embed",
-                    "height": 800
+                    "type": "pdf",
+                    "title": "중단원 마무리하기",
+                    "src": "https://drive.google.com/file/d/13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb"  # (선택) 다운로드 버튼 표시용
                 }
           ]}
         ],
@@ -577,10 +545,11 @@ CURRICULUM = [
           ]},
           {"key": "3-2-5", "label": "중단원 마무리하기기", "items": [
                 {
-                    "type": "canva",
-                    "title": "모평균의 추정",
-                    "src": "https://www.canva.com/design/DAGS90gRVbo/9uH90_qTyrhm2goy6M41Ug/view?embed",
-                    "height": 800
+                    "type": "pdf",
+                    "title": "중단원 마무리하기",
+                    "src": "https://drive.google.com/file/d/13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=13eV3v_W_XA_ietxyyKcUCCRSi8p5JRPb"  # (선택) 다운로드 버튼 표시용
                 }
           ]}
         ],
