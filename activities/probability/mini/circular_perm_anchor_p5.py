@@ -160,6 +160,34 @@ function draw(){
   drawRings();
 }
 
+// 원하는 방향(CW/CCW)으로 원호를 직접 샘플링해서 그리는 헬퍼
+function drawArcDirectional(cx, cy, R, aStart, aEnd, dir){ // dir: 'CW' or 'CCW'
+  const steps = 64;
+  let angles = [];
+  if (dir === 'CW'){
+    // aStart → aEnd 시계(각도 증가)로 진행
+    if (aEnd < aStart) aEnd += TWO_PI;
+    for (let t = 0; t <= 1; t += 1/steps){
+      const a = aStart + t*(aEnd - aStart);
+      angles.push(a);
+    }
+  } else {
+    // CCW: aStart → aEnd 반시계(각도 감소)로 진행
+    if (aEnd > aStart) aEnd -= TWO_PI;
+    for (let t = 0; t <= 1; t += 1/steps){
+      const a = aStart + t*(aEnd - aStart); // aEnd < aStart 이므로 감소
+      angles.push(a);
+    }
+  }
+  noFill();
+  beginShape();
+  for (let a of angles){
+    vertex(cx + R * Math.cos(a), cy + R * Math.sin(a));
+  }
+  endShape();
+  return angles;
+}
+
 function drawRings(){
   push();
   translate(width/2, height/2);
@@ -189,56 +217,47 @@ function drawRings(){
   circle(0,0, 2*R2);
   drawSeating(canon, R2, startAng, labelColor=color(10,80,220), diskColor=color(180,210,255), bold=true);
 
-  // 원호 힌트: 버튼으로 선택된 방향에 대해 "정렬까지 필요한 칸 수"를 계산해 표시
-  const idx1 = seating.indexOf(1);        // 바깥 원의 1의 위치(0..n-1), 0이면 이미 정렬
+  // 원호 힌트: 선택된 방향에 대해 "정렬까지 필요한 칸 수"와 방향을 표시
+  const idx1 = seating.indexOf(1);        // 바깥 원의 1의 위치(0..n-1), 0이면 정렬
   if (idx1 !== 0 && rotDir){
     const aCur = startAng + angStep * idx1; // 바깥 1의 현재 각도
     const aTop = startAng;                  // 안쪽 1(맨 위)의 각도
 
+    stroke(220,80,0); strokeWeight(2);
+
     if (rotDir === 'L'){
-      // 좌회전(반시계)으로 정렬까지 필요한 칸 = idx1
-      const need = idx1;
-      if (need > 0){
-        // CCW: 현재(aCur) → 위(aTop)
-        let s = aCur, e = aTop;
-        if (e <= s) e += TWO_PI;  // CCW 보장
-        stroke(220,80,0); strokeWeight(2); noFill();
-        arc(0,0, R1*1.8, R1*1.8, s, e);
+      // 좌회전(CCW): 현재(aCur) → 위(aTop)를 반시계로 감
+      const need = idx1; // CCW로 필요한 칸 수
+      const angles = drawArcDirectional(0,0, R1*0.9, aCur, aTop, 'CCW');
 
-        // 화살촉(끝: 위쪽, CCW 접선)
-        const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
-        push(); translate(hx, hy); rotate(aTop + PI/2);
-        fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
-        pop();
+      // 화살촉(끝점: aTop, CCW 접선 방향)
+      const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
+      push(); translate(hx, hy); rotate(aTop + PI/2);
+      fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
+      pop();
 
-        // 캡션
-        noStroke(); fill(220,80,0);
-        textAlign(CENTER, TOP); textSize(13);
-        const mid = (s+e)/2;
-        text(`좌회전 ${need}칸`, (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
-      }
+      // 캡션을 경로 중간에
+      const amid = angles[Math.floor(angles.length/2)];
+      noStroke(); fill(220,80,0);
+      textAlign(CENTER, TOP); textSize(13);
+      text(`좌회전 ${need}칸`, (R1*0.9)*cos(amid), (R1*0.9)*sin(amid)+2);
+
     } else if (rotDir === 'R'){
-      // 우회전(시계)으로 정렬까지 필요한 칸 = (n - idx1) % n
+      // 우회전(CW): 현재(aCur) → 위(aTop)를 시계로 감
       const need = (seating.length - idx1) % seating.length;
-      if (need > 0){
-        // 시각적 CW: 위(aTop) → 현재(aCur)를 CCW로 그리면 동일 호
-        let s = aTop, e = aCur;
-        if (e <= s) e += TWO_PI;  // CCW 보장(위→현재)
-        stroke(220,80,0); strokeWeight(2); noFill();
-        arc(0,0, R1*1.8, R1*1.8, s, e);
+      const angles = drawArcDirectional(0,0, R1*0.9, aCur, aTop, 'CW');
 
-        // 화살촉(끝: 위쪽, CW 접선)
-        const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
-        push(); translate(hx, hy); rotate(aTop - PI/2);
-        fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
-        pop();
+      // 화살촉(끝점: aTop, CW 접선 방향)
+      const hx = (R1*0.9)*cos(aTop), hy = (R1*0.9)*sin(aTop);
+      push(); translate(hx, hy); rotate(aTop - PI/2);
+      fill(220,80,0); noStroke(); triangle(0,0, -8,-12, 8,-12);
+      pop();
 
-        // 캡션
-        noStroke(); fill(220,80,0);
-        textAlign(CENTER, TOP); textSize(13);
-        const mid = (s+e)/2;
-        text(`우회전 ${need}칸`, (R1*0.9)*cos(mid), (R1*0.9)*sin(mid)+2);
-      }
+      // 캡션을 경로 중간에
+      const amid = angles[Math.floor(angles.length/2)];
+      noStroke(); fill(220,80,0);
+      textAlign(CENTER, TOP); textSize(13);
+      text(`우회전 ${need}칸`, (R1*0.9)*cos(amid), (R1*0.9)*sin(amid)+2);
     }
   }
 
@@ -282,8 +301,8 @@ function drawSeating(arr, R, startAng, labelColor, diskColor, bold){
   // 사람 1 강조(링)
   const idx1 = arr.indexOf(1);
   if(idx1 >= 0){
-    const angStep = TWO_PI / arr.length;
-    const a1 = startAng + angStep*idx1;
+    const angStep2 = TWO_PI / arr.length;
+    const a1 = startAng + angStep2*idx1;
     const x1 = R*cos(a1), y1 = R*sin(a1);
     noFill(); stroke(0,120,255); strokeWeight(2.2);
     circle(x1, y1, (bold? 26:22)*2);
