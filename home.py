@@ -96,6 +96,8 @@ st.set_page_config(
     layout="wide"
 )
 
+SHOW_MINI_IN_SIDEBAR = False
+
 # 교과 카테고리 정의(폴더명 ↔ 표시명)
 SUBJECTS = {
     "common": "공통수학",
@@ -292,7 +294,7 @@ def discover_activities() -> Dict[str, List[Activity]]:
 
     def add_from_dir(dir_path: Path, subject_key: str, slug_prefix: str = ""):
         # mini 폴더 여부 판정
-        is_hidden_dir = (Path(dir_path).name == "mini") or slug_prefix.startswith("mini/")
+        is_mini = (Path(dir_path).name == "mini") or slug_prefix.startswith("mini/")
 
         for py_file in dir_path.glob("*.py"):
             name = py_file.name
@@ -313,7 +315,7 @@ def discover_activities() -> Dict[str, List[Activity]]:
             order = int(meta.get("order", 10_000_000))
             # 파일 단위 숨김도 지원
             is_hidden_file = bool(meta.get("hidden", False))
-            hidden = is_hidden_dir or is_hidden_file
+            hidden = (is_mini and not SHOW_MINI_IN_SIDEBAR) or is_hidden_file
 
             if callable(render_fn):
                 registry[subject_key].append(
