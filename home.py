@@ -5,7 +5,12 @@ import importlib.util
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Any
 import streamlit.components.v1 as components  # 임베드용
-import urllib.parse 
+import urllib.parse
+from functools import lru_cache
+
+@lru_cache(maxsize=256)
+def _load_module_cached(path_str: str, mtime: float):
+    return load_module_from_path(Path(path_str))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Fallback: utils.keep_scroll이 없을 때 최소 구현
@@ -301,7 +306,7 @@ def discover_activities() -> Dict[str, List[Activity]]:
             if name.startswith("_") or name == "__init__.py":
                 continue
             try:
-                module = load_module_from_path(py_file)
+                module = _load_module_cached(str(py_file), py_file.stat().st_mtime)
             except Exception as e:
                 # 문제 파일을 사이드바/본문에 명확히 표시하고, 나머지 파일 로딩은 계속
                 st.sidebar.error(f"❌ 활동 로딩 실패: {py_file.name}\n\n{e}")
