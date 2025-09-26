@@ -13,8 +13,7 @@ ORDER = [
     "sampling_mean_demo_p5",
     "clt_sample_mean",
     "ci_mean_demo_p5",
-    "ci_length_lab",
-    "my_new_lab"
+    "ci_length_lab"
     # 하위 폴더에 있는 경우엔 이렇게 씁니다:
     #"mini/dice_conditional_prob",      # mini 폴더 예시(보이게 하려면 해당 파일 META.hidden=False 필요)
     # ...원하는 순서대로 계속...
