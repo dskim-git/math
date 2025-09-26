@@ -1,5 +1,7 @@
 # activities/etc/survey_live_dashboard.py
 import time
+import re
+import urllib.parse
 import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
@@ -47,7 +49,7 @@ def render():
         pc_url = st.text_input(
             "PC에서 복사한 시트/CSV URL",
             placeholder="https://docs.google.com/spreadsheets/d/.../edit#gid=0 (PC에서 복사)",
-            help="PC의 브라우저 주소창에서 복사한 링크를 붙여넣으세요."
+            help="PC 브라우저 주소창에서 복사한 링크를 붙여넣으세요."
         )
         mobile_url = st.text_input(
             "모바일에서 복사한 시트/CSV URL",
@@ -55,8 +57,19 @@ def render():
             help="모바일 브라우저/드라이브 앱에서 복사한 링크를 붙여넣으세요."
         )
 
+        # 🔹 탭 식별 입력(둘 중 편한 걸 쓰면 됨)
+        sheet_name = st.text_input(
+            "시트 탭 이름(선택)",
+            placeholder="예: 폼 응답 1 / 응답 시트1",
+            help="모바일 링크에 gid가 없을 때 사용하면 좋아요. 탭 이름이 정확해야 합니다."
+        )
+        gid_input = st.text_input(
+            "gid (숫자, 선택)",
+            placeholder="예: 0 또는 123456789",
+            help="정확한 gid를 알면 가장 확실합니다."
+        )
+
         # 둘 다 있으면 어떤 걸 쓸지 선택, 하나만 있으면 그걸 자동 선택
-        source_choice = None
         options = []
         if mobile_url:
             options.append("모바일 URL")
@@ -70,23 +83,57 @@ def render():
         else:
             source_choice = None  # 아직 아무 것도 입력 안 됨
 
-        # 실제로 사용할 URL 결정
+        # 실제로 사용할 원본 URL 결정
         if source_choice == "모바일 URL":
-            active_url = mobile_url
+            active_url_raw = mobile_url
         elif source_choice == "PC URL":
-            active_url = pc_url
+            active_url_raw = pc_url
         else:
-            active_url = ""
+            active_url_raw = ""
 
-        # 자동 새로고침
+        # 🔹 CSV URL 만들기(탭 이름/gid를 우선 사용)
+        def build_csv_url(url: str, sheet: str, gid_text: str) -> str:
+            if not url:
+                return ""
+            # 이미 CSV export면 그대로
+            if "export?format=csv" in url or "output=csv" in url:
+                return url
+
+            # 스프레드시트 파일 ID 추출
+            m = re.search(r"/spreadsheets/d/([a-zA-Z0-9-_]+)/", url)
+            if not m:
+                # 그 밖의 경우는 기존 변환기로 시도
+                return make_csv_export_url(url)
+
+            file_id = m.group(1)
+            gid_in_url = re.search(r"[?#&]gid=([0-9]+)", url)
+
+            # 1) gid 입력을 최우선
+            if gid_text and gid_text.strip().isdigit():
+                gid_clean = gid_text.strip()
+                return f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=csv&gid={gid_clean}"
+
+            # 2) URL에 gid가 이미 있으면 그걸 사용
+            if gid_in_url:
+                return f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=csv&gid={gid_in_url.group(1)}"
+
+            # 3) 탭 이름이 있으면 gviz/tq + sheet 이름으로 (gid 없이도 동작)
+            if sheet and sheet.strip():
+                sheet_enc = urllib.parse.quote(sheet.strip())
+                # tqx=out:csv 를 명시해 CSV로 받도록
+                return f"https://docs.google.com/spreadsheets/d/{file_id}/gviz/tq?tqx=out:csv&sheet={sheet_enc}"
+
+            # 4) 마지막 안전망: 기존 로직(여기선 gid=0이 될 수 있어 주의)
+            return make_csv_export_url(url)
+
+        # 미리보기: 각 URL을 CSV export로 변환해 보여주고, 현재 사용 중인 URL도 표시
+        preview_pc = build_csv_url(pc_url, sheet_name, gid_input) if pc_url else ""
+        preview_mobile = build_csv_url(mobile_url, sheet_name, gid_input) if mobile_url else ""
+        preview_active = build_csv_url(active_url_raw, sheet_name, gid_input) if active_url_raw else ""
+
+        # 자동/수동 새로고침
         refresh_sec = st.slider("자동 새로고침(초)", 0, 120, 10, help="0은 자동 새로고침 끔")
-        # 수동 새로고침
         force = st.button("🔁 지금 새로고침")
-
-        # ⬇️ 미리보기: 각 URL을 CSV export로 변환해 보여주고, 현재 사용 중인 URL도 표시
-        preview_pc = make_csv_export_url(pc_url) if pc_url else ""
-        preview_mobile = make_csv_export_url(mobile_url) if mobile_url else ""
-        preview_active = make_csv_export_url(active_url) if active_url else ""
 
         st.caption("PC → CSV 주소 미리보기")
         st.text_area("PC CSV URL", preview_pc, height=60, label_visibility="collapsed")
@@ -99,8 +146,11 @@ def render():
 
         show_raw = st.checkbox("원시 데이터 보기", False)
 
+    # 실제 사용할 최종 URL
+    final_url = preview_active
+
     # 자동 새로고침 트리거(있을 때만)
-    if active_url and refresh_sec > 0:
+    if final_url and refresh_sec > 0:
         _auto_refresh(refresh_sec, key="auto_refresh_survey")
 
     # bust 값 계산: 자동 주기 + 수동 버튼
@@ -118,12 +168,12 @@ def render():
         # bust가 함수 인자로 들어가므로, 값이 바뀔 때마다 캐시가 무효화됩니다.
         return load_csv_live(url, cache_bust=bust)
 
-    if not active_url:
-        st.info("좌측에서 **PC 또는 모바일 URL**을 붙여넣으면 그래프가 나타납니다.")
+    if not final_url:
+        st.info("좌측에서 **PC/모바일 URL**을 입력하고, 필요 시 **탭 이름 또는 gid**를 채워주세요.")
         return
 
     try:
-        df = _load(active_url, bust_val)
+        df = _load(final_url, bust_val)
     except Exception as e:
         st.error(f"CSV를 불러오는 중 오류: {e}")
         return
