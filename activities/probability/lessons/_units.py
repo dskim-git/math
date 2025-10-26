@@ -279,6 +279,12 @@ CURRICULUM = [
                     "title": "신기한 주사위", 
                     "subject": "probability",
                     "slug": "mini/nontransitive_dice_lab",
+                },
+                {
+                    "type": "canva",
+                    "title": "AI로 공정한 게임의 확률 검증하기",
+                    "src": "https://www.canva.com/design/DAG2NDANiTM/ZrgIgrdEzKG5g_7eF_gvDQ/view?embed",
+                    "height": 800
                 }
           ]},
           {"key": "2-2-3", "label": "사건의 독립과 종속", "items": [
