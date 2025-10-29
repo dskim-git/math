@@ -399,7 +399,7 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "이항분포의 평균과 표준편차",
-                    "src": "https://www.canva.com/design/DAGPlRem8xg/view?embed",
+                    "src": "https://www.canva.com/design/DAGPlRem8xg/hYCHXkQKzbCavXITM80CXw/view?embed",
                     "height": 800
                 },
                 {
