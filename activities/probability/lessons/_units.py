@@ -424,7 +424,7 @@ CURRICULUM = [
                     "type": "activity",
                     "title": "미니: 큰 수의 법칙 이해",
                     "subject": "probability",
-                    "slug": "mini/lln_visual"
+                    "slug": "mini/lln_binomial_simple"
                 }
           ]},
           {"key": "3-1-5", "label": "정규분포", "items": [
