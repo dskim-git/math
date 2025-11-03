@@ -419,6 +419,12 @@ CURRICULUM = [
                     "title": "큰 수의 법칙",
                     "src": "https://www.canva.com/design/DAGPlZbIltE/uDkL0_1Qcg5b4A_tj6fQuw/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 큰 수의 법칙 이해",
+                    "subject": "probability",
+                    "slug": "mini/lln_visual.py"
                 }
           ]},
           {"key": "3-1-5", "label": "정규분포", "items": [
