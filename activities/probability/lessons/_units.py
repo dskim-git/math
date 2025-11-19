@@ -487,6 +487,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "카드 추출하기", 
+                    "subject": "probability",
+                    "slug": "mini/sampling_cards",
+                },
+                {
                     "type": "canva",
                     "title": "모평균과 표본평균",
                     "src": "https://www.canva.com/design/DAGS91-b3vE/4oH3vpKWWgEPdmSKWo7flg/view?embed",
