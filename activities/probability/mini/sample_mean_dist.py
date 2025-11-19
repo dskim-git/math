@@ -61,6 +61,7 @@ def draw_basket(values: List[int]):
 
 # ---------- 합 분포(정확/근사) ----------
 def pmf_sum_via_power(values: List[int], n: int) -> Dict[int, float]:
+    """단일 추출 pmf를 다항식으로 보고 n제곱(분할정복) → S_n의 정확 분포."""
     vals = np.array(values, dtype=int)
     m = len(vals)
     minv, maxv = vals.min(), vals.max()
@@ -93,15 +94,18 @@ def pmf_sum_via_power(values: List[int], n: int) -> Dict[int, float]:
     return pmf
 
 def pmf_sum(values: List[int], n: int) -> Dict[int, float]:
-    m = len(values)
-    total_outcomes = m ** n
-    range_len = n * (max(values) - min(values)) + 1
-    if total_outcomes <= 200_000 and range_len <= 6000:
+    """
+    가능하면 항상 '정확' 방법을 사용.
+    spread*n이 적정(≤4000)하면 다항식 거듭제곱을 강제하고,
+    그 외 극단적 상황만 몬테카를로로 근사.
+    """
+    spread = max(values) - min(values) if len(values) > 0 else 0
+    if spread * n <= 4000:
         return pmf_sum_via_power(values, n)
 
-    # 근사(몬테카를로) – 합은 여전히 정수이므로 불가능한 평균은 생성 자체가 안 됨
+    # 근사(희귀 합이 누락될 수 있으므로 가능한 한 위 조건을 만족시키도록 안내)
     rng = np.random.default_rng(0)
-    trials = min(200_000, 5000 * n)
+    trials = min(300_000, 6000 * max(1, n))
     vals = np.array(values)
     sums = rng.choice(vals, size=(trials, n), replace=True).sum(axis=1)
     unique, counts = np.unique(sums, return_counts=True)
@@ -171,86 +175,53 @@ def render():
     st.markdown("<div style='height:10px;'></div>", unsafe_allow_html=True)
     st.divider()
 
-    # ===== 표본평균의 분포(불가능 값 제거 + 가로표) =====
+    # ===== 표본평균의 분포(가능한 값만, 가로형 표) =====
     st.subheader("표본평균의 분포표")
-
-    # 합 S_n의 분포 → 표본평균 = S_n / n
-    pmfS = pmf_sum(values, n)
-    # 아주 작은 수치잡음 제거(근사시)
-    pmfS = {s: p for s, p in pmfS.items() if p > 1e-12}
-    sums_sorted = sorted(pmfS.keys())
+    pmfS = pmf_sum(values, n)          # S_n의 (정확한) 분포 또는 근사
+    pmfS = {s: p for s, p in pmfS.items() if p > 1e-15}  # 수치잡음 제거
+    sums_sorted = sorted(pmfS.keys())  # 가능한 합(정수)만 포함됨 → 불가능 평균 자동 배제
     probs_sorted = [pmfS[s] for s in sums_sorted]
 
-    # 표본평균 = s/n (불가능한 평균은 애초에 생성되지 않음)
-    means_vals = np.array(sums_sorted, dtype=float) / n
-    probs = np.array(probs_sorted, dtype=float)
+    # 가로 테이블: 열이 "s/n (=decimal)"
+    means_decimal = [s / n for s in sums_sorted]
+    labels = [f"{s}/{n} ({s / n:.4f})" for s in sums_sorted]
 
-    # 확률이 0인(또는 수치상 0에 가까운) 평균 제거
-    mask = probs > 1e-12
-    means_vals = means_vals[mask]
-    probs = probs[mask]
-
-    # 같은 평균(동일 s/n)이 중복될 일은 없지만, 혹시 모를 수치 문제 방지용 그룹핑
-    uniq, idx = np.unique(np.round(means_vals, 12), return_inverse=True)
-    prob_by_mean = np.zeros_like(uniq, dtype=float)
-    for i, p in zip(idx, probs):
-        prob_by_mean[i] += p
-
-    # 라벨: 분수와 소수 병기 (s/n = decimal)
-    sums_kept = np.array(sums_sorted)[mask]
-    # uniq는 반올림 기준이므로 다시 decimal로 표기
-    decimals = uniq
-    labels = [f"{int(s)}/{n} ({d:.4f})" for s, d in zip(sums_kept, means_vals)]
-
-    # 가로 테이블 (1행)
     import pandas as pd
-    df_row = pd.DataFrame([np.round(prob_by_mean, 6)], columns=labels)
+    df_row = pd.DataFrame([np.round(probs_sorted, 6)], columns=labels)
     st.dataframe(df_row, use_container_width=True, hide_index=True)
 
     # 히스토그램
     st.subheader("표본평균 분포 히스토그램")
-    df_hist = pd.DataFrame({"mean": decimals, "prob": prob_by_mean})
+    df_hist = pd.DataFrame({"mean": means_decimal, "prob": probs_sorted})
     fig = px.bar(df_hist, x="mean", y="prob")
     fig.update_layout(xaxis_title="표본평균", yaxis_title="확률", bargap=0.05)
     st.plotly_chart(fig, use_container_width=True)
 
     st.divider()
 
-    # ===== 모집단 vs 표본평균 비교(공식 + 값 나란히) =====
+    # ===== 모집단 vs 표본평균 비교 (안전한 columns 구성: KeyError 방지) =====
     st.subheader("모집단 vs 표본평균 비교")
-    # 이론: 복원추출 IID → E[ȳ]=μ, Var(ȳ)=σ²/n, SD(ȳ)=σ/√n
     mean_bar = pop_mean
     var_bar  = pop_var / n
     std_bar  = sqrt(var_bar)
 
-    st.markdown(
-        """
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
-            <div style="font-weight:700;margin-bottom:6px;">모집단(원자료 X)</div>
-            <div>\\(\\mu=\\mathrm{E}[X]\\) → <b>{mu:.6f}</b></div>
-            <div>\\(\\sigma^2=\\mathrm{Var}(X)\\) → <b>{var:.6f}</b></div>
-            <div>\\(\\sigma=\\sqrt{\\mathrm{Var}(X)}\\) → <b>{std:.6f}</b></div>
-          </div>
-          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
-            <div style="font-weight:700;margin-bottom:6px;">표본평균(\\(\\overline X\\))</div>
-            <div>\\(\\mathrm{E}[\\overline X]=\\mu\\) → <b>{mbar:.6f}</b></div>
-            <div>\\(\\mathrm{Var}(\\overline X)=\\dfrac{\\sigma^2}{n}\\) → <b>{vbar:.6f}</b></div>
-            <div>\\(\\mathrm{SD}(\\overline X)=\\dfrac{\\sigma}{\\sqrt{n}}\\) → <b>{sdbar:.6f}</b></div>
-          </div>
-        </div>
-        """.format(mu=pop_mean, var=pop_var, std=pop_std,
-                   mbar=mean_bar, vbar=var_bar, sdbar=std_bar),
-        unsafe_allow_html=True,
-    )
+    left, right = st.columns(2)
+    with left:
+        st.markdown("**모집단 (원자료 \\(X\\))**")
+        st.latex(r"\mu=\mathrm{E}[X]")
+        st.metric("값", f"{pop_mean:.6f}")
+        st.latex(r"\sigma^2=\mathrm{Var}(X)")
+        st.metric("값", f"{pop_var:.6f}")
+        st.latex(r"\sigma=\sqrt{\mathrm{Var}(X)}")
+        st.metric("값", f"{pop_std:.6f}")
 
-    st.markdown(
-        """
-        <div style="margin-top:6px;">
-        <span style="font-weight:600;">해석</span>: 표본평균은 모평균을 그대로 가지지만, 분산은
-        \\(n\\)이 커질수록 \\(\\sigma^2/n\\)으로 작아져 **분포가 더 좁아집니다**.
-        (히스토그램에서 막대가 점점 가운데에 모이는 이유)
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with right:
+        st.markdown("**표본평균 (\\(\overline{X}\\))**")
+        st.latex(r"\mathrm{E}[\overline{X}]=\mu")
+        st.metric("값", f"{mean_bar:.6f}")
+        st.latex(r"\mathrm{Var}(\overline{X})=\dfrac{\sigma^2}{n}")
+        st.metric("값", f"{var_bar:.6f}")
+        st.latex(r"\mathrm{SD}(\overline{X})=\dfrac{\sigma}{\sqrt{n}}")
+        st.metric("값", f"{std_bar:.6f}")
+
+    st.caption("해석: 표본평균은 모평균은 같고, 분산은 σ²/n로 작아져 n이 커질수록 분포가 가운데로 모입니다.")
