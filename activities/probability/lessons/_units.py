@@ -509,6 +509,12 @@ CURRICULUM = [
                     "title": "표본평균의 분포", 
                     "subject": "probability",
                     "slug": "sampling_mean_demo_p5",
+                },
+                {
+                    "type": "activity",
+                    "title": "표본평균의 분포 확인하기", 
+                    "subject": "probability",
+                    "slug": "mini/sample_mean_dist",
                 }
           ]},
           {"key": "3-2-2", "label": "모평균의 추정", "items": [
