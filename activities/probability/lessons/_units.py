@@ -499,6 +499,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "표본분산을 n-1로 나누는 이유", 
+                    "subject": "probability",
+                    "slug": "mini/sample_variance_unbiased",
+                },
+                {
                     "type": "canva",
                     "title": "표본평균의 분포",
                     "src": "https://www.canva.com/design/DAGS9z4Un_I/01aa-XnuOLe4unwLzFniBQ/view?embed",
