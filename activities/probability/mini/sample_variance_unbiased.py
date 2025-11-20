@@ -42,8 +42,9 @@ def draw_concept_diagram() -> go.Figure:
     # 수직 기준선(왼쪽: X̄, 오른쪽: μ 위치 느낌)
     fig.add_shape(type="line", x0=4.0, x1=4.0, y0=1.0, y1=5.0, line=dict(color="rgba(90,90,90,0.6)", width=1))
     fig.add_shape(type="line", x0=6.2, x1=6.2, y0=1.0, y1=5.0, line=dict(color="rgba(90,90,90,0.6)", width=1))
-    fig.add_annotation(x=3.95, y=1.0, text="\\(\\overline{X}\\)", showarrow=False, font=dict(size=13))
-    fig.add_annotation(x=6.15, y=1.0, text="\\(\\mu\\)", showarrow=False, font=dict(size=13))
+    # ✅ LaTeX는 \( ... \) 말고 $ ... $ 로!
+    fig.add_annotation(x=3.95, y=1.0, text="$\\overline{X}$", showarrow=False, font=dict(size=13))
+    fig.add_annotation(x=6.15, y=1.0, text="$\\mu$", showarrow=False, font=dict(size=13))
 
     # 보라색 양방향 화살표: 표본들이 표본평균에서 퍼진 정도
     fig.add_annotation(
@@ -130,7 +131,6 @@ def render():
         s2_n1_vals[t] = np.var(sample, ddof=1)  # = sum(...)/(n-1)
 
     # 히스토그램(겹쳐 보기)
-    import plotly.graph_objects as go
     fig_hist = go.Figure()
     fig_hist.add_histogram(x=s2_n_vals,  name="(1/n)·Σ(Xᵢ−X̄)²",  opacity=0.55)
     fig_hist.add_histogram(x=s2_n1_vals, name="(1/(n−1))·Σ(Xᵢ−X̄)²", opacity=0.55)
