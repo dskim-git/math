@@ -532,6 +532,12 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
+                    "title": "신뢰도 vs 정확도", 
+                    "subject": "probability",
+                    "slug": "mini/confidence_tradeoff",
+                },
+                {
+                    "type": "activity",
                     "title": "신뢰도의 의미", 
                     "subject": "probability",
                     "slug": "ci_mean_demo_p5",
