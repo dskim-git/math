@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
-from math import sqrt
 from typing import Tuple
 
 PAGE_META = {
@@ -44,19 +43,17 @@ def z(alpha: float) -> float:
     return norm_ppf(1.0 - alpha)
 
 # -----------------------------
-# 1) 같은 신뢰도에서 비대칭 구간 길이
+# 1) 같은 신뢰도에서 비대칭 구간 길이(파트1 그대로)
 # -----------------------------
 def ci_length_asym(alpha: float, share_left: float, se: float) -> Tuple[float, float, float]:
     """
-    alpha=1-신뢰도, share_left∈[0,1].
-    수치안정성을 위해 a_L = alpha*(ε + (1-2ε)*share_left) 로 변환하여
-    a_L, a_R 모두 (0, alpha) 개구간에 있도록 보정.
+    alpha=1-신뢰도, share_left∈[0,1]. 수치안정성 확보(ε-클램프).
     """
-    eps = 1e-6  # 충분히 작지만 0은 아님
+    eps = 1e-6
     aL = alpha * (eps + (1 - 2*eps) * share_left)
-    aR = alpha - aL                  # 자동으로 alpha*eps 이상 확보
-    zl = norm_ppf(aL)                # 왼쪽 경계
-    zr = norm_ppf(1 - aR)            # 오른쪽 경계
+    aR = alpha - aL
+    zl = norm_ppf(aL)
+    zr = norm_ppf(1 - aR)
     L = (zr - zl) * se
     return L, zl, zr
 
@@ -76,18 +73,10 @@ def draw_pdf_with_shade(zl: float, zr: float):
     return fig
 
 # -----------------------------
-# 2) 신뢰도에 따른 효율 곡선 (대칭 CI)
+# (공통) 대칭 신뢰구간 길이
 # -----------------------------
 def length_symmetric(alpha: float, se: float) -> float:
     return 2.0 * z(alpha/2.0) * se
-
-def make_efficiency_curves(se: float, lam: float):
-    CLs = np.linspace(0.50, 0.999, 400)  # 50%~99.9%
-    alphas = 1 - CLs
-    Ls = np.array([length_symmetric(a, se) for a in alphas])
-    ratio = CLs / Ls
-    util  = CLs - lam * Ls
-    return CLs, Ls, ratio, util
 
 # -----------------------------
 # 메인
@@ -98,17 +87,15 @@ def render():
     n     = st.sidebar.number_input("표본 크기 n", min_value=1, value=25, step=1)
     se = float(sigma / np.sqrt(n))
 
+    # ----------------- 파트 1 (그대로) -----------------
     st.markdown("### 1) 같은 신뢰도에서 **가장 짧은 신뢰구간**은 왜 대칭일까?")
     colA, colB = st.columns([2,1])
     with colB:
         CL = st.slider("신뢰도 (1−α)", min_value=0.50, max_value=0.999, value=0.95, step=0.001, format="%.3f")
         alpha = 1.0 - CL
-        # endpoint에서의 예외를 없애기 위해 살짝 여유를 둔 슬라이더
         share_left = st.slider("왼쪽 꼬리 비율 (α_L/α)", 0.0, 1.0, 0.50, step=0.01)
 
-    # 현재 비대칭 구간
     L, zl, zr = ci_length_asym(alpha, share_left, se)
-    # 대칭(최적) 구간
     L_sym = length_symmetric(alpha, se)
     zl_sym, zr_sym = -z(alpha/2.0), z(alpha/2.0)
 
@@ -124,7 +111,7 @@ def render():
     c2.metric("대칭 구간 길이(최소)", f"{L_sym:.4f}")
     c3.metric("길이 차이(현재−대칭)", f"{(L - L_sym):.4f}")
 
-    # 비대칭 비율별 길이 곡선 (양끝 제외한 그리드)
+    # 비대칭 비율별 길이 곡선
     r_eps = 1e-6
     r_grid = np.linspace(r_eps, 1-r_eps, 201)
     lengths = [ci_length_asym(alpha, r, se)[0] for r in r_grid]
@@ -138,58 +125,77 @@ def render():
                           yaxis_title=f"구간 길이")
     st.plotly_chart(fig_len, use_container_width=True)
 
-    st.markdown(
-        """
-        **설명**: 신뢰도 \\(1-\\alpha\\) 를 고정하면 가능한 신뢰구간이 여럿이지만  
-        길이 \\(L=(z_{1-\\alpha_R}-z_{\\alpha_L})\\,\\text{SE}\\) 는  
-        \\(\\alpha_L=\\alpha_R=\\alpha/2\\) (즉 **대칭 구간**)에서 최소가 됩니다.
-        """
-    )
-
     st.divider()
 
-    st.markdown("### 2) 왜 95%를 많이 쓸까? — ‘효율’로 보기(대칭 구간 기준)")
-    st.caption("SE=σ/√n 이 클수록 전체 길이가 길어집니다. 상황에 맞는 가중치 λ를 조절해 보세요.")
-    col1, col2 = st.columns([1.2, 1])
-    with col2:
-        metric = st.selectbox("효율 기준 선택", ["비율: (신뢰도)/(길이)", "효용: (신뢰도) − λ·(길이)"])
-        lam = 0.12
-        if metric.startswith("효용"):
-            lam = st.slider("λ (길이에 대한 패널티 가중치)", 0.00, 0.50, 0.12, 0.01)
+    # ----------------- 파트 2 (새 설계) -----------------
+    st.markdown("### 2) 신뢰도를 1%씩 올릴 때 **정확도(길이)** 는 얼마나 희생될까?")
+    st.caption("대칭 신뢰구간 기준. 50%에서 시작해 1%p씩 올리며 길이 증가 ΔL과 ‘효율’=0.01/ΔL을 봅니다.")
 
-    CLs, Ls, ratio, util = make_efficiency_curves(se, lam)
-    with col1:
-        if metric.startswith("비율"):
-            y, ylab = ratio, "효율 = (신뢰도) / (길이)"
-        else:
-            y, ylab = util, "효용 = (신뢰도) − λ·(길이)"
+    # 신뢰도 그리드(1% 간격). 99%에서 멈춤(끝점 100%는 분위수 무한대)
+    CL_grid = np.arange(0.50, 0.99 + 1e-9, 0.01)  # 50%, 51%, ..., 99%
+    alphas = 1.0 - CL_grid
+    L_grid = np.array([length_symmetric(a, se) for a in alphas])
 
-        fig_eff = go.Figure()
-        fig_eff.add_trace(go.Scatter(x=CLs, y=y, mode="lines", name=ylab))
-        # 95% 표시
-        fig_eff.add_vline(x=0.95, line_dash="dash", line_color="gray",
-                          annotation_text="95%", annotation_position="top")
-        # 최대점
-        idx_max = int(np.argmax(y))
-        cl_star = float(CLs[idx_max])
-        fig_eff.add_vline(x=cl_star, line_color="purple",
-                          annotation_text=f"최대≈{cl_star:.3f}", annotation_position="bottom")
-        fig_eff.update_layout(height=340, xaxis_title="신뢰도 (1−α)", yaxis_title=ylab)
-        st.plotly_chart(fig_eff, use_container_width=True)
+    # ΔL (다음 1%p로 올릴 때 길이 증가) : 마지막 값은 NaN
+    dCL = 0.01
+    dL = np.empty_like(L_grid)
+    dL[:-1] = L_grid[1:] - L_grid[:-1]
+    dL[-1] = np.nan
 
+    # 효율 = ΔCL / ΔL  (ΔCL은 0.01로 고정)
+    efficiency = dCL / dL
+    efficiency[-1] = np.nan
+
+    # 그래프 1: 신뢰도 vs 길이
+    fig_L = go.Figure()
+    fig_L.add_trace(go.Scatter(x=CL_grid, y=L_grid, mode="lines+markers", name="길이 L(CL)"))
+    fig_L.add_vline(x=0.95, line_dash="dash", line_color="gray",
+                    annotation_text="95%", annotation_position="top")
+    fig_L.update_layout(height=320, xaxis_title="신뢰도 (1−α)", yaxis_title="구간 길이")
+    st.plotly_chart(fig_L, use_container_width=True)
+
+    # 그래프 2: 신뢰도 vs ΔL (1%p 올릴 때 추가 길이)
+    fig_dL = go.Figure()
+    fig_dL.add_trace(go.Scatter(x=CL_grid[:-1], y=dL[:-1], mode="lines+markers", name="ΔL(1%p 상승 시)"))
+    fig_dL.add_vline(x=0.95, line_dash="dash", line_color="gray",
+                     annotation_text="95%", annotation_position="top")
+    fig_dL.update_layout(height=320, xaxis_title="신뢰도 (1−α)", yaxis_title="추가 길이 ΔL")
+    st.plotly_chart(fig_dL, use_container_width=True)
+
+    # 그래프 3: 신뢰도 vs 효율 = 0.01/ΔL (값이 클수록 ‘1%p 올릴 때 얻는 이득/비용’이 큼)
+    fig_eff = go.Figure()
+    fig_eff.add_trace(go.Scatter(x=CL_grid[:-1], y=efficiency[:-1], mode="lines+markers", name="효율 = 0.01 / ΔL"))
+    # 최대 효율 지점
+    idx_max = int(np.nanargmax(efficiency[:-1]))
+    cl_star = float(CL_grid[idx_max])
+    y_star  = float(efficiency[idx_max])
+    fig_eff.add_vline(x=0.95, line_dash="dash", line_color="gray",
+                      annotation_text="95%", annotation_position="top")
+    fig_eff.add_vline(x=cl_star, line_color="purple",
+                      annotation_text=f"최대≈{cl_star:.2f}", annotation_position="bottom")
+    fig_eff.update_layout(height=340, xaxis_title="신뢰도 (1−α)", yaxis_title="효율 = 0.01 / ΔL")
+    st.plotly_chart(fig_eff, use_container_width=True)
+
+    # 요약 카드
     a95 = 1 - 0.95
     L95 = length_symmetric(a95, se)
-    c1, c2, _ = st.columns(3)
+    # 95%에서의 ΔL과 효율
+    i95 = int(round((0.95 - 0.50) / 0.01))
+    dL95 = float(dL[i95]) if i95 < len(dL)-1 else float("nan")
+    eff95 = float(efficiency[i95]) if i95 < len(efficiency)-1 else float("nan")
+
+    c1, c2, c3 = st.columns(3)
     c1.metric("SE = σ/√n", f"{se:.4f}")
-    c2.metric("95% 대칭 구간 길이", f"{L95:.4f}")
+    c2.metric("95%의 구간 길이 L", f"{L95:.4f}")
+    c3.metric("95%에서 효율(0.01/ΔL)", f"{eff95:.4f}")
 
     st.markdown(
         """
-        **정리**  
-        - 단순 비율 \\((1-\\alpha)/L\\) 은 신뢰도가 낮을수록 커지는 경향이 있어 95%를
-          ‘최적’이라고 말하기 어렵습니다.  
-        - 따라서 수업에서는 **정확도(길이)와 신뢰도(면적)의 균형**을 설명하며  
-          \\(U(\\alpha)=(1-\\alpha)-\\lambda L(\\alpha)\\) 같은 **가중 효용**을 함께 보여주면 좋습니다.  
-          적절한 \\(\\lambda\\) 하에서 균형점이 **약 95% 근처**에 나타나는 것을 확인할 수 있어요.
+        **해석 가이드**  
+        - **ΔL 그래프**: 신뢰도가 높아질수록 **1%p 더 올릴 때** 필요한 **추가 길이(비용)** 가 급격히 커집니다.  
+        - **효율 그래프(0.01/ΔL)**: 낮은 신뢰도에서는 길이가 거의 늘지 않아 효율이 높고,  
+          높은 신뢰도에서는 길이가 크게 늘어 효율이 낮아집니다.  
+          많은 설정에서 **약 95% 근처**에서 효율이 **최대**가 되어 “**비용 대비 이득의 균형점**”처럼 보입니다.  
+        - **n↑ 또는 σ↓(=SE↓)** 이면 전체 길이가 줄어들어 **더 높은 신뢰도**까지도 비교적 작은 ΔL로 감당할 수 있습니다.
         """
     )
