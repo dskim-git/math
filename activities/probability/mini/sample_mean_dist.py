@@ -133,31 +133,41 @@ def card_html(v: int) -> str:
 # ─────────────────────────────
 # 🔧 사이드바용 스텝퍼 슬라이더 헬퍼 (± 버튼 + 슬라이더)
 # ─────────────────────────────
-def sidebar_stepper_slider(label: str, min_value: int, max_value: int, key: str, default: int, step: int = 1) -> int:
+def sidebar_stepper_slider(label: str, min_value: int, max_value: int,
+                           key: str, default: int, step: int = 1) -> int:
     cont = st.sidebar.container()
     cont.caption(label)
-    c1, c2, c3 = cont.columns([6, 1, 1], gap="small")
+
+    # 사이드바 폭에서 버튼이 잘리지 않도록 약간 더 넓게 확보
+    c_slider, c_minus, c_plus = cont.columns([7, 1.2, 1.2], gap="small")
 
     # 초기화
     if key not in st.session_state:
-        st.session_state[key] = default
+        st.session_state[key] = int(default)
 
-    # 버튼 먼저 처리(즉시 반영)
-    if c2.button("−", key=f"{key}__minus"):
-        st.session_state[key] = max(min_value, st.session_state[key] - step)
+    # 버튼: 먼저 처리(즉시 반영 → 슬라이더 숫자/표시 동기화)
+    if c_minus.button("➖", key=f"{key}__minus"):
+        st.session_state[key] = max(min_value, int(st.session_state[key]) - step)
         st.rerun()
-    if c3.button("+", key=f"{key}__plus"):
-        st.session_state[key] = min(max_value, st.session_state[key] + step)
+    if c_plus.button("➕", key=f"{key}__plus"):
+        st.session_state[key] = min(max_value, int(st.session_state[key]) + step)
         st.rerun()
 
-    # 슬라이더(레이블 숨김)
-    val = c1.slider(
-        label, min_value=min_value, max_value=max_value,
-        value=int(st.session_state[key]), step=step,
-        key=f"{key}__slider", label_visibility="collapsed"
+    # 슬라이더(라벨 감춤). 슬라이더 위의 붉은 숫자도 세션 값과 자동 동기화됨
+    val = c_slider.slider(
+        label,
+        min_value=min_value,
+        max_value=max_value,
+        value=int(st.session_state[key]),
+        step=step,
+        key=f"{key}__slider",
+        label_visibility="collapsed",
     )
+
+    # 슬라이더로 바꾼 값 → 세션 반영
     if val != st.session_state[key]:
         st.session_state[key] = int(val)
+
     return int(st.session_state[key])
 
 # ---------- 메인 ----------
