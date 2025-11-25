@@ -130,6 +130,36 @@ def card_html(v: int) -> str:
             f'box-shadow:0 2px 6px rgba(0,0,0,0.06);">'
             f'<span style="font-size:22px;font-weight:700;color:#222;">{v}</span></div>')
 
+# ─────────────────────────────
+# 🔧 사이드바용 스텝퍼 슬라이더 헬퍼 (± 버튼 + 슬라이더)
+# ─────────────────────────────
+def sidebar_stepper_slider(label: str, min_value: int, max_value: int, key: str, default: int, step: int = 1) -> int:
+    cont = st.sidebar.container()
+    cont.caption(label)
+    c1, c2, c3 = cont.columns([6, 1, 1], gap="small")
+
+    # 초기화
+    if key not in st.session_state:
+        st.session_state[key] = default
+
+    # 버튼 먼저 처리(즉시 반영)
+    if c2.button("−", key=f"{key}__minus"):
+        st.session_state[key] = max(min_value, st.session_state[key] - step)
+        st.rerun()
+    if c3.button("+", key=f"{key}__plus"):
+        st.session_state[key] = min(max_value, st.session_state[key] + step)
+        st.rerun()
+
+    # 슬라이더(레이블 숨김)
+    val = c1.slider(
+        label, min_value=min_value, max_value=max_value,
+        value=int(st.session_state[key]), step=step,
+        key=f"{key}__slider", label_visibility="collapsed"
+    )
+    if val != st.session_state[key]:
+        st.session_state[key] = int(val)
+    return int(st.session_state[key])
+
 # ---------- 메인 ----------
 def render():
     st.sidebar.subheader("⚙️ 모집단 & 표본 설정")
@@ -143,7 +173,9 @@ def render():
         with cols[i % col_num]:
             v = st.number_input(f"원소 {i+1}", value=int(defaults[i]), step=1, format="%d")
             values.append(int(v))
-    n = st.sidebar.slider("표본 크기 n (복원추출)", 1, 100, 2, step=1)
+
+    # ✅ 표본 크기 n 슬라이더를 스텝퍼(± 버튼) 있는 버전으로 교체
+    n = sidebar_stepper_slider("표본 크기 n (복원추출)", 1, 100, key="sampmean_n", default=2, step=1)
 
     st.markdown("### 표본평균의 분포(복원추출)")
     st.plotly_chart(draw_basket(values), use_container_width=True)
@@ -199,7 +231,7 @@ def render():
 
     st.divider()
 
-    # ===== 모집단 vs 표본평균 비교 (안전한 columns 구성: KeyError 방지) =====
+    # ===== 모집단 vs 표본평균 비교 =====
     st.subheader("모집단 vs 표본평균 비교")
     mean_bar = pop_mean
     var_bar  = pop_var / n
