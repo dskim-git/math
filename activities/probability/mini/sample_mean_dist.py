@@ -94,11 +94,7 @@ def pmf_sum_via_power(values: List[int], n: int) -> Dict[int, float]:
     return pmf
 
 def pmf_sum(values: List[int], n: int) -> Dict[int, float]:
-    """
-    가능하면 항상 '정확' 방법을 사용.
-    spread*n이 적정(≤4000)하면 다항식 거듭제곱을 강제하고,
-    그 외 극단적 상황만 몬테카를로로 근사.
-    """
+    """가능하면 항상 '정확' 방법을 사용(극단만 근사)."""
     spread = max(values) - min(values) if len(values) > 0 else 0
     if spread * n <= 4000:
         return pmf_sum_via_power(values, n)
@@ -130,40 +126,45 @@ def card_html(v: int) -> str:
             f'<span style="font-size:22px;font-weight:700;color:#222;">{v}</span></div>')
 
 # ─────────────────────────────
-# 🔧 사이드바용 스텝퍼 슬라이더 (슬라이더 아래 − / ＋ 버튼)
-#    - 처음 진입 시 n을 default로 강제 초기화 (세션에 값이 남아 있어도)
-#    - 슬라이더/숫자/본문이 모두 같은 key를 공유 → 완전 동기화
+# 🔧 슬라이더 아래 − / ＋ 버튼 + 안전한 상태 갱신(에러 해결)
+#   - 버튼 클릭 → 먼저 상태 갱신 → 마지막에 슬라이더 렌더
+#   - 최초 진입 시 n=1로 강제 초기화
 # ─────────────────────────────
 def sidebar_stepper_slider(label: str, min_value: int, max_value: int,
                            key: str, default: int, step: int = 1) -> int:
-    cont = st.sidebar.container()
-    cont.caption(label)
+    parent = st.sidebar.container()
+    parent.caption(label)
 
-    # 최초 진입 시에는 무조건 default로 세팅
+    # 슬라이더 위치용 플레이스홀더(위쪽)
+    slider_box = parent.container()
+
+    # 초기화: 첫 진입 시 1로 강제
     if f"{key}__inited" not in st.session_state:
         st.session_state[key] = int(default)
         st.session_state[f"{key}__inited"] = True
 
-    # 슬라이더 (라벨은 접고, 버튼은 슬라이더 '아래'에 배치)
-    st.sidebar.slider(
-        label,
-        min_value=min_value,
-        max_value=max_value,
-        step=step,
-        key=key,                         # 슬라이더/버튼/본문이 공유하는 key
-        label_visibility="collapsed",
-    )
+    # 버튼 행(슬라이더 아래 보이지만, 코드상 먼저 상태를 갱신)
+    btn_l, btn_r = parent.columns(2, gap="small")
+    minus_clicked = btn_l.button("−", key=f"{key}__minus")
+    plus_clicked  = btn_r.button("＋", key=f"{key}__plus")
 
-    # 아래쪽 버튼 행: 왼쪽 − / 오른쪽 ＋
-    bcol_l, bcol_r = st.sidebar.columns(2, gap="small")
-    with bcol_l:
-        if st.button("−", key=f"{key}__minus"):
-            st.session_state[key] = max(min_value, int(st.session_state[key]) - step)
-            st.rerun()
-    with bcol_r:
-        if st.button("＋", key=f"{key}__plus"):
-            st.session_state[key] = min(max_value, int(st.session_state[key]) + step)
-            st.rerun()
+    # 버튼을 먼저 처리하여 상태를 갱신(이 실행에서 슬라이더는 아직 렌더되지 않았음)
+    cur = int(st.session_state.get(key, default))
+    if minus_clicked:
+        st.session_state[key] = max(min_value, cur - step)
+    if plus_clicked:
+        st.session_state[key] = min(max_value, cur + step)
+
+    # 이제 플레이스홀더에 슬라이더를 렌더(버튼/슬라이더/본문이 같은 key 공유)
+    with slider_box:
+        st.slider(
+            label,
+            min_value=min_value,
+            max_value=max_value,
+            step=step,
+            key=key,
+            label_visibility="collapsed",
+        )
 
     return int(st.session_state[key])
 
@@ -181,7 +182,7 @@ def render():
             v = st.number_input(f"원소 {i+1}", value=int(defaults[i]), step=1, format="%d")
             values.append(int(v))
 
-    # ✅ n: 슬라이더 아래 −/＋ 버튼, 초기값 1로 강제
+    # n: 슬라이더 아래 −/＋, 초기값 1
     n = sidebar_stepper_slider("표본 크기 n (복원추출)", 1, 100, key="sampmean_n", default=1, step=1)
 
     st.markdown("### 표본평균의 분포(복원추출)")
@@ -198,7 +199,7 @@ def render():
 
     st.divider()
 
-    # 예시 표본 (제목에 현재 n 표시)
+    # 예시 표본(제목에 현재 n 표시)
     st.subheader(f"예시 표본 5개 — (표본 크기 {n}, 복원추출)")
     samples, means = make_examples(values, n, k=5, seed=42)
     for i, (s, mval) in enumerate(zip(samples, means), start=1):
@@ -216,12 +217,11 @@ def render():
 
     # ===== 표본평균의 분포(가능한 값만, 가로형 표) =====
     st.subheader("표본평균의 분포표")
-    pmfS = pmf_sum(values, n)          # S_n의 (정확한) 분포 또는 근사
-    pmfS = {s: p for s, p in pmfS.items() if p > 1e-15}  # 수치잡음 제거
-    sums_sorted = sorted(pmfS.keys())  # 가능한 합(정수)만 포함됨 → 불가능 평균 자동 배제
+    pmfS = pmf_sum(values, n)
+    pmfS = {s: p for s, p in pmfS.items() if p > 1e-15}
+    sums_sorted = sorted(pmfS.keys())
     probs_sorted = [pmfS[s] for s in sums_sorted]
 
-    # 가로 테이블: 열이 "s/n (=decimal)"
     means_decimal = [s / n for s in sums_sorted]
     labels = [f"{s}/{n} ({s / n:.4f})" for s in sums_sorted]
 
