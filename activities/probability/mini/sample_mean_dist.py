@@ -130,38 +130,41 @@ def card_html(v: int) -> str:
             f'<span style="font-size:22px;font-weight:700;color:#222;">{v}</span></div>')
 
 # ─────────────────────────────
-# 🔧 사이드바용 스텝퍼 슬라이더 (슬라이더/숫자 완전 동기화)
-#    ▶ 슬라이더와 버튼이 **같은 키**를 공유합니다.
+# 🔧 사이드바용 스텝퍼 슬라이더 (슬라이더 아래 − / ＋ 버튼)
+#    - 처음 진입 시 n을 default로 강제 초기화 (세션에 값이 남아 있어도)
+#    - 슬라이더/숫자/본문이 모두 같은 key를 공유 → 완전 동기화
 # ─────────────────────────────
 def sidebar_stepper_slider(label: str, min_value: int, max_value: int,
                            key: str, default: int, step: int = 1) -> int:
     cont = st.sidebar.container()
     cont.caption(label)
 
-    # 버튼이 잘 보이도록 컬럼폭을 넉넉하게
-    c_slider, c_minus, c_plus = cont.columns([8, 1, 1], gap="small")
-
-    # 공용 세션 키 초기화
-    if key not in st.session_state:
+    # 최초 진입 시에는 무조건 default로 세팅
+    if f"{key}__inited" not in st.session_state:
         st.session_state[key] = int(default)
+        st.session_state[f"{key}__inited"] = True
 
-    # 버튼: 먼저 처리(즉시 반영 → 슬라이더와 숫자도 함께 업데이트)
-    if c_minus.button("➖", key=f"{key}__minus"):
-        st.session_state[key] = max(min_value, int(st.session_state[key]) - step)
-        st.rerun()
-    if c_plus.button("➕", key=f"{key}__plus"):
-        st.session_state[key] = min(max_value, int(st.session_state[key]) + step)
-        st.rerun()
-
-    # 슬라이더: 버튼과 **같은 key** 사용 → 자동 동기화
-    c_slider.slider(
+    # 슬라이더 (라벨은 접고, 버튼은 슬라이더 '아래'에 배치)
+    st.sidebar.slider(
         label,
         min_value=min_value,
         max_value=max_value,
         step=step,
-        key=key,                      # ← 동일 키!
+        key=key,                         # 슬라이더/버튼/본문이 공유하는 key
         label_visibility="collapsed",
     )
+
+    # 아래쪽 버튼 행: 왼쪽 − / 오른쪽 ＋
+    bcol_l, bcol_r = st.sidebar.columns(2, gap="small")
+    with bcol_l:
+        if st.button("−", key=f"{key}__minus"):
+            st.session_state[key] = max(min_value, int(st.session_state[key]) - step)
+            st.rerun()
+    with bcol_r:
+        if st.button("＋", key=f"{key}__plus"):
+            st.session_state[key] = min(max_value, int(st.session_state[key]) + step)
+            st.rerun()
+
     return int(st.session_state[key])
 
 # ---------- 메인 ----------
@@ -178,8 +181,8 @@ def render():
             v = st.number_input(f"원소 {i+1}", value=int(defaults[i]), step=1, format="%d")
             values.append(int(v))
 
-    # ✅ n 슬라이더를 스텝퍼(±)가 있는 버전으로 교체 (슬라이더와 숫자 완전 동기화)
-    n = sidebar_stepper_slider("표본 크기 n (복원추출)", 1, 100, key="sampmean_n", default=2, step=1)
+    # ✅ n: 슬라이더 아래 −/＋ 버튼, 초기값 1로 강제
+    n = sidebar_stepper_slider("표본 크기 n (복원추출)", 1, 100, key="sampmean_n", default=1, step=1)
 
     st.markdown("### 표본평균의 분포(복원추출)")
     st.plotly_chart(draw_basket(values), use_container_width=True)
@@ -195,7 +198,7 @@ def render():
 
     st.divider()
 
-    # 예시 표본 (표본 크기 n 명시)
+    # 예시 표본 (제목에 현재 n 표시)
     st.subheader(f"예시 표본 5개 — (표본 크기 {n}, 복원추출)")
     samples, means = make_examples(values, n, k=5, seed=42)
     for i, (s, mval) in enumerate(zip(samples, means), start=1):
