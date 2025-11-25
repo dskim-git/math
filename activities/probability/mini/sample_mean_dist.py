@@ -103,7 +103,6 @@ def pmf_sum(values: List[int], n: int) -> Dict[int, float]:
     if spread * n <= 4000:
         return pmf_sum_via_power(values, n)
 
-    # 근사(희귀 합이 누락될 수 있으므로 가능한 한 위 조건을 만족시키도록 안내)
     rng = np.random.default_rng(0)
     trials = min(300_000, 6000 * max(1, n))
     vals = np.array(values)
@@ -131,21 +130,22 @@ def card_html(v: int) -> str:
             f'<span style="font-size:22px;font-weight:700;color:#222;">{v}</span></div>')
 
 # ─────────────────────────────
-# 🔧 사이드바용 스텝퍼 슬라이더 헬퍼 (± 버튼 + 슬라이더)
+# 🔧 사이드바용 스텝퍼 슬라이더 (슬라이더/숫자 완전 동기화)
+#    ▶ 슬라이더와 버튼이 **같은 키**를 공유합니다.
 # ─────────────────────────────
 def sidebar_stepper_slider(label: str, min_value: int, max_value: int,
                            key: str, default: int, step: int = 1) -> int:
     cont = st.sidebar.container()
     cont.caption(label)
 
-    # 사이드바 폭에서 버튼이 잘리지 않도록 약간 더 넓게 확보
-    c_slider, c_minus, c_plus = cont.columns([7, 1.2, 1.2], gap="small")
+    # 버튼이 잘 보이도록 컬럼폭을 넉넉하게
+    c_slider, c_minus, c_plus = cont.columns([8, 1, 1], gap="small")
 
-    # 초기화
+    # 공용 세션 키 초기화
     if key not in st.session_state:
         st.session_state[key] = int(default)
 
-    # 버튼: 먼저 처리(즉시 반영 → 슬라이더 숫자/표시 동기화)
+    # 버튼: 먼저 처리(즉시 반영 → 슬라이더와 숫자도 함께 업데이트)
     if c_minus.button("➖", key=f"{key}__minus"):
         st.session_state[key] = max(min_value, int(st.session_state[key]) - step)
         st.rerun()
@@ -153,21 +153,15 @@ def sidebar_stepper_slider(label: str, min_value: int, max_value: int,
         st.session_state[key] = min(max_value, int(st.session_state[key]) + step)
         st.rerun()
 
-    # 슬라이더(라벨 감춤). 슬라이더 위의 붉은 숫자도 세션 값과 자동 동기화됨
-    val = c_slider.slider(
+    # 슬라이더: 버튼과 **같은 key** 사용 → 자동 동기화
+    c_slider.slider(
         label,
         min_value=min_value,
         max_value=max_value,
-        value=int(st.session_state[key]),
         step=step,
-        key=f"{key}__slider",
+        key=key,                      # ← 동일 키!
         label_visibility="collapsed",
     )
-
-    # 슬라이더로 바꾼 값 → 세션 반영
-    if val != st.session_state[key]:
-        st.session_state[key] = int(val)
-
     return int(st.session_state[key])
 
 # ---------- 메인 ----------
@@ -184,7 +178,7 @@ def render():
             v = st.number_input(f"원소 {i+1}", value=int(defaults[i]), step=1, format="%d")
             values.append(int(v))
 
-    # ✅ 표본 크기 n 슬라이더를 스텝퍼(± 버튼) 있는 버전으로 교체
+    # ✅ n 슬라이더를 스텝퍼(±)가 있는 버전으로 교체 (슬라이더와 숫자 완전 동기화)
     n = sidebar_stepper_slider("표본 크기 n (복원추출)", 1, 100, key="sampmean_n", default=2, step=1)
 
     st.markdown("### 표본평균의 분포(복원추출)")
@@ -201,8 +195,8 @@ def render():
 
     st.divider()
 
-    # 예시 표본 5개
-    st.subheader("예시 표본 5개 (복원추출)")
+    # 예시 표본 (표본 크기 n 명시)
+    st.subheader(f"예시 표본 5개 — (표본 크기 {n}, 복원추출)")
     samples, means = make_examples(values, n, k=5, seed=42)
     for i, (s, mval) in enumerate(zip(samples, means), start=1):
         row = st.columns([6, 1.8])
