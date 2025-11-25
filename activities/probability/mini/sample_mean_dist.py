@@ -5,6 +5,9 @@ import plotly.express as px
 from math import sqrt
 from typing import List, Dict
 
+# 이 페이지를 식별하는 고유 ID (처음 진입 시 세션 리셋용)
+PAGE_ID = "probability/mini/sample_mean_dist"
+
 PAGE_META = {
     "title": "표본평균의 분포(복원추출)",
     "group": "확률과통계",
@@ -17,17 +20,25 @@ def draw_basket(values: List[int]):
     fig = go.Figure()
     fig.update_xaxes(visible=False, range=[0, 1])
     fig.update_yaxes(visible=False, range=[0, 1], scaleanchor="x", scaleratio=1)
-    fig.update_layout(margin=dict(l=10, r=10, t=10, b=10),
-                      plot_bgcolor="white", paper_bgcolor="white", height=340)
+    fig.update_layout(
+        margin=dict(l=10, r=10, t=10, b=10),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        height=340,
+    )
 
     bag_x0, bag_x1 = 0.05, 0.95
     bag_y0, bag_y1 = 0.10, 0.90
-    fig.add_shape(type="rect", x0=bag_x0, y0=bag_y0, x1=bag_x1, y1=bag_y1,
-                  fillcolor="rgba(245,170,110,0.35)",
-                  line=dict(color="rgba(120,80,50,0.8)", width=2))
-    fig.add_shape(type="rect", x0=bag_x0, y0=0.86, x1=bag_x1, y1=0.92,
-                  fillcolor="rgba(200,120,70,0.6)",
-                  line=dict(color="rgba(120,80,50,0.8)", width=1))
+    fig.add_shape(
+        type="rect", x0=bag_x0, y0=bag_y0, x1=bag_x1, y1=bag_y1,
+        fillcolor="rgba(245,170,110,0.35)",
+        line=dict(color="rgba(120,80,50,0.8)", width=2),
+    )
+    fig.add_shape(
+        type="rect", x0=bag_x0, y0=0.86, x1=bag_x1, y1=0.92,
+        fillcolor="rgba(200,120,70,0.6)",
+        line=dict(color="rgba(120,80,50,0.8)", width=1),
+    )
 
     cols = 5 if N >= 5 else N
     rows = int(np.ceil(N / max(cols, 1)))
@@ -46,17 +57,22 @@ def draw_basket(values: List[int]):
         cx = bag_x0 + pad_x + (c + 0.5) * inner_w / max(cols, 1)
         cy = bag_y1 - pad_y - (r + 0.6) * inner_h / max(rows, 1)
 
-        fig.add_shape(type="rect",
-                      x0=cx - card_w / 2, x1=cx + card_w / 2,
-                      y0=cy - card_h / 2, y1=cy + card_h / 2,
-                      fillcolor="white",
-                      line=dict(color="rgba(60,60,60,0.6)", width=1.3))
-        fig.add_annotation(x=cx, y=cy, text=str(val),
-                           showarrow=False, font=dict(size=16, color="#111"))
+        fig.add_shape(
+            type="rect",
+            x0=cx - card_w / 2, x1=cx + card_w / 2,
+            y0=cy - card_h / 2, y1=cy + card_h / 2,
+            fillcolor="white",
+            line=dict(color="rgba(60,60,60,0.6)", width=1.3),
+        )
+        fig.add_annotation(
+            x=cx, y=cy, text=str(val),
+            showarrow=False, font=dict(size=16, color="#111"),
+        )
 
-    fig.add_annotation(x=0.5, y=0.96,
-                       text=f"모집단: {values}",
-                       showarrow=False, font=dict(size=14, color="#111"))
+    fig.add_annotation(
+        x=0.5, y=0.96, text=f"모집단: {values}",
+        showarrow=False, font=dict(size=14, color="#111"),
+    )
     return fig
 
 # ---------- 합 분포(정확/근사) ----------
@@ -119,43 +135,46 @@ def make_examples(values: List[int], n: int, k: int = 5, seed: int = 0):
     return samples, means
 
 def card_html(v: int) -> str:
-    return (f'<div style="display:flex;align-items:center;justify-content:center;'
-            f'width:64px;height:84px;margin-right:6px;'
-            f'border:1.5px solid rgba(60,60,60,0.5);border-radius:8px;background:white;'
-            f'box-shadow:0 2px 6px rgba(0,0,0,0.06);">'
-            f'<span style="font-size:22px;font-weight:700;color:#222;">{v}</span></div>')
+    return (
+        '<div style="display:flex;align-items:center;justify-content:center;'
+        'width:64px;height:84px;margin-right:6px;'
+        'border:1.5px solid rgba(60,60,60,0.5);border-radius:8px;background:white;'
+        'box-shadow:0 2px 6px rgba(0,0,0,0.06);">'
+        f'<span style="font-size:22px;font-weight:700;color:#222;">{v}</span></div>'
+    )
 
 # ─────────────────────────────
-# 🔧 슬라이더 아래 − / ＋ 버튼 + 안전한 상태 갱신(에러 해결)
+# 🔧 슬라이더 아래 − / ＋ 버튼 + 안전한 상태 갱신(에러 방지)
 #   - 버튼 클릭 → 먼저 상태 갱신 → 마지막에 슬라이더 렌더
-#   - 최초 진입 시 n=1로 강제 초기화
+#   - 최초 진입 시 n=default(1)로 강제 초기화
 # ─────────────────────────────
-def sidebar_stepper_slider(label: str, min_value: int, max_value: int,
-                           key: str, default: int, step: int = 1) -> int:
+def sidebar_stepper_slider(
+    label: str, min_value: int, max_value: int,
+    key: str, default: int, step: int = 1
+) -> int:
     parent = st.sidebar.container()
     parent.caption(label)
 
     # 슬라이더 위치용 플레이스홀더(위쪽)
     slider_box = parent.container()
 
-    # 초기화: 첫 진입 시 1로 강제
+    # 초기화: 첫 진입 시 기본값으로 강제
     if f"{key}__inited" not in st.session_state:
         st.session_state[key] = int(default)
         st.session_state[f"{key}__inited"] = True
 
-    # 버튼 행(슬라이더 아래 보이지만, 코드상 먼저 상태를 갱신)
+    # 버튼 행(슬라이더 아래 배치하지만, 코드상 먼저 상태 갱신)
     btn_l, btn_r = parent.columns(2, gap="small")
     minus_clicked = btn_l.button("−", key=f"{key}__minus")
     plus_clicked  = btn_r.button("＋", key=f"{key}__plus")
 
-    # 버튼을 먼저 처리하여 상태를 갱신(이 실행에서 슬라이더는 아직 렌더되지 않았음)
     cur = int(st.session_state.get(key, default))
     if minus_clicked:
         st.session_state[key] = max(min_value, cur - step)
     if plus_clicked:
         st.session_state[key] = min(max_value, cur + step)
 
-    # 이제 플레이스홀더에 슬라이더를 렌더(버튼/슬라이더/본문이 같은 key 공유)
+    # 플레이스홀더에 슬라이더 렌더(버튼/슬라이더/본문이 같은 key 공유)
     with slider_box:
         st.slider(
             label,
@@ -170,8 +189,15 @@ def sidebar_stepper_slider(label: str, min_value: int, max_value: int,
 
 # ---------- 메인 ----------
 def render():
+    # ▶ 이 페이지로 처음 들어온 경우, 과거 세션값 초기화(항상 n=1로 시작)
+    if st.session_state.get("_current_activity") != PAGE_ID:
+        st.session_state["_current_activity"] = PAGE_ID
+        st.session_state.pop("sampmean_n", None)
+        st.session_state.pop("sampmean_n__inited", None)
+
     st.sidebar.subheader("⚙️ 모집단 & 표본 설정")
     m = st.sidebar.slider("모집단 원소의 개수", 1, 10, 4, step=1)
+
     default_vals = [2, 4, 6, 8] + [i for i in range(1, 11)]
     defaults = default_vals[:m]
     values = []
@@ -199,7 +225,7 @@ def render():
 
     st.divider()
 
-    # 예시 표본(제목에 현재 n 표시)
+    # 예시 표본(제목에 현재 n 표시) — n은 세션과 동기화됨
     st.subheader(f"예시 표본 5개 — (표본 크기 {n}, 복원추출)")
     samples, means = make_examples(values, n, k=5, seed=42)
     for i, (s, mval) in enumerate(zip(samples, means), start=1):
