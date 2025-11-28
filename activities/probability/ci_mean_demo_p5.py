@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
-from scipy.stats import t  # t-분포 임계값
+from scipy.stats import t, norm  # t-분포, 표준정규 임계값
 
 META = {
     "title": "신뢰도의 의미",
@@ -68,9 +68,19 @@ def draw_samples(values: np.ndarray, n: int, m: int, seed: int):
     N = len(values)
     return [values[rng.integers(0, N, size=n)] for _ in range(m)]
 
-def ci_mean(x: np.ndarray, conf: float):
+# ✅ z-구간(σ 고정) 모드 지원
+def ci_mean(x: np.ndarray, conf: float, sigma_known: float | None = None):
     n = len(x)
     xbar = float(np.mean(x))
+
+    if sigma_known is not None:
+        # z-구간: 길이 일정 (σ / √n)
+        alpha = 1 - conf
+        crit = float(norm.ppf(1 - alpha/2))
+        half = crit * float(sigma_known) / np.sqrt(n)
+        return xbar - half, xbar + half, xbar, float(sigma_known)
+
+    # t-구간: 길이 표본마다 다름 (s / √n)
     s = float(np.std(x, ddof=1)) if n > 1 else 0.0
     if n <= 1:
         return xbar, xbar, xbar, s
@@ -120,12 +130,19 @@ def render():
         return
 
     pop_mu = float(np.mean(values))
+    pop_sigma = float(np.std(values, ddof=0))  # ✅ 모표준편차(σ)
 
     with st.sidebar:
         st.subheader("🎯 신뢰구간 설정")
         n = st.number_input("표본 크기 n", 2, 1000, 30, step=1)
         conf_pct = st.slider("신뢰도(%)", 50, 99, 95, step=1)
         conf = conf_pct / 100.0
+        # ✅ 길이 일정 모드: 모표준편차 σ 사용(z-구간)
+        use_sigma_mode = st.checkbox(
+            "길이를 일정하게 (모표준편차 σ 사용: z-구간)",
+            value=False,
+            help="체크하면 모집단의 모표준편차 σ를 사용하여 모든 표본에 같은 반너비를 적용합니다."
+        )
         m = 100
         seed = st.number_input("난수 시드", 0, 10000, 0, step=1)
         go = st.button("표본 100세트 추출 / 새로고침")
@@ -147,10 +164,16 @@ def render():
     st.subheader("🧪 표본 표와 요약 (신뢰구간 포함)")
     rows, ci_list = [], []
     for i, s in enumerate(samples, start=1):
-        lo, hi, xbar, s_hat = ci_mean(s, conf)
+        sigma_known = pop_sigma if use_sigma_mode else None
+        lo, hi, xbar, s_used = ci_mean(s, conf, sigma_known=sigma_known)
         ci_list.append((lo, hi, xbar))
-        rows.append([i, len(s), xbar, s_hat, lo, hi])
-    summary_df = pd.DataFrame(rows, columns=["표본#", "크기", "표본평균", "표본표준편차", f"{conf_pct}% CI L", f"{conf_pct}% CI R"])
+        rows.append([i, len(s), xbar, s_used, lo, hi])
+
+    sd_col_name = "모표준편차(σ)" if use_sigma_mode else "표본표준편차"
+    summary_df = pd.DataFrame(
+        rows,
+        columns=["표본#", "크기", "표본평균", sd_col_name, f"{conf_pct}% CI L", f"{conf_pct}% CI R"]
+    )
     st.dataframe(summary_df, use_container_width=True, height=min(360, 40 + 28 * len(rows)))
 
     # p5.js 시각화 준비
@@ -164,11 +187,12 @@ def render():
     contains = [(lo <= pop_mu <= hi) for (lo, hi, _) in ci_list]
     contain_cnt = sum(contains)
 
+    mode_tag = "z-구간(σ 고정)" if use_sigma_mode else "t-구간(ŝ 사용)"
     payload = {
         "intervals": [{"lo": float(lo), "hi": float(hi), "mean": float(mu), "ok": bool(ok)}
                       for (lo, hi, mu), ok in zip(ci_list, contains)],
         "xmin": float(xmin), "xmax": float(xmax), "mu": float(pop_mu),
-        "title": f"{conf_pct}% 신뢰구간 (표본 100개)",
+        "title": f"{conf_pct}% 신뢰구간 · {mode_tag} (표본 100개)",
     }
 
     row_h = 10
@@ -176,7 +200,6 @@ def render():
     H = top_pad + bottom_pad + len(payload["intervals"]) * row_h
     H = min(max(H, 380), 1200)
 
-    # ⚠️ 퍼센트 포매팅으로 삽입 → JS 중괄호와 충돌 없음
     html = """
 <div id="ci_canvas" style="width:100%%;max-width:980px;margin:0 auto;"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -232,9 +255,6 @@ new p5((p)=>{
     """ % (json.dumps(payload), row_h, H)
 
     components.html(html, height=H)
-
-    expected = int(st.session_state.get("expected_conf", 0) or 0)
-    expected = 0  # 사용 안함(참고용)
 
     col = "#23a559" if contain_cnt >= int(0.01*conf_pct*100) else "#e33c3c"
     st.markdown(
