@@ -432,29 +432,119 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
     )
 
 def home_view():
-    st.title("🧮 Mathlab")
+    # CSS 스타일링 주입 (한 번만)
+    if "_home_styles" not in st.session_state:
+        st.session_state["_home_styles"] = True
+        st.markdown(
+            """
+            <style>
+              /* 히어로 섹션 스타일 */
+              .hero-container {
+                background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+                border-radius: 16px;
+                padding: 2.5rem 2rem;
+                margin-bottom: 2.5rem;
+                text-align: center;
+                border: 1px solid rgba(99, 102, 241, 0.2);
+              }
+              .hero-title {
+                font-size: 3rem;
+                font-weight: 800;
+                margin: 0 0 0.75rem 0;
+                background: linear-gradient(135deg, #6366f1, #a855f7);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+              }
+              .hero-subtitle {
+                font-size: 1.15rem;
+                color: var(--secondary-text-color);
+                line-height: 1.6;
+                margin: 0;
+              }
+              
+              /* 카드 스타일 */
+              .subject-card {
+                height: 100%;
+              }
+              .subject-card-icon {
+                font-size: 3rem;
+                margin-bottom: 0.75rem;
+              }
+              .subject-card-title {
+                font-size: 1.35rem;
+                font-weight: 700;
+                margin: 0 0 0.5rem 0;
+                color: var(--text-color);
+              }
+              .subject-card-desc {
+                font-size: 0.95rem;
+                color: var(--secondary-text-color);
+                line-height: 1.5;
+                margin: 0 0 1rem 0;
+              }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+    
+    # 히어로 섹션
     st.markdown(
         """
-        이곳은 **수학 수업에서 활용**할 수 있는 시뮬레이션과 활동을 한 곳에 모은 연구실입니다.  
-        아래에서 교과를 고르고, 교과별 메인 페이지에서 구체 활동으로 들어가세요.
-        """
+        <div class="hero-container">
+          <div class="hero-title">MathLab</div>
+          <div class="hero-subtitle">
+            수학 수업에서 활용할 수 있는 시뮬레이션과 활동을 한 곳에 모은 공간입니다.<br>
+            원하는 교과를 선택하여 다양한 수학 활동을 체험해보세요.
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-#    st.markdown(
- #       """
- #       - **공통수학**: 수와 연산, 함수 기초, 수열 등
- #       - **미적분학**: 극한/연속, 미분/적분의 핵심 개념 시각화
- #       - **확률과통계**: 난수, 분포, 추정·검정 체험형 시뮬
- #       - **기하학**: 도형 성질, 변환, 작도 아이디어
- #       - **기타**: 프랙털 등 흥미 주제 모음
- #       """
- #   )
-    st.subheader("교과로 이동")
-    cols = st.columns(4)
+    
+    # 교과별 아이콘과 설명 데이터
+    subject_data = {
+        "common": {
+            "icon": "🔢",
+            "description": "수와 연산, 함수, 수열 등<br>수학의 기초를 탄탄하게 다집니다."
+        },
+        "calculus": {
+            "icon": "📈",
+            "description": "극한, 미분, 적분의 변화를<br>시각적으로 확인하고 이해합니다."
+        },
+        "probability": {
+            "icon": "🎲",
+            "description": "데이터 분포와 확률 시뮬레이션으로<br>통계적 추론 과정을 경험합니다."
+        },
+        "geometry": {
+            "icon": "📐",
+            "description": "평면과 공간 도형의 성질,<br>변환과 작도의 원리를 탐구합니다."
+        },
+        "etc": {
+            "icon": "🧩",
+            "description": "프랙털, 게임 이론 등<br>흥미로운 수학 주제들을 만납니다."
+        }
+    }
+    
+    # 3열 그리드 레이아웃으로 카드 배치
+    cols = st.columns(3, gap="medium")
     for i, (key, label) in enumerate(SUBJECTS.items()):
-        with cols[i % 4]:
-            if st.button(f"{label} 이동", use_container_width=True):
-                set_route("subject", subject=key)
-                _do_rerun()
+        data = subject_data.get(key, {"icon": "📚", "description": ""})
+        with cols[i % 3]:
+            with st.container(border=True):
+                st.markdown(
+                    f"""
+                    <div class="subject-card">
+                      <div class="subject-card-icon">{data['icon']}</div>
+                      <div class="subject-card-title">{label}</div>
+                      <div class="subject-card-desc">{data['description']}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+                if st.button("시작하기", key=f"home_btn_{key}", use_container_width=True, type="primary"):
+                    set_route("subject", subject=key)
+                    _do_rerun()
 
 def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
     label = SUBJECTS.get(subject_key, subject_key)
