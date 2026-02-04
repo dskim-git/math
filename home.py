@@ -431,62 +431,64 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
         use_container_width=True
     )
 
+def _inject_home_styles():
+    """홈 뷰의 CSS 스타일을 주입합니다."""
+    st.markdown(
+        """
+        <style>
+          /* 히어로 섹션 스타일 */
+          .hero-container {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            margin-bottom: 2.5rem;
+            text-align: center;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+          }
+          .hero-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 0 0 0.75rem 0;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+          }
+          .hero-subtitle {
+            font-size: 1.15rem;
+            color: var(--secondary-text-color);
+            line-height: 1.6;
+            margin: 0;
+          }
+          
+          /* 카드 스타일 */
+          .subject-card {
+            height: 100%;
+          }
+          .subject-card-icon {
+            font-size: 3rem;
+            margin-bottom: 0.75rem;
+          }
+          .subject-card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            color: var(--text-color);
+          }
+          .subject-card-desc {
+            font-size: 0.95rem;
+            color: var(--secondary-text-color);
+            line-height: 1.5;
+            margin: 0 0 1rem 0;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
 def home_view():
-    # CSS 스타일링 주입 (한 번만)
-    if "_home_styles" not in st.session_state:
-        st.session_state["_home_styles"] = True
-        st.markdown(
-            """
-            <style>
-              /* 히어로 섹션 스타일 */
-              .hero-container {
-                background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
-                border-radius: 16px;
-                padding: 2.5rem 2rem;
-                margin-bottom: 2.5rem;
-                text-align: center;
-                border: 1px solid rgba(99, 102, 241, 0.2);
-              }
-              .hero-title {
-                font-size: 3rem;
-                font-weight: 800;
-                margin: 0 0 0.75rem 0;
-                background: linear-gradient(135deg, #6366f1, #a855f7);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-              }
-              .hero-subtitle {
-                font-size: 1.15rem;
-                color: var(--secondary-text-color);
-                line-height: 1.6;
-                margin: 0;
-              }
-              
-              /* 카드 스타일 */
-              .subject-card {
-                height: 100%;
-              }
-              .subject-card-icon {
-                font-size: 3rem;
-                margin-bottom: 0.75rem;
-              }
-              .subject-card-title {
-                font-size: 1.35rem;
-                font-weight: 700;
-                margin: 0 0 0.5rem 0;
-                color: var(--text-color);
-              }
-              .subject-card-desc {
-                font-size: 0.95rem;
-                color: var(--secondary-text-color);
-                line-height: 1.5;
-                margin: 0 0 1rem 0;
-              }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
+    # CSS 스타일링 주입 (뷰가 렌더링될 때마다 적용)
+    _inject_home_styles()
     
     # 히어로 섹션
     st.markdown(
