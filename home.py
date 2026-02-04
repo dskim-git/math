@@ -425,6 +425,11 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
     if st.button("🏠 홈으로", type="secondary", use_container_width=True):
         set_route("home")
         _do_rerun()
+    st.sidebar.link_button(
+        "🤖 AI 튜터와 대화하기", 
+        "https://copilotstudio.microsoft.com/environments/Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/copilots_header_78f6d/webchat?__version__=2",
+        use_container_width=True
+    )
 
 def home_view():
     st.title("🧮 Mathlab")
