@@ -46,7 +46,7 @@ def render():
         <div>Score: <span id="currentScore">0</span></div>
         <div>Target Step: <span id="bestScore">4</span></div>
     </div>
-    <canvas id="gameCanvas" width="500" height="420"></canvas>
+    <canvas id="gameCanvas" width="600" height="500"></canvas>
     <div class="vertex-btns">
         <button class="red" onclick="move(0)">Red (T)</button>
         <button class="blue" onclick="move(1)">Blue (L)</button>
@@ -133,4 +133,4 @@ def render():
 """
 
     # 스트림릿 컴포넌트로 HTML 삽입
-    components.html(chaos_game_html, height=650)
+    components.html(chaos_game_html, height=850)
