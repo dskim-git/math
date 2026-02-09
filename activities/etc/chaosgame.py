@@ -47,9 +47,9 @@ def render():
     </div>
     <canvas id="gameCanvas" width="500" height="420"></canvas>
     <div class="vertex-btns">
-        <button class="red" onclick="move(0)">Red(T)</button>
-        <button class="blue" onclick="move(1)">Blue(L)</button>
-        <button class="green" onclick="move(2)">Green(R)</button>
+        <button class="red" onclick="move(0)">Red (T)</button>
+        <button class="blue" onclick="move(1)">Blue (L)</button>
+        <button class="green" onclick="move(2)">Green (R)</button>
     </div>
     <div class="status" id="statusMsg"></div>
     <button onclick="initGame()" style="background: #34495e;">Restart</button>
