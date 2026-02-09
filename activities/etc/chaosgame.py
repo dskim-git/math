@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 META = {
-    "title": "카오스 게임",
+    "title": "카오스 게임(BU)",
     "description": "보스턴 대학교(BU)의 카오스 게임을 재현한 퍼즐 게임입니다.",
     "order": 10,
     "hidden": False,
