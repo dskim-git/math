@@ -32,6 +32,7 @@ def render():
         button.green { background: #2ecc71; }
         .score-board { display: flex; gap: 30px; font-size: 1.1em; font-weight: bold; justify-content: center; }
         .status { color: #e67e22; height: 24px; margin: 10px 0; font-weight: bold; }
+        .history { margin: 15px 0; padding: 10px; background: #f8f8f8; border-radius: 5px; font-family: monospace; font-size: 1.1em; min-height: 30px; }
     </style>
 </head>
 <body>
@@ -51,6 +52,7 @@ def render():
         <button class="blue" onclick="move(1)">Blue (L)</button>
         <button class="green" onclick="move(2)">Green (R)</button>
     </div>
+    <div class="history" id="clickHistory"></div>
     <div class="status" id="statusMsg"></div>
     <button onclick="initGame()" style="background: #34495e;">Restart</button>
 </div>
@@ -61,6 +63,7 @@ def render():
     let level = 2;
     const vertices = [{x: 250, y: 40, color: '#e74c3c'}, {x: 50, y: 380, color: '#3498db'}, {x: 450, y: 380, color: '#2ecc71'}];
     let currentPos = {x: 450, y: 380}, targetTriangle = [], score = 0, gameOver = false;
+    let clickHistory = [];
 
     function getTriangles(v1, v2, v3, depth) {
         if (depth === 0) return [[v1, v2, v3]];
@@ -70,8 +73,10 @@ def render():
 
     function initGame() {
         score = 0; gameOver = false;
+        clickHistory = [];
         document.getElementById('currentScore').innerText = score;
         document.getElementById('statusMsg').innerText = "";
+        document.getElementById('clickHistory').innerText = "";
         let allTriangles = getTriangles(vertices[0], vertices[1], vertices[2], level);
         targetTriangle = allTriangles[Math.floor(Math.random() * allTriangles.length)];
         currentPos = {x: vertices[2].x, y: vertices[2].y};
@@ -80,6 +85,15 @@ def render():
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Draw triangle border connecting the three vertices
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(vertices[0].x, vertices[0].y);
+        ctx.lineTo(vertices[1].x, vertices[1].y);
+        ctx.lineTo(vertices[2].x, vertices[2].y);
+        ctx.closePath();
+        ctx.stroke();
         ctx.fillStyle = '#2ecc71'; ctx.globalAlpha = 0.5;
         ctx.beginPath(); ctx.moveTo(targetTriangle[0].x, targetTriangle[0].y); ctx.lineTo(targetTriangle[1].x, targetTriangle[1].y); ctx.lineTo(targetTriangle[2].x, targetTriangle[2].y); ctx.fill();
         ctx.globalAlpha = 1.0;
@@ -92,6 +106,10 @@ def render():
         currentPos.x = (currentPos.x + vertices[vIdx].x) / 2;
         currentPos.y = (currentPos.y + vertices[vIdx].y) / 2;
         score++; document.getElementById('currentScore').innerText = score;
+        // Add to click history: 0=T, 1=L, 2=R
+        const labels = ['T', 'L', 'R'];
+        clickHistory.push(labels[vIdx]);
+        document.getElementById('clickHistory').innerText = clickHistory.join('');
         draw();
         if (isInside(currentPos, targetTriangle)) {
             document.getElementById('statusMsg').innerText = "🎉 Success!";
