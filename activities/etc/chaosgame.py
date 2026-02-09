@@ -86,13 +86,13 @@ def render():
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         // Draw triangle border connecting the three vertices
-        ctx.strokeStyle = '#333';
+        ctx.strokeStyle = 'black';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(vertices[0].x, vertices[0].y);
         ctx.lineTo(vertices[1].x, vertices[1].y);
         ctx.lineTo(vertices[2].x, vertices[2].y);
-        ctx.lineTo(vertices[0].x, vertices[0].y);
+        ctx.closePath();
         ctx.stroke();
         ctx.fillStyle = '#2ecc71'; ctx.globalAlpha = 0.5;
         ctx.beginPath(); ctx.moveTo(targetTriangle[0].x, targetTriangle[0].y); ctx.lineTo(targetTriangle[1].x, targetTriangle[1].y); ctx.lineTo(targetTriangle[2].x, targetTriangle[2].y); ctx.fill();
