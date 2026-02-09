@@ -1,17 +1,22 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
-# 페이지 설정
-st.set_page_config(page_title="Chaos Game Puzzle", layout="centered")
+META = {
+    "title": "카오스 게임",
+    "description": "보스턴 대학교(BU)의 카오스 게임을 재현한 퍼즐 게임입니다.",
+    "order": 10,
+    "hidden": False,
+}
 
-st.title("🎮 The Chaos Game (BU Edition)")
-st.markdown("""
-이 게임은 보스턴 대학교(BU)의 카오스 게임을 재현한 것입니다.  
-**목표:** 현재 점을 꼭짓점 버튼을 눌러 이동시켜 초록색 타겟 영역 안에 넣으세요!
-""")
+def render():
+    st.title("🎮 The Chaos Game (BU Edition)")
+    st.markdown("""
+    이 게임은 보스턴 대학교(BU)의 카오스 게임을 재현한 것입니다.  
+    **목표:** 현재 점을 꼭짓점 버튼을 눌러 이동시켜 초록색 타겟 영역 안에 넣으세요!
+    """)
 
-# 앞서 만든 HTML/JS 코드를 변수에 담습니다.
-chaos_game_html = """
+    # 앞서 만든 HTML/JS 코드를 변수에 담습니다.
+    chaos_game_html = """
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -109,5 +114,5 @@ chaos_game_html = """
 </html>
 """
 
-# 스트림릿 컴포넌트로 HTML 삽입
-components.html(chaos_game_html, height=650)
+    # 스트림릿 컴포넌트로 HTML 삽입
+    components.html(chaos_game_html, height=650)
