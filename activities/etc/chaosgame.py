@@ -32,7 +32,7 @@ def render():
         button.green { background: #2ecc71; }
         .score-board { display: flex; gap: 30px; font-size: 1.1em; font-weight: bold; justify-content: center; }
         .status { color: #e67e22; height: 24px; margin: 10px 0; font-weight: bold; }
-        .history { margin: 15px 0; padding: 10px; background: #f8f8f8; border-radius: 5px; font-family: monospace; font-size: 1.1em; min-height: 30px; }
+        .history { margin: 15px 0; padding: 10px; background: #f8f8f8; border-radius: 5px; font-family: monospace; font-size: 24px; font-weight: bold; min-height: 30px; }
     </style>
 </head>
 <body>
@@ -133,4 +133,4 @@ def render():
 """
 
     # 스트림릿 컴포넌트로 HTML 삽입
-    components.html(chaos_game_html, height=650)
+    components.html(chaos_game_html, height=850)
