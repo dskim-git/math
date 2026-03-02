@@ -107,10 +107,15 @@ SHOW_MINI_IN_SIDEBAR = False
 SUBJECTS = {
     "common": "공통수학",
     "calculus": "미적분학",
-    "probability": "확률과통계",
+    "probability_new": "확률과통계",
+    "probability": "확률과통계(이전 교육과정)",
     "geometry": "기하학",
     "etc": "기타",
 }
+
+# 일반 사용자에게 숨길 교과 키 (개발자 모드에서만 노출)
+# URL에 ?dev=1 을 붙이면 개발자 모드가 활성화됩니다.
+HIDDEN_SUBJECTS: set = {"probability"}
 
 # home.py와 같은 디렉터리 기준
 ACTIVITIES_ROOT = Path(__file__).parent / "activities"
@@ -290,6 +295,53 @@ def _do_rerun():
     except Exception:
         st.experimental_rerun()  # type: ignore[attr-defined]
 
+def _is_dev_mode() -> bool:
+    """관리자 모드 여부를 세션 상태에서 읽습니다."""
+    return st.session_state.get("_dev_mode", False)
+
+_ADMIN_PASSWORD = "1318"
+
+def _admin_mode_ui():
+    """사이드바 하단에 관리자 모드 토글 UI를 렌더링합니다."""
+    dev = _is_dev_mode()
+    st.sidebar.divider()
+
+    if dev:
+        st.sidebar.caption("🔧 관리자 모드 활성화 중")
+        if st.sidebar.button("🔓 일반 모드로 돌아가기", use_container_width=True, key="_admin_exit_btn"):
+            st.session_state["_dev_mode"] = False
+            st.session_state.pop("_show_pw_input", None)
+            st.session_state.pop("_pw_error", None)
+            _do_rerun()
+    else:
+        if st.session_state.get("_show_pw_input", False):
+            pw = st.sidebar.text_input(
+                "관리자 비밀번호", type="password", key="_admin_pw_input",
+                placeholder="비밀번호 입력 후 Enter"
+            )
+            c1, c2 = st.sidebar.columns(2)
+            with c1:
+                if st.button("확인", key="_admin_pw_confirm", use_container_width=True):
+                    if pw == _ADMIN_PASSWORD:
+                        st.session_state["_dev_mode"] = True
+                        st.session_state["_show_pw_input"] = False
+                        st.session_state.pop("_pw_error", None)
+                        _do_rerun()
+                    else:
+                        st.session_state["_pw_error"] = True
+            with c2:
+                if st.button("취소", key="_admin_pw_cancel", use_container_width=True):
+                    st.session_state["_show_pw_input"] = False
+                    st.session_state.pop("_pw_error", None)
+                    _do_rerun()
+            if st.session_state.get("_pw_error"):
+                st.sidebar.error("비밀번호가 틀렸습니다.")
+        else:
+            if st.sidebar.button("🔐 관리자 모드", use_container_width=True, key="_admin_enter_btn"):
+                st.session_state["_show_pw_input"] = True
+                st.session_state.pop("_pw_error", None)
+                _do_rerun()
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 활동 자동 탐색
 def discover_activities() -> Dict[str, List[Activity]]:
@@ -396,8 +448,11 @@ def set_route(view: str, subject: Optional[str] = None,
 # ─────────────────────────────────────────────────────────────────────────────
 # 공통 UI
 def sidebar_navigation(registry: Dict[str, List[Activity]]):
+    dev = _is_dev_mode()
     st.sidebar.header("📂 교과별 페이지")
     for key, label in SUBJECTS.items():
+        if key in HIDDEN_SUBJECTS and not dev:
+            continue
         with st.sidebar.expander(f"{label}", expanded=False):
             # 교과 메인
             if st.button("교과 메인 열기", key=f"open_{key}_index", use_container_width=True):
@@ -430,6 +485,7 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
         "https://copilotstudio.microsoft.com/environments/Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/copilots_header_78f6d/webchat?__version__=2",
         use_container_width=True
     )
+    _admin_mode_ui()
 
 def _inject_home_styles():
     """홈 뷰의 CSS 스타일을 주입합니다."""
@@ -514,9 +570,13 @@ def home_view():
             "icon": "📈",
             "description": "극한, 미분, 적분의 변화를<br>시각적으로 확인하고 이해합니다."
         },
-        "probability": {
+        "probability_new": {
             "icon": "🎲",
             "description": "데이터 분포와 확률 시뮬레이션으로<br>통계적 추론 과정을 경험합니다."
+        },
+        "probability": {
+            "icon": "🎲",
+            "description": "[이전 교육과정] 확률과통계 수업 자료입니다.<br>개발자 모드에서만 표시됩니다."
         },
         "geometry": {
             "icon": "📐",
@@ -529,8 +589,10 @@ def home_view():
     }
     
     # 3열 그리드 레이아웃으로 카드 배치
+    dev = _is_dev_mode()
+    visible_subjects = [(k, v) for k, v in SUBJECTS.items() if k not in HIDDEN_SUBJECTS or dev]
     cols = st.columns(3, gap="medium")
-    for i, (key, label) in enumerate(SUBJECTS.items()):
+    for i, (key, label) in enumerate(visible_subjects):
         data = subject_data.get(key, {"icon": "📚", "description": ""})
         with cols[i % 3]:
             with st.container(border=True):
