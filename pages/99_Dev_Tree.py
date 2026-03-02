@@ -1,8 +1,47 @@
 # pages/99_Dev_Tree.py
 from pathlib import Path
 import streamlit as st
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Project Tree", layout="centered")
+
+# 기본 멀티페이지 nav 항상 숨김
+st.markdown("""
+<style>
+[data-testid="stSidebarNav"],
+[data-testid="stSidebarNavContainer"],
+[data-testid="stSidebarNavItems"],
+[data-testid="stSidebarNavLink"],
+section[data-testid="stSidebar"] nav
+{ display: none !important; visibility: hidden !important; }
+</style>
+""", unsafe_allow_html=True)
+components.html("""
+<script>
+(function() {
+    const SEL = [
+        '[data-testid="stSidebarNav"]',
+        '[data-testid="stSidebarNavContainer"]',
+        '[data-testid="stSidebarNavItems"]',
+        '[data-testid="stSidebarNavLink"]',
+        'section[data-testid="stSidebar"] nav',
+    ];
+    function hide() {
+        SEL.forEach(function(s) {
+            window.parent.document.querySelectorAll(s).forEach(function(el) {
+                el.style.setProperty('display','none','important');
+            });
+        });
+    }
+    hide();
+    new MutationObserver(hide).observe(window.parent.document.body, {childList:true, subtree:true});
+})();
+</script>
+""", height=0)
+
+# 사이드바: 홈으로 돌아가기
+st.sidebar.page_link("home.py", label="🏠 홈으로 돌아가기", use_container_width=True)
+
 st.title("📁 Project Tree (copy & share)")
 
 # pages/ 아래에 이 파일이 있으니, 프로젝트 루트는 parents[1]

@@ -313,6 +313,7 @@ def _admin_mode_ui():
             st.session_state.pop("_show_pw_input", None)
             st.session_state.pop("_pw_error", None)
             _do_rerun()
+        st.sidebar.page_link("pages/99_Dev_Tree.py", label="📁 Dev Tree (파일 구조 보기)", use_container_width=True)
     else:
         if st.session_state.get("_show_pw_input", False):
             pw = st.sidebar.text_input(
@@ -447,8 +448,46 @@ def set_route(view: str, subject: Optional[str] = None,
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 공통 UI
+def _inject_sidebar_nav_visibility(dev: bool):
+    """Streamlit 기본 멀티페이지 내비게이션(home, Dev Tree)을 항상 숨깁니다."""
+    st.markdown("""
+    <style>
+    [data-testid="stSidebarNav"],
+    [data-testid="stSidebarNavContainer"],
+    [data-testid="stSidebarNavItems"],
+    [data-testid="stSidebarNavLink"],
+    section[data-testid="stSidebar"] nav
+    { display: none !important; visibility: hidden !important; }
+    </style>
+    """, unsafe_allow_html=True)
+    components.html("""
+    <script>
+    (function hideSidebarNav() {
+        const SELECTORS = [
+            '[data-testid="stSidebarNav"]',
+            '[data-testid="stSidebarNavContainer"]',
+            '[data-testid="stSidebarNavItems"]',
+            '[data-testid="stSidebarNavLink"]',
+            'section[data-testid="stSidebar"] nav',
+        ];
+        function hide() {
+            SELECTORS.forEach(function(sel) {
+                var els = window.parent.document.querySelectorAll(sel);
+                els.forEach(function(el) {
+                    el.style.setProperty('display', 'none', 'important');
+                });
+            });
+        }
+        hide();
+        var observer = new MutationObserver(hide);
+        observer.observe(window.parent.document.body, { childList: true, subtree: true });
+    })();
+    </script>
+    """, height=0)
+
 def sidebar_navigation(registry: Dict[str, List[Activity]]):
     dev = _is_dev_mode()
+    _inject_sidebar_nav_visibility(dev)
     st.sidebar.header("📂 교과별 페이지")
     for key, label in SUBJECTS.items():
         if key in HIDDEN_SUBJECTS and not dev:
