@@ -301,6 +301,20 @@ def _is_dev_mode() -> bool:
 
 _ADMIN_PASSWORD = "1318"
 
+# OT 자료 비밀 토큰 — URL에 ?ot=<이 값> 을 붙이면 해당 과목 OT 자료가 표시됩니다.
+_OT_TOKEN = "mathot2026"
+_OT_CANVA: Dict[str, str] = {
+    "common":          "https://www.canva.com/design/DAHC4prloOs/iLjYVxFI-b-VKCWRB3rE9A/view?embed",
+    "probability_new": "https://www.canva.com/design/DAHC5FC0x7g/wVBeRL2qrRPuWLC9BszvjQ/view?embed",
+}
+
+def _is_ot_mode() -> bool:
+    """URL ?ot=토큰 이 있으면 세션에 기억하고 OT 모드를 유지합니다."""
+    qp = _qp_get()
+    if qp.get("ot", [""])[0] == _OT_TOKEN:
+        st.session_state["_ot_mode"] = True
+    return st.session_state.get("_ot_mode", False)
+
 def _admin_mode_ui():
     """사이드바 하단에 관리자 모드 토글 UI를 렌더링합니다."""
     dev = _is_dev_mode()
@@ -769,6 +783,13 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
             else:
                 st.caption(f"`activities/{subject_key}/lessons/_units.py`에 CURRICULUM 또는 UNITS를 정의하면 여기서 바로 이동할 수 있어요.")
 
+    # ▼ OT 자료 진입 버튼 (비밀 토큰 URL일 때만 표시)
+    if _is_ot_mode() and subject_key in _OT_CANVA:
+        st.divider()
+        if st.button("📋 OT 자료 보기", key=f"ot_btn_{subject_key}", type="primary"):
+            set_route("ot", subject=subject_key)
+            _do_rerun()
+
     # ▼ 활동 카드들
     acts_all = registry.get(subject_key, [])
     acts = [a for a in acts_all if not a.hidden]    # ← 추가
@@ -791,6 +812,21 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
 LESSON_HEADER_VISIBLE = False
 
 LESSON_HEADER_VISIBLE = False
+
+def ot_view(subject_key: str):
+    """OT 자료 전용 페이지."""
+    label = SUBJECTS.get(subject_key, subject_key)
+    st.title(f"📋 {label} OT")
+
+    c1, c2 = st.columns([1, 5])
+    with c1:
+        if st.button("← 교과 메인", type="secondary", use_container_width=True):
+            set_route("subject", subject=subject_key)
+            _do_rerun()
+
+    st.divider()
+    components.iframe(_OT_CANVA[subject_key], height=860, scrolling=True)
+
 
 def lessons_view(subject_key: str):
     keep_scroll(key=f"{subject_key}/lessons", mount="sidebar")
@@ -1081,6 +1117,8 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
 # ─────────────────────────────────────────────────────────────────────────────
 # 메인
 def main():
+    # URL 파라미터를 가장 먼저 읽어 세션에 기록 (이후 set_route로 파라미터가 지워지기 전에)
+    _is_ot_mode()
     registry = discover_activities()
     sidebar_navigation(registry)
 
@@ -1090,6 +1128,8 @@ def main():
         home_view()
     elif view == "subject" and subject in SUBJECTS:
         subject_index_view(subject, registry)
+    elif view == "ot" and subject in SUBJECTS and _is_ot_mode() and subject in _OT_CANVA:
+        ot_view(subject)
     elif view == "lessons" and subject in SUBJECTS:
         lessons_view(subject)
     elif view == "activity" and subject in SUBJECTS and activity:
