@@ -151,4 +151,49 @@ CURRICULUM = [
             },
         ],
     },
+    # 교육과정 외
+    {
+        "key": "X",
+        "label": "교육과정 외",
+        "children": [
+        {"key": "X-1", "label": "중등 기하", "items": [
+                    {
+                        "type": "canva",
+                        "title": "삼각형의 합동과 닮음",
+                        "src": "https://www.canva.com/design/DAHC5OxGYD4/Wz6XA9IJNE-WkVffPBElHg/view?embed",
+                        "height": 800
+                    },
+                    {
+                        "type": "canva",
+                        "title": "삼각형의 성질",
+                        "src": "https://www.canva.com/design/DAHC5HyRFvA/U1SeoXLFac9VcVpT3D94Ig/view?embed",
+                        "height": 800
+                    },
+                    {
+                        "type": "canva",
+                        "title": "삼각형의 무게중심, 외심, 내심",
+                        "src": "https://www.canva.com/design/DAHC5P3F-nY/iivCAv3Yyomhh2B0MEQ5GA/view?embed",
+                        "height": 800
+                    },
+                    {
+                        "type": "canva",
+                        "title": "원의 성질",
+                        "src": "https://www.canva.com/design/DAHC5HH_w_M/C-8ZtVtMTvGfOFr8dhWfgg/view?embed",
+                        "height": 800
+                    },
+                    {
+                        "type": "canva",
+                        "title": "사각형의 성질",
+                        "src": "https://www.canva.com/design/DAHC5C632MI/dkfuH14cRqF-yQKv0A-XYA/view?embed",
+                        "height": 800
+                    },
+                    {
+                        "type": "canva",
+                        "title": "문제 풀이",
+                        "src": "https://www.canva.com/design/DAHC5IfBCP0/b7zKPYtrtvixYB3lFk5o4g/view?embed",
+                        "height": 800
+                    }
+        ]}, 
+        ],
+    },
 ]
