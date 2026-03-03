@@ -10,48 +10,35 @@ CURRICULUM = [
         "key": "1-1",
         "label": "(1) 순열과 조합",
         "children": [
-          {"key": "1-1-1", "label": "원순열", "items": [
-                {
-                    "type": "canva",
-                    "title": "원순열",
-                    "src": "https://www.canva.com/design/DAGNlyGJNp8/56f2EaBXpwemyaLtixXk8A/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "activity",
-                    "title": "원순열 이해하기", 
-                    "subject": "probability",
-                    "slug": "mini/circular_perm_anchor_p5",
-                },
-                {
-                    "type": "activity",
-                    "title": "다각형 변 위에 숫자 배열하기", 
-                    "subject": "probability",
-                    "slug": "mini/polygon_edge_arrangements_p5",
-                }
-            ]},
-          {"key": "1-1-2", "label": "중복순열", "items": [
+          {"key": "1-1-1", "label": "여러 가지 순열", "items": [
                 {
                     "type": "canva",
                     "title": "중복순열",
-                    "src": "https://www.canva.com/design/DAGNl8s3A0s/Nbs_N2gbTcqYSpIrfu6cBQ/view?embed",
+                    "src": "https://www.canva.com/design/DAHC5PirjcY/uvXHr_miHQ-AwSZ32-cB3Q/view?embed",
                     "height": 800
-                }
-            ]},
-          {"key": "1-1-3", "label": "같은 것이 있는 순열", "items": [
+                },
                 {
                     "type": "canva",
                     "title": "같은 것이 있는 순열",
-                    "src": "https://www.canva.com/design/DAGNl2vhKYA/ObtbLokxlZBoJgazUpFQYg/view?embed",
+                    "src": "https://www.canva.com/design/DAHC5Lf4DO0/SRtT5-ot2uNc1t3WKf1qag/view?embed",
                     "height": 800
                 }
             ]},
-          {"key": "1-1-4", "label": "중복조합", "items": [
+          {"key": "1-1-2", "label": "중복조합", "items": [
                 {
                     "type": "canva",
                     "title": "중복조합",
-                    "src": "https://www.canva.com/design/DAGNly2hs8o/pnOkCbXhNC0Ca0L-2hIObg/view?embed",
+                    "src": "https://www.canva.com/design/DAHC5BwlzB0/5UHPurQTyTDyvihjWyhvZg/view?embed",
                     "height": 800
+                }
+            ]},
+          {"key": "1-1-3", "label": "중단원 마무리 문제", "items": [
+                {
+                    "type": "pdf",
+                    "title": "중단원 마무리 문제",
+                    "src": "https://drive.google.com/file/d/1D_DEPylJ9dNV8yDruIDKrjd4v5LhjMwP/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1D_DEPylJ9dNV8yDruIDKrjd4v5LhjMwP"  # (선택) 다운로드 버튼 표시용
                 }
             ]},
         ],
@@ -572,7 +559,27 @@ CURRICULUM = [
     "key": "X",
     "label": "교육과정 외",
     "children": [
-      {"key": "X-1", "label": "분할", "items": [
+      {"key": "X-1", "label": "원순열", "items": [
+                {
+                    "type": "canva",
+                    "title": "원순열",
+                    "src": "https://www.canva.com/design/DAGNlyGJNp8/56f2EaBXpwemyaLtixXk8A/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "원순열 이해하기", 
+                    "subject": "probability",
+                    "slug": "mini/circular_perm_anchor_p5",
+                },
+                {
+                    "type": "activity",
+                    "title": "다각형 변 위에 숫자 배열하기", 
+                    "subject": "probability",
+                    "slug": "mini/polygon_edge_arrangements_p5",
+                }
+      ]},
+      {"key": "X-2", "label": "분할", "items": [
                 {
                     "type": "canva",
                     "title": "자연수의 분할",
@@ -586,7 +593,7 @@ CURRICULUM = [
                     "height": 800
                 }
       ]},
-      {"key": "X-2", "label": "모비율의 추정", "items": [
+      {"key": "X-3", "label": "모비율의 추정", "items": [
                 {
                     "type": "canva",
                     "title": "모비율과 표본비율",
