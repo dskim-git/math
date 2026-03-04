@@ -299,7 +299,7 @@ def _is_dev_mode() -> bool:
     """관리자 모드 여부를 세션 상태에서 읽습니다."""
     return st.session_state.get("_dev_mode", False)
 
-_ADMIN_PASSWORD = "1318"
+_ADMIN_PASSWORD = "1906"
 
 # OT 자료 비밀 토큰 — URL에 ?ot=<이 값> 을 붙이면 해당 과목 OT 자료가 표시됩니다.
 _OT_TOKEN = "mathot2026"
