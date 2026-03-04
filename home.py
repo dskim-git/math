@@ -315,6 +315,23 @@ def _is_ot_mode() -> bool:
         st.session_state["_ot_mode"] = True
     return st.session_state.get("_ot_mode", False)
 
+# 과목 필터 토큰 — URL에 ?class=<이 값> 을 붙이면 해당 과목만 표시됩니다.
+_SUBJECT_TOKENS: Dict[str, str] = {
+    "common1":   "common",           # 1학년 공통수학 전용
+    "prob2":     "probability_new",  # 2학년 확률과통계 전용
+}
+
+def _get_subject_filter() -> Optional[str]:
+    """URL ?class=토큰 이 있으면 세션에 기억하고 필터 과목 키를 반환합니다.
+    관리자 모드에서는 항상 None(필터 없음)을 반환합니다."""
+    if _is_dev_mode():
+        return None
+    qp = _qp_get()
+    token = qp.get("class", [""])[0]
+    if token in _SUBJECT_TOKENS:
+        st.session_state["_subject_filter"] = _SUBJECT_TOKENS[token]
+    return st.session_state.get("_subject_filter", None)
+
 def _admin_mode_ui():
     """사이드바 하단에 관리자 모드 토글 UI를 렌더링합니다."""
     dev = _is_dev_mode()
@@ -501,10 +518,13 @@ def _inject_sidebar_nav_visibility(dev: bool):
 
 def sidebar_navigation(registry: Dict[str, List[Activity]]):
     dev = _is_dev_mode()
+    subject_filter = _get_subject_filter()  # None → 필터 없음
     _inject_sidebar_nav_visibility(dev)
     st.sidebar.header("📂 교과별 페이지")
     for key, label in SUBJECTS.items():
         if key in HIDDEN_SUBJECTS and not dev:
+            continue
+        if subject_filter and key != subject_filter:
             continue
         with st.sidebar.expander(f"{label}", expanded=False):
             # 교과 메인
@@ -643,7 +663,12 @@ def home_view():
     
     # 3열 그리드 레이아웃으로 카드 배치
     dev = _is_dev_mode()
-    visible_subjects = [(k, v) for k, v in SUBJECTS.items() if k not in HIDDEN_SUBJECTS or dev]
+    subject_filter = _get_subject_filter()  # None → 필터 없음
+    visible_subjects = [
+        (k, v) for k, v in SUBJECTS.items()
+        if (k not in HIDDEN_SUBJECTS or dev)
+        and (not subject_filter or k == subject_filter)
+    ]
     cols = st.columns(3, gap="medium")
     for i, (key, label) in enumerate(visible_subjects):
         data = subject_data.get(key, {"icon": "📚", "description": ""})
@@ -1119,6 +1144,7 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
 def main():
     # URL 파라미터를 가장 먼저 읽어 세션에 기록 (이후 set_route로 파라미터가 지워지기 전에)
     _is_ot_mode()
+    _get_subject_filter()
     registry = discover_activities()
     sidebar_navigation(registry)
 
