@@ -18,6 +18,30 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 비밀번호 경우의 수 탐색기",
+                    "subject": "probability_new",
+                    "slug": "mini/rep_perm_password",
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 모스 부호와 중복순열",
+                    "subject": "probability_new",
+                    "slug": "mini/rep_perm_morse",
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 색깔 타일 배열기",
+                    "subject": "probability_new",
+                    "slug": "mini/rep_perm_tiles",
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 주사위 연속 던지기와 중복순열",
+                    "subject": "probability_new",
+                    "slug": "mini/rep_perm_dice",
+                },
+                {
                     "type": "canva",
                     "title": "같은 것이 있는 순열",
                     "src": "https://www.canva.com/design/DAHC5Lf4DO0/SRtT5-ot2uNc1t3WKf1qag/view?embed",
