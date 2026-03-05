@@ -35,3 +35,6 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# Streamlit secrets (서비스 계정 키 포함 - 절대 커밋 금지)
+.streamlit/secrets.toml

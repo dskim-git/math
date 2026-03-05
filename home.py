@@ -105,17 +105,21 @@ SHOW_MINI_IN_SIDEBAR = False
 
 # 교과 카테고리 정의(폴더명 ↔ 표시명)
 SUBJECTS = {
-    "common": "공통수학",
-    "calculus": "미적분학",
+    "common":          "공통수학1",
+    "common2":         "공통수학2",
+    "algebra":         "대수",
+    "calculus1":       "미적분1",
+    "calculus2":       "미적분2",
     "probability_new": "확률과통계",
-    "probability": "확률과통계(이전 교육과정)",
-    "geometry": "기하학",
-    "etc": "기타",
+    "economics_math":  "경제수학",
+    "calculus":        "미적분학(이전 교육과정)",
+    "probability":     "확률과통계(이전 교육과정)",
+    "geometry":        "기하학",
+    "etc":             "기타",
 }
 
-# 일반 사용자에게 숨길 교과 키 (개발자 모드에서만 노출)
-# URL에 ?dev=1 을 붙이면 개발자 모드가 활성화됩니다.
-HIDDEN_SUBJECTS: set = {"probability"}
+# 일반 사용자에게 숨길 교과 키 (관리자 모드에서만 노출)
+HIDDEN_SUBJECTS: set = {"probability", "calculus"}
 
 # home.py와 같은 디렉터리 기준
 ACTIVITIES_ROOT = Path(__file__).parent / "activities"
@@ -305,7 +309,12 @@ _ADMIN_PASSWORD = "1906"
 _OT_TOKEN = "mathot2026"
 _OT_CANVA: Dict[str, str] = {
     "common":          "https://www.canva.com/design/DAHC4prloOs/iLjYVxFI-b-VKCWRB3rE9A/view?embed",
+    "common2":         "https://www.canva.com/design/DAHC4prloOs/iLjYVxFI-b-VKCWRB3rE9A/view?embed",
+    "algebra":         "",   # TODO: 대수 OT Canva URL
+    "calculus1":       "",   # TODO: 미적분1 OT Canva URL
+    "calculus2":       "",   # TODO: 미적분2 OT Canva URL
     "probability_new": "https://www.canva.com/design/DAHC5FC0x7g/wVBeRL2qrRPuWLC9BszvjQ/view?embed",
+    "economics_math":  "",   # TODO: 경제수학 OT Canva URL
 }
 
 def _is_ot_mode() -> bool:
@@ -317,8 +326,13 @@ def _is_ot_mode() -> bool:
 
 # 과목 필터 토큰 — URL에 ?class=<이 값> 을 붙이면 해당 과목만 표시됩니다.
 _SUBJECT_TOKENS: Dict[str, str] = {
-    "common1":   "common",           # 1학년 공통수학 전용
-    "prob2":     "probability_new",  # 2학년 확률과통계 전용
+    "common1":        "common",           # 1학년 공통수학1 전용
+    "common2":        "common2",          # 1학년 공통수학2 전용
+    "algebra":        "algebra",          # 대수 전용
+    "calculus1":      "calculus1",        # 미적분1 전용
+    "calculus2":      "calculus2",        # 미적분2 전용
+    "prob2":          "probability_new",  # 2학년 확률과통계 전용
+    "econ":           "economics_math",   # 경제수학 전용
 }
 
 def _get_subject_filter() -> Optional[str]:
@@ -345,6 +359,12 @@ def _admin_mode_ui():
             st.session_state.pop("_pw_error", None)
             _do_rerun()
         st.sidebar.page_link("pages/99_Dev_Tree.py", label="📁 Dev Tree (파일 구조 보기)", use_container_width=True)
+        st.sidebar.page_link("pages/98_진도표.py", label="📋 진도표 관리", use_container_width=True)
+        st.sidebar.link_button(
+            "🤖 AI 튜터와 대화하기",
+            "https://copilotstudio.microsoft.com/environments/Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/copilots_header_78f6d/webchat?__version__=2",
+            use_container_width=True
+        )
     else:
         if st.session_state.get("_show_pw_input", False):
             pw = st.sidebar.text_input(
@@ -553,11 +573,6 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
     if st.button("🏠 홈으로", type="secondary", use_container_width=True):
         set_route("home")
         _do_rerun()
-    st.sidebar.link_button(
-        "🤖 AI 튜터와 대화하기", 
-        "https://copilotstudio.microsoft.com/environments/Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/copilots_header_78f6d/webchat?__version__=2",
-        use_container_width=True
-    )
     _admin_mode_ui()
 
 def _inject_home_styles():
@@ -637,19 +652,39 @@ def home_view():
     subject_data = {
         "common": {
             "icon": "🔢",
-            "description": "수와 연산, 함수, 수열 등<br>수학의 기초를 탄탄하게 다집니다."
+            "description": "다항식, 방·부등식, 경우의 수, 행렬 등<br>수학의 기초를 탄탄하게 다집니다."
         },
-        "calculus": {
+        "common2": {
+            "icon": "🔣",
+            "description": "도형의 방정식, 집합과 명제, 함수 등<br>함수의 기초에 대해 학습합니다."
+        },
+        "algebra": {
+            "icon": "🔡",
+            "description": "지수와 로그, 삼각함수, 수열 등<br>대수적 사고력을 키웁니다."
+        },
+        "calculus1": {
             "icon": "📈",
-            "description": "극한, 미분, 적분의 변화를<br>시각적으로 확인하고 이해합니다."
+            "description": "함수의 극한과 연속, 다항함수의 미분과<br>적분을 학습합니다."
+        },
+        "calculus2": {
+            "icon": "📊",
+            "description": "수열의 극한, 지수·로그·삼각함수의 미분과<br>여러 가지 적분법을 학습합니다."
         },
         "probability_new": {
             "icon": "🎲",
-            "description": "데이터 분포와 확률 시뮬레이션으로<br>통계적 추론 과정을 경험합니다."
+            "description": "경우의 수, 확률, 통계 등<br>통계적 추론 과정을 경험합니다."
+        },
+        "economics_math": {
+            "icon": "💹",
+            "description": "수학적 개념을 경제 현상에 적용하여<br>분석하는 방법을 탐구합니다."
+        },
+        "calculus": {
+            "icon": "📈",
+            "description": "[이전 교육과정] 미적분학 수업 자료입니다.<br>관리자 모드에서만 표시됩니다."
         },
         "probability": {
             "icon": "🎲",
-            "description": "[이전 교육과정] 확률과통계 수업 자료입니다.<br>개발자 모드에서만 표시됩니다."
+            "description": "[이전 교육과정] 확률과통계 수업 자료입니다.<br>관리자 모드에서만 표시됩니다."
         },
         "geometry": {
             "icon": "📐",
