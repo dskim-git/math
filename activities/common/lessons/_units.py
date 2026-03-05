@@ -31,24 +31,56 @@ CURRICULUM = [
                         "key": "1-1-1",
                         "label": "다항식의 덧셈과 뺄셈",
                         "items": [
-                            # 예시 — 실제 자료로 교체하세요
-                            # {
-                            #     "type": "canva",
-                            #     "title": "다항식의 덧셈과 뺄셈",
-                            #     "src": "https://www.canva.com/design/...",
-                            #     "height": 800
-                            # },
+                            {
+                                "type": "canva",
+                                "title": "다항식의 정리",
+                                "src": "https://www.canva.com/design/DAHDEJoHCTU/X7qpJ4Y2F_fkfxUuqZyfXw/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "다항식의 덧셈과 뺄셈",
+                                "src": "https://www.canva.com/design/DAHDEHRkj2Q/JGbuWNdqt5iDUUdE3UHSsw/view?embed",
+                                "height": 800
+                            }
                         ],
                     },
                     {
                         "key": "1-1-2",
-                        "label": "다항식의 곱셈",
-                        "items": [],
+                        "label": "다항식의 곱셈과 나눗셈",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "다항식의 곱셈",
+                                "src": "https://www.canva.com/design/DAHDEK3KszI/OT-O0r2rMc4wlEG1nHOZ2g/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "다항식의 나눗셈",
+                                "src": "https://www.canva.com/design/DAHDENEx56I/UnmJrokl7f2SUX0U6KY4xA/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "조립제법",
+                                "src": "https://www.canva.com/design/DAHDEE2Z5ow/n7VqS7JZ12LjPOfOFGUkoQ/view?embed",
+                                "height": 800
+                            }
+                        ],
                     },
                     {
                         "key": "1-1-3",
-                        "label": "다항식의 나눗셈",
-                        "items": [],
+                        "label": "중단원 점검하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "중단원 마무리 문제",
+                                "src": "https://drive.google.com/file/d/1jRdV1GXgwqkhnpTWn0rllrpnLljMllRN/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=1jRdV1GXgwqkhnpTWn0rllrpnLljMllRN"  # (선택) 다운로드 버튼 표시용
+                }
+                        ],
                     },
                 ],
             },
