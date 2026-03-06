@@ -92,7 +92,8 @@ def _get_active_classes(date_iso: str, day: str) -> list:
 SEMESTER_START = date(2026, 3, 2)
 SEMESTER_END   = date(2026, 7, 17)
 
-SHEET_NAME = "진도표"   # 구글 시트 내 워크시트 이름
+SHEET_NAME      = "진도표"       # 구글 시트 내 워크시트 이름
+SETTINGS_SHEET  = "시간표설정"    # 날짜별 예외 저장 탭
 
 # ── 날짜 목록 생성 (주말 제외) ────────────────────────────────────────────────
 def generate_weekdays(start: date, end: date) -> list[date]:
@@ -239,6 +240,61 @@ def init_sheet(spreadsheet_id: str):
         return False
 
 
+def load_date_overrides_from_sheet(spreadsheet_id: str) -> dict:
+    """
+    구글 시트 '시간표설정' 탭에서 날짜별 예외를 불러옵니다.
+    반환형: { 'YYYY-MM-DD': [cls, ...] }
+    """
+    client = _get_gspread_client()
+    if client is None or not spreadsheet_id:
+        return {}
+    try:
+        sh = client.open_by_key(spreadsheet_id)
+        try:
+            ws = sh.worksheet(SETTINGS_SHEET)
+        except Exception:
+            return {}
+        records = ws.get_all_records()
+        result = {}
+        for row in records:
+            d = str(row.get("날짜", "")).strip()
+            if not d:
+                continue
+            cls_str = str(row.get("수업반", "")).strip()
+            if cls_str:
+                result[d] = [c.strip() for c in cls_str.split(",") if c.strip() in CLASSES]
+            else:
+                result[d] = []  # 수업 없는 날도 예외로 기록
+        return result
+    except Exception as e:
+        st.warning(f"시간표 설정 불러오기 실패: {e}")
+        return {}
+
+
+def save_date_overrides_to_sheet(spreadsheet_id: str, overrides: dict) -> bool:
+    """
+    날짜별 예외 전체를 구글 시트 '시간표설정' 탭에 저장합니다.
+    (기존 내용을 지우고 전체 재기록)
+    """
+    client = _get_gspread_client()
+    if client is None or not spreadsheet_id:
+        return False
+    try:
+        sh = client.open_by_key(spreadsheet_id)
+        try:
+            ws = sh.worksheet(SETTINGS_SHEET)
+        except Exception:
+            ws = sh.add_worksheet(title=SETTINGS_SHEET, rows=100, cols=2)
+        ws.clear()
+        ws.append_row(["날짜", "수업반"])
+        for date_iso, cls_list in sorted(overrides.items()):
+            ws.append_row([date_iso, ", ".join(cls_list)])
+        return True
+    except Exception as e:
+        st.error(f"시간표 설정 저장 실패: {e}")
+        return False
+
+
 # ── 메인 UI ───────────────────────────────────────────────────────────────────
 st.title("📋 수업 진도표")
 st.caption(f"학기: {SEMESTER_START.strftime('%Y.%m.%d')} ~ {SEMESTER_END.strftime('%Y.%m.%d')}  |  관리자 전용")
@@ -283,6 +339,13 @@ if client_ok and spreadsheet_id:
         sheet_data: dict = load_sheet_data(spreadsheet_id)
 else:
     sheet_data: dict = {}
+
+# ── 날짜 예외 시간표 로드 (세션 최초 접속 시에만 시트에서 불러오기) ─────────────
+if "_date_overrides_loaded" not in st.session_state:
+    if client_ok and spreadsheet_id:
+        _loaded_ov = load_date_overrides_from_sheet(spreadsheet_id)
+        st.session_state["_date_overrides"] = _loaded_ov
+    st.session_state["_date_overrides_loaded"] = True
 
 # ── 진도표 DataFrame 생성 ─────────────────────────────────────────────────────
 today = date.today()
@@ -396,10 +459,14 @@ with tab_schedule:
 
     if add_btn:
         st.session_state["_date_overrides"][ov_date_iso] = ov_selected
+        if client_ok and spreadsheet_id:
+            save_date_overrides_to_sheet(spreadsheet_id, st.session_state["_date_overrides"])
         st.success(f"{ov_date.strftime('%m/%d')} ({DAY_KR[ov_date.weekday()]}) 예외가 저장되었습니다.")
         st.rerun()
     if del_btn:
         st.session_state.get("_date_overrides", {}).pop(ov_date_iso, None)
+        if client_ok and spreadsheet_id:
+            save_date_overrides_to_sheet(spreadsheet_id, st.session_state.get("_date_overrides", {}))
         st.success(f"{ov_date.strftime('%m/%d')} 예외가 삭제되었습니다.")
         st.rerun()
 
@@ -441,39 +508,7 @@ with tab_data:
             st.cache_data.clear()
             st.rerun()
 
-    # ── 컬러 진도표 (음영 적용, 읽기 전용) ─────────────────────────────────
-    st.subheader("📅 진도표 현황")
-    _styled_unused, df_view = _build_styled_df(filtered_dates)
-
-    # _date_iso 컬럼을 column_config에서 None으로 숨김, 스타일은 전체 row에 적용
-    st.dataframe(
-        df_view.style.apply(_style_row, axis=1),
-        use_container_width=True,
-        hide_index=True,
-        column_config={
-            "_date_iso": None,  # 화면에서 숨김
-            "날짜": st.column_config.TextColumn("날짜", width="small"),
-            "요일": st.column_config.TextColumn("요일", width="small"),
-            **{cls: st.column_config.TextColumn(cls, width="medium") for cls in CLASSES},
-            "비고": st.column_config.TextColumn("비고", width="medium"),
-        },
-    )
-
-    # 범례 (간소화)
-    leg_c = st.columns(len(CLASSES) + 1)
-    with leg_c[0]:
-        st.caption("범례:")
-    for i, cls in enumerate(CLASSES):
-        bg, fg = CLASS_COLORS[cls]
-        with leg_c[i + 1]:
-            st.markdown(
-                f'<span style="background:{bg};color:{fg};padding:2px 6px;border-radius:4px;font-size:0.78em">'
-                f'{cls.split(" (")[0]}</span>',
-                unsafe_allow_html=True
-            )
-
     # ── 날짜 선택하여 진도 입력/수정 ────────────────────────────────────────
-    st.divider()
     st.subheader("✏️ 날짜 선택하여 진도 입력 / 수정")
 
     today_idx = next((i for i, d in enumerate(ALL_DATES) if d == today), 0)
@@ -575,4 +610,64 @@ with tab_data:
 
     if not client_ok or not spreadsheet_id:
         st.info("💡 구글 시트 연동 설정 후 저장이 가능합니다. 상단 '구글 시트 연동 상태'를 확인하세요.")
+
+    # ── 컬러 진도표 (음영 적용, 읽기 전용 · 주차별 그룹) ────────────────────
+    st.divider()
+    st.subheader("📅 진도표 현황")
+
+    # 범례
+    leg_c = st.columns(len(CLASSES) + 1)
+    with leg_c[0]:
+        st.caption("범례:")
+    for i, cls in enumerate(CLASSES):
+        bg, fg = CLASS_COLORS[cls]
+        with leg_c[i + 1]:
+            st.markdown(
+                '<span style="background:{};color:{};padding:2px 6px;border-radius:4px;font-size:0.78em">{}</span>'.format(
+                    bg, fg, cls.split(" (")[0]
+                ),
+                unsafe_allow_html=True,
+            )
+
+    _col_cfg = {
+        "_date_iso": None,
+        "날짜": st.column_config.TextColumn("날짜", width="small"),
+        "요일": st.column_config.TextColumn("요일", width="small"),
+        **{cls: st.column_config.TextColumn(cls, width="medium") for cls in CLASSES},
+        "비고": st.column_config.TextColumn("비고", width="medium"),
+    }
+
+    # 주차별 그룹 렌더링
+    from itertools import groupby as _groupby
+    def _week_key(d: date):
+        iso = d.isocalendar()
+        return (iso[0], iso[1])  # (ISO year, ISO week)
+
+    week_num = 0
+    for (yw_year, yw_week), week_iter in _groupby(filtered_dates, key=_week_key):
+        week_num += 1
+        week_dates = list(week_iter)
+        w_start = week_dates[0]
+        w_end   = week_dates[-1]
+        st.markdown(
+            '<div style="background:#f1f5f9;border-left:4px solid #6366f1;'
+            'padding:5px 12px;margin:10px 0 4px 0;border-radius:0 6px 6px 0;'
+            'font-weight:600;font-size:0.9em;color:#3730a3">'
+            '{week_num}주차 &nbsp;'
+            '<span style="font-weight:400;color:#64748b">'
+            '{m1}/{d1}({day1}) ~ {m2}/{d2}({day2})'
+            '</span></div>'.format(
+                week_num=week_num,
+                m1=w_start.month, d1=w_start.day, day1=DAY_KR[w_start.weekday()],
+                m2=w_end.month,   d2=w_end.day,   day2=DAY_KR[w_end.weekday()],
+            ),
+            unsafe_allow_html=True,
+        )
+        _unused, df_week = _build_styled_df(week_dates)
+        st.dataframe(
+            df_week.style.apply(_style_row, axis=1),
+            use_container_width=True,
+            hide_index=True,
+            column_config=_col_cfg,
+        )
 
