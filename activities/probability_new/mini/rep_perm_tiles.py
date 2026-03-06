@@ -216,6 +216,7 @@ def _render_reflection_form(sheet_name: str, gas_url: str):
                 resp = requests.post(gas_url, json=payload, timeout=10)
                 if resp.status_code == 200:
                     st.success(f"✅ {name}님의 활동 기록이 제출되었습니다!")
+                    st.balloons()
                 else:
                     st.error(f"제출 중 오류가 발생했습니다. (상태코드: {resp.status_code})")
             except Exception as e:

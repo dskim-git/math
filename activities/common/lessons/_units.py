@@ -38,11 +38,23 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🃏 다항식의 정리 : 항 카드 정렬 게임",
+                                "subject": "common",
+                                "slug": "mini/poly_sort_game"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "다항식의 덧셈과 뺄셈",
                                 "src": "https://www.canva.com/design/DAHDEHRkj2Q/JGbuWNdqt5iDUUdE3UHSsw/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔗 다항식의 덧셈과 뺄셈 : 동류항 연결 게임",
+                                "subject": "common",
+                                "slug": "mini/poly_add_sub_game"
+                            },
                         ],
                     },
                     {
@@ -54,6 +66,12 @@ CURRICULUM = [
                                 "title": "다항식의 곱셈",
                                 "src": "https://www.canva.com/design/DAHDEK3KszI/OT-O0r2rMc4wlEG1nHOZ2g/view?embed",
                                 "height": 800
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🧮 곱셈 공식 확장 탐구",
+                                "subject": "common",
+                                "slug": "mini/poly_mul_expand"
                             },
                             {
                                 "type": "canva",
