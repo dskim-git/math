@@ -86,28 +86,87 @@ CURRICULUM = [
             },
             {
                 "key": "1-2",
-                "label": "(2) 나머지정리",
+                "label": "(2) 나머지정리와 인수분해",
                 "children": [
                     {
                         "key": "1-2-1",
-                        "label": "나머지정리",
-                        "items": [],
+                        "label": "항등식과 나머지정리",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "항등식의 성질",
+                                "src": "https://www.canva.com/design/DAHDI99sxS4/US6oIgAJSCE_fcZ1-zPuVg/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "미정계수법",
+                                "src": "https://www.canva.com/design/DAHDI3-7ioc/s3qyHF1rQDw-tpdE71lt5Q/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "나머지정리",
+                                "src": "https://www.canva.com/design/DAHDI2U-E3c/g1DY6SWInl5nESlFjFqQ3A/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "인수정리",
+                                "src": "https://www.canva.com/design/DAHDI5T663c/gICWu0Vt7S-nB_ooShr16w/view?embed",
+                                "height": 800
+                            }
+                        ],
                     },
                     {
                         "key": "1-2-2",
-                        "label": "인수정리",
-                        "items": [],
+                        "label": "인수분해",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "다항식의 인수분해",
+                                "src": "https://www.canva.com/design/DAHDI90xSJQ/tDqzeZZF5OrIkMI1rLl55A/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "인수정리를 이용한 인수분해",
+                                "src": "https://www.canva.com/design/DAHDIxwQ-UE/sevPmqArsV_F-L-PS-mEpA/view?embed",
+                                "height": 800
+                            }
+                        ],
+                    },
+                    {
+                        "key": "1-2-3",
+                        "label": "중단원 점검하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "중단원 마무리 문제",
+                                "src": "https://drive.google.com/file/d/133FQCx_vxoJhjjHm9CbgxwPBBSqe9auw/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=133FQCx_vxoJhjjHm9CbgxwPBBSqe9auw"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
                     },
                 ],
             },
             {
                 "key": "1-3",
-                "label": "(3) 인수분해",
+                "label": "대단원 평가하기",
                 "children": [
                     {
                         "key": "1-3-1",
-                        "label": "인수분해",
-                        "items": [],
+                        "label": "대단원 평가하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "대단원 평가하기",
+                                "src": "https://drive.google.com/file/d/1CzgyQMHmO8gvnRlpOcW9StJp4nDB81Tp/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=1CzgyQMHmO8gvnRlpOcW9StJp4nDB81Tp"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
                     },
                 ],
             },
