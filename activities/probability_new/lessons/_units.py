@@ -46,7 +46,13 @@ CURRICULUM = [
                     "title": "같은 것이 있는 순열",
                     "src": "https://www.canva.com/design/DAHC5Lf4DO0/SRtT5-ot2uNc1t3WKf1qag/view?embed",
                     "height": 800
-                }
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 삼색기와 같은 것이 있는 순열",
+                    "subject": "probability_new",
+                    "slug": "mini/tricolor_flag_perm",
+                },
             ]},
           {"key": "1-1-2", "label": "중복조합", "items": [
                 {
