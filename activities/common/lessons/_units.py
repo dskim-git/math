@@ -74,6 +74,12 @@ CURRICULUM = [
                                 "slug": "mini/poly_mul_expand"
                             },
                             {
+                                "type": "activity",
+                                "title": "✖️ 갤로시아 곱셈 탐구 (수·다항식)",
+                                "subject": "common",
+                                "slug": "mini/gelosia_mul"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "다항식의 나눗셈",
                                 "src": "https://www.canva.com/design/DAHDENEx56I/UnmJrokl7f2SUX0U6KY4xA/view?embed",
@@ -96,6 +102,12 @@ CURRICULUM = [
                                 "title": "📊 스프레드시트로 조립제법 구현하기",
                                 "subject": "common",
                                 "slug": "mini/synthetic_div_spreadsheet"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "➗ 갤로시아 나눗셈 탐구 (수·다항식)",
+                                "subject": "common",
+                                "slug": "mini/gelosia_div"
                             },
                         ],
                     },
