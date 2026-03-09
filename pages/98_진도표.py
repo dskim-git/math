@@ -387,6 +387,58 @@ def _build_styled_df(dates_list: list) -> "pd.io.formats.style.Styler":
     df = df.reset_index(drop=True)
     return df.style.apply(_style_row, axis=1), df
 
+
+def _render_week_html_table(week_dates: list) -> str:
+    """주차별 진도표를 텍스트 선택·복사가 가능한 HTML 테이블로 렌더링합니다."""
+    import html as _html
+    display_cols = ["날짜", "요일"] + CLASSES + ["비고"]
+    subset = df_all[df_all["_date_iso"].isin([d.isoformat() for d in week_dates])].copy()
+    subset = subset.reset_index(drop=True)
+
+    th_base = (
+        "padding:6px 10px;text-align:center;font-size:0.8em;font-weight:600;"
+        "border-bottom:2px solid #cbd5e1;white-space:nowrap;background:#f8fafc"
+    )
+    headers_html = "".join(
+        f'<th style="{th_base}">{_html.escape(col)}</th>' for col in display_cols
+    )
+
+    rows_html = ""
+    for _, row in subset.iterrows():
+        date_iso = row["_date_iso"]
+        day = row["요일"]
+        active = _get_active_classes(date_iso, day)
+        has_override = date_iso in _get_date_overrides()
+        cells = ""
+        for col in display_cols:
+            base = "padding:5px 8px;vertical-align:top;font-size:0.82em;border-bottom:1px solid #e2e8f0;"
+            if col in CLASSES and col in active:
+                bg, fg = CLASS_COLORS.get(col, ("#e0f2fe", "#0c4a6e"))
+                extra = f"background:{bg};color:{fg};font-weight:500;"
+                if has_override:
+                    extra += "border:2px solid #f59e0b;"
+                style = base + extra
+            elif col == "요일":
+                style = base + "font-weight:bold;text-align:center;"
+            elif col == "날짜":
+                style = base + ("color:#d97706;font-weight:bold;text-align:center;" if has_override else "text-align:center;")
+            else:
+                style = base
+            raw_val = str(row[col]) if col in row.index else ""
+            val = _html.escape(raw_val).replace("\n", "<br>")
+            cells += f'<td style="{style}">{val}</td>'
+        rows_html += f"<tr>{cells}</tr>"
+
+    return (
+        '<div style="overflow-x:auto;user-select:text;-webkit-user-select:text;'
+        '-moz-user-select:text;-ms-user-select:text">'
+        '<table style="width:100%;border-collapse:collapse;table-layout:auto">'
+        f"<thead><tr>{headers_html}</tr></thead>"
+        f"<tbody>{rows_html}</tbody>"
+        "</table></div>"
+    )
+
+
 # ── 기간 필터 (탭 공통) ───────────────────────────────────────────────────────
 month_map = {"3월": 3, "4월": 4, "5월": 5, "6월": 6, "7월": 7}
 sel_filter = st.radio(
@@ -546,6 +598,10 @@ with tab_data:
 
     existing = sheet_data.get(sel_iso, {})
 
+    # 저장 직후 폼 초기화 플래그 확인
+    _just_saved_iso = st.session_state.pop("_just_saved_iso", None)
+    use_existing = {} if _just_saved_iso == sel_iso else existing
+
     with st.form("data_input_form", border=True):
         # 수업 있는 반만 우선 표시, 나머지도 표시하되 비수업일 칸은 흐리게
         input_cols = st.columns(len(CLASSES))
@@ -570,13 +626,13 @@ with tab_data:
                     )
                 inputs[cls] = st.text_area(
                     label=cls,
-                    value=existing.get(cls, ""),
+                    value=use_existing.get(cls, ""),
                     height=110,
-                    key=f"inp_{cls}",
+                    key=f"inp_{sel_iso}_{cls}",
                     label_visibility="collapsed",
                     disabled=False,
                 )
-        note = st.text_input("비고", value=existing.get("비고", ""), key="inp_note")
+        note = st.text_input("비고", value=use_existing.get("비고", ""), key=f"inp_note_{sel_iso}")
 
         c1, c2 = st.columns([3, 1])
         with c1:
@@ -595,6 +651,12 @@ with tab_data:
             ok = save_row_to_sheet(spreadsheet_id, sel_iso, row_data)
         if ok:
             st.success(f"✅ {sel_date.strftime('%m/%d')} 진도 내용이 저장되었습니다.")
+            # 저장 후 폼 클리어: 해당 날짜 위젯 키 삭제 + 플래그 설정
+            for _cls in CLASSES:
+                st.session_state.pop(f"inp_{sel_iso}_{_cls}", None)
+            st.session_state.pop(f"inp_note_{sel_iso}", None)
+            st.session_state["_just_saved_iso"] = sel_iso
+            st.balloons()
             st.cache_data.clear()
             st.rerun()
 
@@ -663,11 +725,5 @@ with tab_data:
             ),
             unsafe_allow_html=True,
         )
-        _unused, df_week = _build_styled_df(week_dates)
-        st.dataframe(
-            df_week.style.apply(_style_row, axis=1),
-            use_container_width=True,
-            hide_index=True,
-            column_config=_col_cfg,
-        )
+        st.markdown(_render_week_html_table(week_dates), unsafe_allow_html=True)
 

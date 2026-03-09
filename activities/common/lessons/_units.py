@@ -84,7 +84,19 @@ CURRICULUM = [
                                 "title": "조립제법",
                                 "src": "https://www.canva.com/design/DAHDEE2Z5ow/n7VqS7JZ12LjPOfOFGUkoQ/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔢 조립제법 원리 탐구 – 계수 비교법으로 이해하기",
+                                "subject": "common",
+                                "slug": "mini/synthetic_div_principle"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "📊 스프레드시트로 조립제법 구현하기",
+                                "subject": "common",
+                                "slug": "mini/synthetic_div_spreadsheet"
+                            },
                         ],
                     },
                     {
