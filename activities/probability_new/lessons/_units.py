@@ -53,6 +53,12 @@ CURRICULUM = [
                     "subject": "probability_new",
                     "slug": "mini/tricolor_flag_perm",
                 },
+                {
+                    "type": "activity",
+                    "title": "미니: 정육면체 최단경로와 같은 것이 있는 순열",
+                    "subject": "probability_new",
+                    "slug": "mini/cube_path_perm",
+                },
             ]},
           {"key": "1-1-2", "label": "중복조합", "items": [
                 {
