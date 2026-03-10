@@ -52,16 +52,17 @@ if not st.session_state.get("_dev_mode", False):
 # ── 임포트 ───────────────────────────────────────────────────────────────────
 from auth_utils import (
     ALL_SUBJECTS,
-    WS_STUDENTS, WS_GENERAL,
+    WS_STUDENTS, WS_GENERAL, WS_LOCKOUT,
     STATUS_PENDING, STATUS_APPROVED, STATUS_REJECTED,
     _cached_students, _cached_general,
-    _cached_grade_perms, _cached_group_perms,
+    _cached_grade_perms, _cached_group_perms, _cached_lockout,
     _get_users_spreadsheet_id,
     update_user_status, reset_user_password,
     update_user_group, save_grade_permissions,
     save_group_permissions, delete_group,
     get_all_groups, batch_register_students,
     check_password_policy,
+    is_account_locked, reset_lockout,
 )
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -77,13 +78,14 @@ if st.button("🔄 데이터 새로고침", key="mgmt_refresh"):
 sheet_id = _get_users_spreadsheet_id()
 
 (tab_approve, tab_students, tab_general,
- tab_perms, tab_groups, tab_bulk) = st.tabs([
+ tab_perms, tab_groups, tab_bulk, tab_lockout) = st.tabs([
     "✅ 가입 승인",
     "🎓 학생 관리",
     "👤 일반인 관리",
     "🔑 과목 권한",
     "📂 그룹 관리",
     "📥 대량 등록",
+    "🔒 계정 잠금",
 ])
 
 
@@ -443,3 +445,88 @@ with tab_bulk:
                         st.cache_data.clear()
         except Exception as e:
             st.error(f"파일 파싱 오류: {e}")
+
+
+# ─── 7. 계정 잠금 ─────────────────────────────────────────────────────────────
+with tab_lockout:
+    st.subheader("🔒 계정 잠금 관리")
+    st.caption(
+        "로그인 실패가 5회 이상 누적된 계정입니다. "
+        "확인 후 잠금을 해제해 주세요."
+    )
+
+    if st.button("🔄 새로고침", key="lockout_refresh"):
+        st.cache_data.clear()
+        st.rerun()
+
+    lockout_rows = _cached_lockout(sheet_id)
+
+    if not lockout_rows:
+        st.info("로그인 실패 기록이 없습니다.")
+    else:
+        import pandas as pd
+
+        df_lock = pd.DataFrame(lockout_rows)
+
+        # 잠금 계정만 별도 표시
+        locked_df = df_lock[df_lock["잠금상태"] == "잠금"].copy() if "잠금상태" in df_lock.columns else pd.DataFrame()
+
+        if locked_df.empty:
+            st.success("✅ 현재 잠긴 계정이 없습니다.")
+        else:
+            st.error(f"⚠️ 잠금 계정 **{len(locked_df)}개**")
+            for _, row in locked_df.iterrows():
+                uid       = str(row.get("아이디", ""))
+                fail_cnt  = int(row.get("실패횟수", 0) or 0)
+                last_fail = str(row.get("최근실패시각", ""))
+                with st.container(border=True):
+                    c1, c2 = st.columns([3, 1])
+                    with c1:
+                        st.markdown(
+                            f"**`{uid}`**  |  실패 횟수: **{fail_cnt}회**  |  "
+                            f"최근 실패: {last_fail}"
+                        )
+                    with c2:
+                        if st.button("🔓 잠금 해제", key=f"unlock_{uid}",
+                                     use_container_width=True, type="primary"):
+                            if reset_lockout(uid):
+                                st.success(f"`{uid}` 잠금 해제 완료")
+                                st.cache_data.clear()
+                                st.rerun()
+                            else:
+                                st.error("잠금 해제에 실패했습니다.")
+
+        st.divider()
+        st.markdown("#### 전체 실패 기록")
+        st.caption("잠금 여부와 관계없이 1회 이상 실패한 모든 계정 기록입니다.")
+        st.dataframe(
+            df_lock.sort_values("최근실패시각", ascending=False)
+                   .reset_index(drop=True),
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        st.divider()
+        st.markdown("#### 개별 잠금 해제")
+        st.caption("잠기지 않은 계정의 실패 횟수도 여기서 초기화할 수 있습니다.")
+        all_lock_ids = [str(r.get("아이디", "")) for r in lockout_rows]
+        if all_lock_ids:
+            sel_lock_uid = st.selectbox("아이디 선택", all_lock_ids,
+                                        key="lockout_sel_uid")
+            sel_lock_row = next(
+                (r for r in lockout_rows if str(r.get("아이디", "")) == sel_lock_uid), {}
+            )
+            st.caption(
+                f"실패 횟수: {sel_lock_row.get('실패횟수', 0)}회  |  "
+                f"최근 실패: {sel_lock_row.get('최근실패시각', '-')}  |  "
+                f"상태: {sel_lock_row.get('잠금상태', '-')}"
+            )
+            if st.button("🔓 선택 계정 잠금 해제 / 횟수 초기화",
+                         key="lockout_manual_reset", type="primary"):
+                if reset_lockout(sel_lock_uid):
+                    st.success(f"`{sel_lock_uid}` 초기화 완료")
+                    st.cache_data.clear()
+                    st.rerun()
+                else:
+                    st.error("초기화에 실패했습니다.")
+
