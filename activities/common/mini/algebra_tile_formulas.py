@@ -236,7 +236,7 @@ const FDATA = [
    hint:'(-b)×a = -ab, a×(-b) = -ab. (-b)×(-b) = b² (양수!)'},
   {cols:2,rows:2,cL:['a','b'],rL:['a','(-b)'],
    pool:[{type:'tile-x2',tex:'a^2',cnt:1},{type:'tile-abx',tex:'ab',cnt:1},{type:'tile-abx tile-neg',tex:'-ab',cnt:1},{type:'tile-b2 tile-neg',tex:'-b^2',cnt:1}],
-   ans:[['tile-x2','tile-abx tile-neg'],['tile-abx','tile-b2 tile-neg']],
+   ans:[['tile-x2','tile-abx'],['tile-abx tile-neg','tile-b2 tile-neg']],
    result:'(a+b)(a-b) = a^2 - b^2',
    hint:'ab와 -ab가 서로 상쇄돼서 a²-b²만 남아요!'},
   {cols:2,rows:2,cL:['x','a'],rL:['x','b'],
