@@ -7,6 +7,11 @@ from typing import Callable, Dict, List, Optional, Any
 import streamlit.components.v1 as components  # 임베드용
 import urllib.parse
 from functools import lru_cache
+import smtplib
+import html as _html
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from datetime import datetime
 
 @lru_cache(maxsize=256)
 def _load_module_cached(path_str: str, mtime: float):
@@ -358,8 +363,16 @@ def _admin_mode_ui():
             st.session_state.pop("_show_pw_input", None)
             st.session_state.pop("_pw_error", None)
             _do_rerun()
-        st.sidebar.page_link("pages/99_Dev_Tree.py", label="📁 Dev Tree (파일 구조 보기)", use_container_width=True)
-        st.sidebar.page_link("pages/98_진도표.py", label="📋 진도표 관리", use_container_width=True)
+        if st.sidebar.button("📁 Dev Tree (파일 구조 보기)", use_container_width=True, key="_admin_dev_tree_btn"):
+            st.switch_page("pages/99_Dev_Tree.py")
+        if st.sidebar.button("📋 진도표 관리", use_container_width=True, key="_admin_schedule_btn"):
+            st.switch_page("pages/98_진도표.py")
+        if st.sidebar.button("📥 피드백 게시판", use_container_width=True, key="_admin_feedback_board_btn"):
+            set_route("feedback_board")
+            _do_rerun()
+        if st.sidebar.button("📊 방문자 통계", use_container_width=True, key="_admin_visit_stats_btn"):
+            set_route("visit_stats")
+            _do_rerun()
         st.sidebar.link_button(
             "🤖 AI 튜터와 대화하기",
             "https://copilotstudio.microsoft.com/environments/Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/copilots_header_78f6d/webchat?__version__=2",
@@ -573,6 +586,9 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
     if st.button("🏠 홈으로", type="secondary", use_container_width=True):
         set_route("home")
         _do_rerun()
+    if st.button("💬 의견 · 오류 접수", type="secondary", use_container_width=True, key="_sidebar_feedback_btn"):
+        set_route("feedback")
+        _do_rerun()
     _admin_mode_ui()
 
 def _inject_home_styles():
@@ -722,6 +738,31 @@ def home_view():
                 if st.button("시작하기", key=f"home_btn_{key}", use_container_width=True, type="primary"):
                     set_route("subject", subject=key)
                     _do_rerun()
+
+    # ── 의견 / 오류 접수 섹션 ──
+    st.divider()
+    st.markdown(
+        """
+        <div style="text-align:center; padding: 0.5rem 0 1rem;">
+          <div style="font-size:1.8rem;">💬</div>
+          <div style="font-size:1.1rem; font-weight:700; margin-bottom:0.3rem;">의견 · 오류 접수</div>
+          <div style="font-size:0.92rem; color:var(--secondary-text-color); line-height:1.6;">
+            활동 중 오류를 발견하셨나요? 새로운 활동을 건의하고 싶으신가요?<br>
+            아래 버튼을 눌러 선생님께 직접 말씀해 주세요.
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    col_fb1, col_fb2, col_fb3 = st.columns([2, 2, 2])
+    with col_fb2:
+        if st.button(
+            "✉️ 의견 · 오류 접수하기",
+            key="home_feedback_btn",
+            use_container_width=True,
+            type="secondary",
+        ):
+            set_route("feedback"); _do_rerun()
 
 def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
     label = SUBJECTS.get(subject_key, subject_key)
@@ -1262,6 +1303,515 @@ def _privacy_policy_dialog():
 """)
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 관리자 피드백 게시판 뷰
+def feedback_board_view():
+    """[관리자 전용] 피드백 접수 게시판."""
+    if not _is_dev_mode():
+        set_route("home")
+        _do_rerun()
+        return
+
+    if st.button("← 홈으로", type="secondary", key="fb_board_back_btn"):
+        set_route("home")
+        _do_rerun()
+
+    st.title("📥 피드백 게시판")
+    st.caption("학생들이 제출한 오류 신고 및 활동 건의 목록입니다.")
+    st.divider()
+
+    if st.button("🔄 새로고침", key="fb_board_refresh_btn"):
+        st.cache_data.clear()
+
+    with st.spinner("시트에서 불러오는 중..."):
+        rows = _load_feedback_from_sheet()
+
+    if not rows or len(rows) <= 1:
+        st.info("접수된 의견이 없습니다.")
+        return
+
+    import pandas as pd
+    header = rows[0]
+    data   = rows[1:]
+    df = pd.DataFrame(data, columns=header)
+
+    # 필터
+    col_f, col_s = st.columns([2, 3])
+    with col_f:
+        type_opts = ["전체"] + sorted(df["유형"].unique().tolist())
+        sel_type = st.selectbox("유형 필터", type_opts, key="fb_filter_type")
+    with col_s:
+        search_kw = st.text_input("내용 검색", placeholder="학번/이름/내용 키워드", key="fb_search_kw")
+
+    filtered = df.copy()
+    if sel_type != "전체":
+        filtered = filtered[filtered["유형"] == sel_type]
+    if search_kw.strip():
+        kw = search_kw.strip().lower()
+        mask = (
+            filtered["학번"].str.lower().str.contains(kw, na=False)
+            | filtered["이름"].str.lower().str.contains(kw, na=False)
+            | filtered["내용"].str.lower().str.contains(kw, na=False)
+        )
+        filtered = filtered[mask]
+
+    # 최신 순으로
+    filtered = filtered.iloc[::-1].reset_index(drop=True)
+
+    st.caption(f"전체 {len(df)-0}건 · 필터 결과 {len(filtered)}건")
+
+    for _, row in filtered.iterrows():
+        icon = "🛠" if "오류" in row["유형"] else "💡"
+        with st.expander(
+            f"{icon} [{row['접수시각']}]  {row['이름']}({row['학번']})  —  {row['유형']}",
+            expanded=False,
+        ):
+            st.markdown(f"**답변 이메일:** {row['답변이메일'] or '(미입력)'}")
+            st.markdown("**내용:**")
+            st.markdown(
+                f"<div style='background:#f9f9f9;border:1px solid #ddd;padding:10px;"
+                f"border-radius:6px;white-space:pre-wrap;line-height:1.6'>"
+                f"{row['내용']}</div>",
+                unsafe_allow_html=True,
+            )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 피드백 Google Sheets 연동
+_FEEDBACK_SHEET_NAME = "피드백"
+_FEEDBACK_SHEET_HEADER = ["접수시각", "유형", "학번", "이름", "답변이메일", "내용"]
+
+def _get_feedback_gspread_client():
+    """gspread 클라이언트를 반환. 실패 시 None."""
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        return gspread.authorize(creds)
+    except Exception:
+        return None
+
+def _get_or_create_feedback_worksheet():
+    """
+    진도표 스프레드시트에서 '피드백' 워크시트를 가져오거나,
+    없으면 자동으로 생성하고 헤더를 추가하여 반환합니다.
+    """
+    try:
+        client = _get_feedback_gspread_client()
+        if client is None:
+            return None
+        spreadsheet_id: str = st.secrets["spreadsheet_id"]
+        sh = client.open_by_key(spreadsheet_id)
+        try:
+            ws = sh.worksheet(_FEEDBACK_SHEET_NAME)
+        except Exception:
+            ws = sh.add_worksheet(title=_FEEDBACK_SHEET_NAME, rows=1000, cols=6)
+            ws.append_row(_FEEDBACK_SHEET_HEADER)
+        return ws
+    except Exception:
+        return None
+
+def _save_feedback_to_sheet(
+    feedback_type: str,
+    student_id: str,
+    student_name: str,
+    reply_email: str,
+    content: str,
+) -> bool:
+    """피드백 한 행을 구글 시트에 기록합니다."""
+    ws = _get_or_create_feedback_worksheet()
+    if ws is None:
+        return False
+    try:
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ws.append_row([
+            now_str,
+            feedback_type,
+            student_id,
+            student_name,
+            reply_email,
+            content,
+        ])
+        return True
+    except Exception:
+        return False
+
+def _load_feedback_from_sheet() -> "list[list]":
+    """피드백 시트의 모든 행을 반환합니다(헤더 포함)."""
+    ws = _get_or_create_feedback_worksheet()
+    if ws is None:
+        return []
+    try:
+        return ws.get_all_values()
+    except Exception:
+        return []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 방문 기록 Google Sheets 연동
+_VISIT_SHEET_NAME   = "방문기록"
+_VISIT_SHEET_HEADER = ["방문시각", "과목필터"]
+
+def _get_or_create_visit_worksheet():
+    """
+    진도표 스프레드시트에서 '방문기록' 워크시트를 가져오거나,
+    없으면 자동으로 생성하고 헤더를 추가하여 반환합니다.
+    """
+    try:
+        client = _get_feedback_gspread_client()   # 동일 서비스 계정 재사용
+        if client is None:
+            return None
+        spreadsheet_id: str = st.secrets["spreadsheet_id"]
+        sh = client.open_by_key(spreadsheet_id)
+        try:
+            ws = sh.worksheet(_VISIT_SHEET_NAME)
+        except Exception:
+            ws = sh.add_worksheet(title=_VISIT_SHEET_NAME, rows=10000, cols=2)
+            ws.append_row(_VISIT_SHEET_HEADER)
+        return ws
+    except Exception:
+        return None
+
+def _log_visit() -> None:
+    """
+    세션당 한 번만 방문 시각과 과목 필터를 Google Sheets에 기록합니다.
+    st.session_state['_visit_logged'] 플래그로 중복 기록을 방지합니다.
+    """
+    if st.session_state.get("_visit_logged"):
+        return
+    st.session_state["_visit_logged"] = True
+    try:
+        subject_filter = st.session_state.get("_subject_filter", "(전체)")
+        ws = _get_or_create_visit_worksheet()
+        if ws is None:
+            return
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ws.append_row([now_str, subject_filter or "(전체)"])
+    except Exception:
+        pass   # 방문 기록 실패가 앱을 방해하지 않도록
+
+def _load_visit_data() -> "list[list]":
+    """방문기록 시트의 모든 행(헤더 포함)을 반환합니다."""
+    ws = _get_or_create_visit_worksheet()
+    if ws is None:
+        return []
+    try:
+        return ws.get_all_values()
+    except Exception:
+        return []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 방문 통계 뷰 (관리자 전용)
+def visit_stats_view():
+    """[관리자 전용] 방문자 통계 대시보드."""
+    import pandas as pd
+    import plotly.express as px
+
+    if not _is_dev_mode():
+        set_route("home")
+        _do_rerun()
+        return
+
+    if st.button("← 홈으로", type="secondary", key="vstats_back_btn"):
+        set_route("home")
+        _do_rerun()
+
+    st.title("📊 방문자 통계")
+    st.caption("세션 최초 접속 기준으로 기록된 방문 데이터입니다.")
+    st.divider()
+
+    if st.button("🔄 새로고침", key="vstats_refresh_btn"):
+        st.cache_data.clear()
+
+    with st.spinner("방문 기록 불러오는 중..."):
+        rows = _load_visit_data()
+
+    if not rows or len(rows) <= 1:
+        st.info("아직 방문 기록이 없습니다.")
+        return
+
+    df = pd.DataFrame(rows[1:], columns=["방문시각", "과목필터"])
+    df["방문시각"] = pd.to_datetime(df["방문시각"], errors="coerce")
+    df = df.dropna(subset=["방문시각"])
+    df["날짜"] = df["방문시각"].dt.date
+
+    today   = pd.Timestamp.now().normalize()
+    week_ago  = today - pd.Timedelta(days=6)
+    month_ago = today - pd.Timedelta(days=29)
+
+    cnt_today = int((df["날짜"] == today.date()).sum())
+    cnt_week  = int((df["방문시각"] >= week_ago).sum())
+    cnt_month = int((df["방문시각"] >= month_ago).sum())
+    cnt_total = len(df)
+
+    # 요약 수치
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("오늘",   f"{cnt_today:,} 명")
+    m2.metric("최근 7일",  f"{cnt_week:,} 명")
+    m3.metric("최근 30일", f"{cnt_month:,} 명")
+    m4.metric("누적",   f"{cnt_total:,} 명")
+
+    st.divider()
+
+    # ── 기간 탭 ──
+    tab1, tab2, tab3 = st.tabs(["📅 최근 30일", "📅 최근 7일", "📅 과목별 분포"])
+
+    with tab1:
+        date_range = pd.date_range(end=today, periods=30, freq="D")
+        daily = (
+            df[df["방문시각"] >= month_ago]
+            .groupby("날짜")
+            .size()
+            .reindex([d.date() for d in date_range], fill_value=0)
+            .reset_index()
+        )
+        daily.columns = ["날짜", "방문자"]
+        daily["날짜"] = pd.to_datetime(daily["날짜"])
+        fig = px.bar(
+            daily, x="날짜", y="방문자",
+            title="일별 방문자 수 (최근 30일)",
+            labels={"날짜": "날짜", "방문자": "방문자 수"},
+            color_discrete_sequence=["#6366f1"],
+        )
+        fig.update_layout(hovermode="x unified")
+        st.plotly_chart(fig, use_container_width=True)
+
+    with tab2:
+        date_range7 = pd.date_range(end=today, periods=7, freq="D")
+        daily7 = (
+            df[df["방문시각"] >= week_ago]
+            .groupby("날짜")
+            .size()
+            .reindex([d.date() for d in date_range7], fill_value=0)
+            .reset_index()
+        )
+        daily7.columns = ["날짜", "방문자"]
+        daily7["날짜"] = pd.to_datetime(daily7["날짜"])
+        fig7 = px.bar(
+            daily7, x="날짜", y="방문자",
+            title="일별 방문자 수 (최근 7일)",
+            labels={"날짜": "날짜", "방문자": "방문자 수"},
+            color_discrete_sequence=["#a855f7"],
+        )
+        fig7.update_layout(hovermode="x unified")
+        st.plotly_chart(fig7, use_container_width=True)
+
+    with tab3:
+        subj_df = (
+            df[df["방문시각"] >= month_ago]
+            .groupby("과목필터")
+            .size()
+            .reset_index()
+        )
+        subj_df.columns = ["과목", "방문자"]
+        subj_df = subj_df.sort_values("방문자", ascending=False)
+        fig_s = px.pie(
+            subj_df, names="과목", values="방문자",
+            title="과목별 방문 비율 (최근 30일)",
+        )
+        fig_s.update_traces(textposition="inside", textinfo="percent+label")
+        st.plotly_chart(fig_s, use_container_width=True)
+        st.dataframe(subj_df, use_container_width=True, hide_index=True)
+
+    st.divider()
+    st.markdown("##### 원본 데이터 (최근 100건)")
+    st.dataframe(
+        df.sort_values("방문시각", ascending=False).head(100)[["방문시각","과목필터"]],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 피드백 이메일 전송
+_FEEDBACK_RECEIVER = "daesobi1@gmail.com"
+
+def _send_feedback_email(
+    feedback_type: str,
+    student_id: str,
+    student_name: str,
+    reply_email: str,
+    content: str,
+) -> bool:
+    """
+    피드백 이메일을 _FEEDBACK_RECEIVER로 Gmail SMTP를 통해 전송합니다.
+    .streamlit/secrets.toml 의 [email] 섹션에 sender / password 가 필요합니다.
+    """
+    try:
+        email_secrets = st.secrets.get("email", {})
+        sender_email: str = email_secrets.get("sender", "")
+        sender_password: str = email_secrets.get("password", "")
+    except Exception:
+        sender_email = ""
+        sender_password = ""
+
+    if not sender_email or not sender_password:
+        st.warning("이메일 설정이 구성되지 않았습니다. 관리자(선생님)에게 알려주세요.", icon="⚠️")
+        return False
+
+    # 헤더 인젝션 방지: 개행 문자 제거
+    def _clean(s: str) -> str:
+        return s.replace("\r", "").replace("\n", " ").strip()
+
+    s_id    = _clean(student_id)
+    s_name  = _clean(student_name)
+    s_reply = _clean(reply_email)
+    f_type  = _clean(feedback_type)
+    now_str = datetime.now().strftime("%Y년 %m월 %d일 %H:%M")
+
+    subject_line = f"[MathLab 피드백] {f_type} – {s_name}({s_id})"
+
+    # HTML 이메일 본문 (내용은 XSS 방지를 위해 html.escape 처리)
+    html_body = f"""
+<html>
+<body style="font-family:Arial,sans-serif; color:#333;">
+  <h2 style="color:#6366f1;">📬 MathLab 학생 피드백</h2>
+  <table border="1" cellpadding="8" cellspacing="0"
+         style="border-collapse:collapse; min-width:400px;">
+    <tr><th style="background:#f0f4ff; text-align:left; width:120px;">유형</th>
+        <td>{_html.escape(f_type)}</td></tr>
+    <tr><th style="background:#f0f4ff; text-align:left;">학번</th>
+        <td>{_html.escape(s_id)}</td></tr>
+    <tr><th style="background:#f0f4ff; text-align:left;">이름</th>
+        <td>{_html.escape(s_name)}</td></tr>
+    <tr><th style="background:#f0f4ff; text-align:left;">답변 이메일</th>
+        <td>{_html.escape(s_reply) if s_reply else "(미입력)"}</td></tr>
+    <tr><th style="background:#f0f4ff; text-align:left;">접수 시각</th>
+        <td>{now_str}</td></tr>
+  </table>
+  <h3>내용</h3>
+  <div style="background:#f9f9f9; border:1px solid #ddd; padding:12px; border-radius:6px;
+              white-space:pre-wrap; line-height:1.6;">
+{_html.escape(content)}
+  </div>
+  <p style="color:#888; font-size:0.85rem;">– MathLab 자동 발송 메일 –</p>
+</body>
+</html>
+"""
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject_line
+        msg["From"]    = sender_email
+        msg["To"]      = _FEEDBACK_RECEIVER
+        if s_reply:
+            msg["Reply-To"] = s_reply
+        msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as server:
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, _FEEDBACK_RECEIVER, msg.as_string())
+        return True
+    except smtplib.SMTPAuthenticationError:
+        st.error("이메일 인증에 실패했습니다. 관리자에게 알려주세요. (SMTP 앱 비밀번호 확인 필요)")
+        return False
+    except Exception as exc:
+        st.error(f"이메일 전송 중 오류가 발생했습니다: {exc}")
+        return False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 피드백/의견 접수 뷰
+def feedback_view():
+    """학생 의견 접수 페이지 (오류 신고 / 활동 건의)."""
+    if st.button("← 홈으로", type="secondary", key="feedback_back_btn"):
+        set_route("home"); _do_rerun()
+
+    st.title("💬 의견 보내기")
+    st.caption(
+        "활동을 이용하다가 불편한 점이 있으시거나, 새로운 활동을 원하신다면 아래에 작성해 주세요. "
+        "선생님께서 확인 후 답변드립니다."
+    )
+    st.divider()
+
+    # 피드백 유형 선택
+    feedback_type = st.radio(
+        "어떤 내용을 보내시겠어요?",
+        ["🛠 활동 오류를 접수합니다", "💡 이런 활동도 만들어주세요"],
+        horizontal=True,
+        key="feedback_type_radio",
+    )
+
+    st.markdown("")  # 여백
+
+    with st.form("feedback_form", clear_on_submit=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            student_id = st.text_input(
+                "학번 *",
+                placeholder="예: 10101  (학년+반+번호)",
+                max_chars=20,
+            )
+        with col2:
+            student_name = st.text_input(
+                "이름 *",
+                placeholder="예: 홍길동",
+                max_chars=30,
+            )
+
+        reply_email = st.text_input(
+            "답변받을 이메일 (선택)",
+            placeholder="예: student@example.com",
+            max_chars=100,
+        )
+
+        content = st.text_area(
+            "내용 *",
+            placeholder=(
+                "오류 신고 예시: '확률과통계 > 이항분포 시뮬레이터에서 n=100 설정 시 화면이 멈춥니다.'\n"
+                "활동 건의 예시: '정규분포 표준화 과정을 시각적으로 보여주는 활동이 있으면 좋겠습니다.'"
+            ),
+            height=220,
+        )
+
+        submitted = st.form_submit_button(
+            "✉️ 보내기",
+            use_container_width=True,
+            type="primary",
+        )
+
+    if submitted:
+        errors: list[str] = []
+        if not student_id.strip():
+            errors.append("학번을 입력해 주세요.")
+        if not student_name.strip():
+            errors.append("이름을 입력해 주세요.")
+        if reply_email.strip() and "@" not in reply_email:
+            errors.append("이메일 주소 형식을 확인해 주세요.")
+        if not content.strip():
+            errors.append("내용을 입력해 주세요.")
+
+        if errors:
+            for err in errors:
+                st.error(err, icon="❌")
+        else:
+            with st.spinner("전송 중입니다..."):
+                email_ok = _send_feedback_email(
+                    feedback_type=feedback_type,
+                    student_id=student_id.strip(),
+                    student_name=student_name.strip(),
+                    reply_email=reply_email.strip(),
+                    content=content.strip(),
+                )
+                sheet_ok = _save_feedback_to_sheet(
+                    feedback_type=feedback_type,
+                    student_id=student_id.strip(),
+                    student_name=student_name.strip(),
+                    reply_email=reply_email.strip(),
+                    content=content.strip(),
+                )
+            if email_ok or sheet_ok:
+                st.success(
+                    "✅ 의견이 선생님께 전달되었습니다! 소중한 의견 감사합니다.",
+                    icon="🎉",
+                )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Footer
 def _render_footer():
     st.markdown(
@@ -1294,6 +1844,7 @@ def main():
     # URL 파라미터를 가장 먼저 읽어 세션에 기록 (이후 set_route로 파라미터가 지워지기 전에)
     _is_ot_mode()
     _get_subject_filter()
+    _log_visit()   # 세션 최초 1회 방문 기록
     registry = discover_activities()
     sidebar_navigation(registry)
 
@@ -1301,6 +1852,12 @@ def main():
 
     if view == "home":
         home_view()
+    elif view == "feedback":
+        feedback_view()
+    elif view == "feedback_board":
+        feedback_board_view()
+    elif view == "visit_stats":
+        visit_stats_view()
     elif view == "subject" and subject in SUBJECTS:
         subject_index_view(subject, registry)
     elif view == "ot" and subject in SUBJECTS and _is_ot_mode() and subject in _OT_CANVA:
