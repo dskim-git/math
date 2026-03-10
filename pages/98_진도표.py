@@ -6,7 +6,7 @@
 """
 import streamlit as st
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, timezone
 import json
 
 st.set_page_config(page_title="진도표 관리", layout="wide")
@@ -348,7 +348,8 @@ if "_date_overrides_loaded" not in st.session_state:
     st.session_state["_date_overrides_loaded"] = True
 
 # ── 진도표 DataFrame 생성 ─────────────────────────────────────────────────────
-today = date.today()
+KST = timezone(timedelta(hours=9))
+today = datetime.now(KST).date()
 rows = []
 for d in ALL_DATES:
     date_str = d.isoformat()
