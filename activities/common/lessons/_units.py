@@ -39,7 +39,7 @@ CURRICULUM = [
                             },
                             {
                                 "type": "activity",
-                                "title": "🃏 다항식의 정리 : 항 카드 정렬 게임",
+                                "title": "🃏 항 카드 정렬 게임",
                                 "subject": "common",
                                 "slug": "mini/poly_sort_game"
                             },
@@ -51,7 +51,7 @@ CURRICULUM = [
                             },
                             {
                                 "type": "activity",
-                                "title": "🔗 다항식의 덧셈과 뺄셈 : 동류항 연결 게임",
+                                "title": "🔗 동류항 연결 게임",
                                 "subject": "common",
                                 "slug": "mini/poly_add_sub_game"
                             },
@@ -99,13 +99,19 @@ CURRICULUM = [
                             },
                             {
                                 "type": "activity",
+                                "title": "🃏 나머지가 같은 식 탐험",
+                                "subject": "common",
+                                "slug": "mini/remainder_same_expressions"
+                            },
+                            {
+                                "type": "activity",
                                 "title": "📊 스프레드시트로 조립제법 구현하기",
                                 "subject": "common",
                                 "slug": "mini/synthetic_div_spreadsheet"
                             },
                             {
                                 "type": "activity",
-                                "title": "➗ 갤로시아 나눗셈 탐구 (수·다항식)",
+                                "title": "➗ 갤로시아 나눗셈 탐구 (다항식)",
                                 "subject": "common",
                                 "slug": "mini/gelosia_div"
                             },
