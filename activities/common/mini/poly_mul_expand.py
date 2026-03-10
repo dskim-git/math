@@ -5,7 +5,7 @@ import datetime
 
 META = {"title": "곱셈 공식 확장 탐구", "order": 20}
 
-_GAS_URL    = "YOUR_COMMON1_GAS_WEB_APP_URL"
+_GAS_URL    = "https://script.google.com/macros/s/AKfycbySLDnSYGfQmqrtpuMyIju5hiEf7Lesp6bnWzplm3oZD4WHXESl1XJmsXT_EVcKOJI/exec"
 _SHEET_NAME = "곱셈공식확장"
 
 _GAME_HTML = r"""

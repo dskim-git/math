@@ -75,6 +75,12 @@ CURRICULUM = [
                             },
                             {
                                 "type": "activity",
+                                "title": "🧩 대수막대로 곱셈 공식 탐구",
+                                "subject": "common",
+                                "slug": "mini/algebra_tile_formulas"
+                            },
+                            {
+                                "type": "activity",
                                 "title": "✖️ 갤로시아 곱셈 탐구 (수·다항식)",
                                 "subject": "common",
                                 "slug": "mini/gelosia_mul"
