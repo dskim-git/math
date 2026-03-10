@@ -608,6 +608,11 @@ def _admin_mode_ui():
         set_route("home")
         _do_rerun()
 
+    # 학생 전용 메뉴
+    if user_type == "student":
+        if st.sidebar.button("📖 내 성찰 기록", use_container_width=True, key="_my_reflection_btn"):
+            set_route("my_reflection"); _do_rerun()
+
     # 관리자 전용 메뉴
     if user_type != "admin":
         return
@@ -1779,6 +1784,122 @@ def _load_reflection_log_data() -> "list[list]":
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 성찰 기록 통계 조회
+_REFLECTION_LOG_SHEET_NAME = "성찰기록"
+
+def _load_reflection_log_data() -> "list[list]":
+    """성찰기록 시트의 모든 행(헤더 포함)을 반환합니다. 없으면 빈 리스트."""
+    try:
+        client = _get_feedback_gspread_client()
+        if client is None:
+            return []
+        spreadsheet_id: str = st.secrets["spreadsheet_id"]
+        sh = client.open_by_key(spreadsheet_id)
+        try:
+            ws = sh.worksheet(_REFLECTION_LOG_SHEET_NAME)
+        except Exception:
+            return []
+        return ws.get_all_values()
+    except Exception:
+        return []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 내 성찰 기록 뷰 (학생 전용)
+def my_reflection_view():
+    """[학생 전용] 자신이 제출한 성찰 기록 조회."""
+    import pandas as pd
+
+    user_type = st.session_state.get("_user_type", "")
+    if user_type != "student":
+        set_route("home")
+        _do_rerun()
+        return
+
+    if st.button("← 홈으로", type="secondary", key="myref_back_btn"):
+        set_route("home")
+        _do_rerun()
+
+    user_id   = st.session_state.get("_user_id", "")
+    user_name = st.session_state.get("_user_name", "")
+
+    # 학번 앞 4자리 연도 제거 (성찰기록에 저장된 형식과 맞춤)
+    short_id = (
+        user_id[4:]
+        if len(user_id) >= 9 and user_id[:2] == "20"
+        else user_id
+    )
+
+    st.title("📖 내 성찰 기록")
+    st.caption(f"**{user_name}** 님이 제출한 성찰 기록입니다.")
+    st.divider()
+
+    if st.button("🔄 새로고침", key="myref_refresh_btn"):
+        st.cache_data.clear()
+
+    with st.spinner("기록 불러오는 중..."):
+        rows = _load_reflection_log_data()
+
+    if not rows or len(rows) <= 1:
+        st.info("아직 제출한 성찰 기록이 없습니다.")
+        return
+
+    raw = [r + [""] * (5 - len(r)) for r in rows[1:]]
+    df = pd.DataFrame(raw, columns=["제출시각", "과목", "활동시트명", "학번", "이름"])
+    df["제출시각"] = pd.to_datetime(df["제출시각"], errors="coerce")
+    df = df.dropna(subset=["제출시각"])
+
+    # 본인 기록만 필터링
+    my_df = df[df["학번"] == short_id].sort_values("제출시각", ascending=False)
+
+    if my_df.empty:
+        st.info("아직 제출한 성찰 기록이 없습니다.")
+        return
+
+    # 요약
+    c1, c2, c3 = st.columns(3)
+    c1.metric("총 제출 횟수",  f"{len(my_df):,} 회")
+    c2.metric("참여 활동 수",  f"{my_df['활동시트명'].nunique():,} 가지")
+    c3.metric("최근 제출일",   my_df["제출시각"].max().strftime("%Y-%m-%d"))
+
+    st.divider()
+
+    # 과목 필터
+    subjects = ["전체"] + sorted(my_df["과목"].dropna().unique().tolist())
+    sel = st.selectbox("📚 과목 선택", subjects, key="myref_subj_filter")
+    filtered = my_df if sel == "전체" else my_df[my_df["과목"] == sel]
+
+    # 활동별 제출 횟수 요약표
+    st.markdown("##### 활동별 제출 현황")
+    summary = (
+        filtered.groupby(["과목", "활동시트명"])
+        .agg(제출횟수=("제출시각", "count"), 마지막제출=("제출시각", "max"))
+        .reset_index()
+        .sort_values("마지막제출", ascending=False)
+    )
+    summary["마지막제출"] = summary["마지막제출"].dt.strftime("%Y-%m-%d %H:%M")
+    st.dataframe(
+        summary,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "과목":       st.column_config.TextColumn("과목"),
+            "활동시트명": st.column_config.TextColumn("활동명"),
+            "제출횟수":   st.column_config.NumberColumn("제출 횟수"),
+            "마지막제출": st.column_config.TextColumn("마지막 제출일"),
+        },
+    )
+
+    st.divider()
+
+    # 전체 제출 이력
+    st.markdown("##### 전체 제출 이력")
+    show_df = filtered[["제출시각", "과목", "활동시트명"]].copy()
+    show_df["제출시각"] = show_df["제출시각"].dt.strftime("%Y-%m-%d %H:%M")
+    st.dataframe(show_df, use_container_width=True, hide_index=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 방문 통계 뷰 (관리자 전용)
 def visit_stats_view():
     """[관리자 전용] 방문자 통계 대시보드 — 중복 허용 / 중복 제거 두 모드 지원."""
@@ -2287,6 +2408,8 @@ def main():
         feedback_board_view()
     elif view == "visit_stats":
         visit_stats_view()
+    elif view == "my_reflection":
+        my_reflection_view()
     elif view == "subject" and subject in SUBJECTS:
         subject_index_view(subject, registry)
     elif view == "ot" and subject in SUBJECTS and _is_ot_mode() and subject in _OT_CANVA:
