@@ -1,13 +1,26 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import requests
+from reflection_utils import render_reflection_form
 import datetime
 
 # ──────────────────────────────────────────────────────────
 # Google Apps Script Web App URL
 # 배포 후 아래 문자열을 실제 URL로 교체하세요.
-_GAS_URL = "https://script.google.com/macros/s/AKfycbwJd7W3jYTucIALzqNJUyHvmnT3nqDCEmRZXAsBlBl3IWQYhuYqyvkI3B280chlr0g/exec"
+_GAS_URL = st.secrets["gas_url_probability_new"]
 _SHEET_NAME = "비밀번호탐색기"
+
+_QUESTIONS = [
+    {"type": 'markdown', "text": '**📝 이 활동으로 해결할 수 있는 문제 3개 (문제와 답 모두 작성)**'},
+    {"key": '문제1', "label": '문제 1', "type": 'text_area', "height": 80},
+    {"key": '답1', "label": '문제 1의 답', "type": 'text_input'},
+    {"key": '문제2', "label": '문제 2', "type": 'text_area', "height": 80},
+    {"key": '답2', "label": '문제 2의 답', "type": 'text_input'},
+    {"key": '문제3', "label": '문제 3', "type": 'text_area', "height": 80},
+    {"key": '답3', "label": '문제 3의 답', "type": 'text_input'},
+    {"key": '새롭게알게된점', "label": '💡 이 활동을 통해 새롭게 알게 된 점', "type": 'text_area', "height": 100},
+    {"key": '느낀점', "label": '💬 이 활동을 통해 느낀 점', "type": 'text_area', "height": 100},
+]
 
 META = {
     "title": "미니: 비밀번호 경우의 수 탐색기",
@@ -192,7 +205,7 @@ update();
 </html>
 """, height=720)
     _render_quiz(_SHEET_NAME)
-    _render_reflection_form(_SHEET_NAME, _GAS_URL)
+    render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
 
 
 def _render_quiz(sheet_name: str):
@@ -248,56 +261,3 @@ def _render_quiz(sheet_name: str):
             elif check and not user_ans.strip():
                 st.warning("답을 입력해주세요.")
         st.markdown("---")
-
-
-def _render_reflection_form(sheet_name: str, gas_url: str):
-    st.divider()
-    st.subheader("✍️ 활동 후 성찰 기록")
-    st.caption("아래 질문에 답하고 **제출하기** 버튼을 눌러주세요.")
-
-    with st.form(f"reflection_{sheet_name}", clear_on_submit=True):
-        c1, c2 = st.columns(2)
-        with c1:
-            student_id = st.text_input("학번")
-        with c2:
-            name = st.text_input("이름")
-
-        st.markdown("**📝 이 활동으로 해결할 수 있는 문제 3개 (문제와 답 모두 작성)**")
-        q1 = st.text_area("문제 1", height=80)
-        a1 = st.text_input("문제 1의 답")
-        q2 = st.text_area("문제 2", height=80)
-        a2 = st.text_input("문제 2의 답")
-        q3 = st.text_area("문제 3", height=80)
-        a3 = st.text_input("문제 3의 답")
-
-        new_learning = st.text_area("💡 이 활동을 통해 새롭게 알게 된 점", height=100)
-        feeling = st.text_area("💬 이 활동을 통해 느낀 점", height=100)
-
-        submitted = st.form_submit_button("📤 제출하기", use_container_width=True, type="primary")
-
-    if submitted:
-        if not student_id or not name:
-            st.warning("학번과 이름을 입력해주세요.")
-        elif gas_url == "YOUR_GAS_WEB_APP_URL":
-            st.error("⚠️ Google Sheets 연동 URL이 아직 설정되지 않았습니다. 선생님께 문의하세요.")
-        else:
-            payload = {
-                "sheet":     sheet_name,
-                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "학번":    student_id,
-                "이름":    name,
-                "문제1":   q1, "답1":  a1,
-                "문제2":   q2, "답2":  a2,
-                "문제3":   q3, "답3":  a3,
-                "새롭게알게된점": new_learning,
-                "느낀점":   feeling,
-            }
-            try:
-                resp = requests.post(gas_url, json=payload, timeout=10)
-                if resp.status_code == 200:
-                    st.success(f"✅ {name}님의 활동 기록이 제출되었습니다!")
-                    st.balloons()
-                else:
-                    st.error(f"제출 중 오류가 발생했습니다. (상태코드: {resp.status_code})")
-            except Exception as e:
-                st.error(f"제출 실패: {e}")

@@ -1,12 +1,22 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import requests
+from reflection_utils import render_reflection_form
 import datetime
 
 META = {"title": "대수막대로 곱셈 공식 탐구", "order": 25}
 
-_GAS_URL    = "https://script.google.com/macros/s/AKfycbySLDnSYGfQmqrtpuMyIju5hiEf7Lesp6bnWzplm3oZD4WHXESl1XJmsXT_EVcKOJI/exec"
+_GAS_URL = st.secrets["gas_url_common"]
 _SHEET_NAME = "대수막대곱셈공식"
+
+_QUESTIONS = [
+    {"key": '문제1', "label": '문제 1', "type": 'text_area', "height": 70},
+    {"key": '답1', "label": '문제 1 답', "type": 'text_area', "height": 70},
+    {"key": '문제2', "label": '문제 2', "type": 'text_area', "height": 70},
+    {"key": '답2', "label": '문제 2 답', "type": 'text_area', "height": 70},
+    {"key": '새롭게알게된점', "label": '새롭게 알게 된 점', "type": 'text_area', "height": 80},
+    {"key": '느낀점', "label": '느낀 점', "type": 'text_area', "height": 80},
+]
 
 _GAME_HTML = r"""<!DOCTYPE html>
 <html lang="ko">
@@ -513,43 +523,4 @@ def render():
     )
     components.html(_GAME_HTML, height=920, scrolling=True)
     st.divider()
-    _render_reflection_form(_SHEET_NAME, _GAS_URL)
-
-
-def _render_reflection_form(sheet_name: str, gas_url: str):
-    st.markdown("### 활동 소감 기록")
-    with st.form("reflection_form"):
-        c1, c2 = st.columns(2)
-        with c1:
-            student_id = st.text_input("학번")
-        with c2:
-            student_name = st.text_input("이름")
-        q1 = st.text_area("문제 1", height=70)
-        a1 = st.text_area("문제 1 답", height=70)
-        q2 = st.text_area("문제 2", height=70)
-        a2 = st.text_area("문제 2 답", height=70)
-        learned = st.text_area("새롭게 알게 된 점", height=80)
-        feelings = st.text_area("느낀 점", height=80)
-        submitted = st.form_submit_button("제출하기")
-    if submitted:
-        if not student_id or not student_name:
-            st.warning("학번과 이름을 입력해주세요.")
-            return
-        payload = {
-            "sheet": sheet_name,
-            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "학번": student_id,
-            "이름": student_name,
-            "문제1": q1, "답1": a1,
-            "문제2": q2, "답2": a2,
-            "새롭게알게된점": learned,
-            "느낀점": feelings,
-        }
-        try:
-            resp = requests.post(gas_url, json=payload, timeout=10)
-            if resp.status_code == 200:
-                st.success("✅ 제출 완료!")
-            else:
-                st.error(f"제출 오류 (status {resp.status_code})")
-        except Exception as e:
-            st.error(f"전송 실패: {e}")
+    render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)

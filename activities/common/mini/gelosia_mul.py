@@ -7,10 +7,22 @@ import datetime
 import streamlit as st
 import streamlit.components.v1 as components
 import requests
+from reflection_utils import render_reflection_form
 
 # ── Google Sheets 연동 (공통수학1 전용) ─────────────────────────────────────
-_GAS_URL    = "https://script.google.com/macros/s/AKfycbySLDnSYGfQmqrtpuMyIju5hiEf7Lesp6bnWzplm3oZD4WHXESl1XJmsXT_EVcKOJI/exec"
+_GAS_URL = st.secrets["gas_url_common"]
 _SHEET_NAME = "갤로시아곱셈"
+
+_QUESTIONS = [
+    {"type": 'markdown', "text": '**📝 수 버전 한 문제를 직접 선택해 풀고 과정을 기록해보세요**'},
+    {"key": '수문제', "label": '선택한 수 곱셈 문제 (예: 73 × 28 등)', "type": 'text_area', "height": 56, "placeholder": '예) 73 × 28'},
+    {"key": '수답', "label": '격자를 채우고 얻은 최종 답', "type": 'text_input'},
+    {"type": 'markdown', "text": '**📝 다항식 버전 한 문제를 직접 선택해 풀고 과정을 기록해보세요**'},
+    {"key": '다항식문제', "label": '선택한 다항식 곱셈 문제', "type": 'text_area', "height": 56, "placeholder": '예) (3x+1)(2x²−5x+4)'},
+    {"key": '다항식답', "label": '격자를 채우고 얻은 곱 다항식', "type": 'text_input'},
+    {"key": '새롭게알게된점', "label": '💡 이 활동을 통해 새롭게 알게 된 점\n(예: 갤로시아 곱셈과 일반 곱셈이 어떻게 연결되는지 등)', "type": 'text_area', "height": 100},
+    {"key": '느낀점', "label": '💬 이 활동을 하면서 느낀 점', "type": 'text_area', "height": 90},
+]
 
 META = {
     "title":       "✖️ 갤로시아 곱셈 탐구",
@@ -769,68 +781,4 @@ def render():
         "정수 곱셈과 다항식 곱셈을 직접 체험해 보세요."
     )
     components.html(_HTML, height=1100, scrolling=False)
-    _render_reflection_form(_SHEET_NAME, _GAS_URL)
-
-
-def _render_reflection_form(sheet_name: str, gas_url: str):
-    st.divider()
-    st.subheader("✍️ 활동 후 성찰 기록")
-    st.caption("아래 질문에 답하고 **제출하기** 버튼을 눌러 선생님께 전달해 주세요.")
-
-    with st.form(f"reflection_{sheet_name}", clear_on_submit=True):
-        c1, c2 = st.columns(2)
-        with c1:
-            student_id = st.text_input("학번")
-        with c2:
-            name = st.text_input("이름")
-
-        st.markdown("**📝 수 버전 한 문제를 직접 선택해 풀고 과정을 기록해보세요**")
-        q_num = st.text_area(
-            "선택한 수 곱셈 문제 (예: 73 × 28 등)",
-            placeholder="예) 73 × 28",
-            height=56
-        )
-        a_num = st.text_input("격자를 채우고 얻은 최종 답")
-
-        st.markdown("**📝 다항식 버전 한 문제를 직접 선택해 풀고 과정을 기록해보세요**")
-        q_poly = st.text_area(
-            "선택한 다항식 곱셈 문제",
-            placeholder="예) (3x+1)(2x²−5x+4)",
-            height=56
-        )
-        a_poly = st.text_input("격자를 채우고 얻은 곱 다항식")
-
-        new_learning = st.text_area(
-            "💡 이 활동을 통해 새롭게 알게 된 점\n"
-            "(예: 갤로시아 곱셈과 일반 곱셈이 어떻게 연결되는지 등)",
-            height=100
-        )
-        feeling = st.text_area("💬 이 활동을 하면서 느낀 점", height=90)
-
-        submitted = st.form_submit_button("📤 제출하기", use_container_width=True, type="primary")
-
-    if submitted:
-        if not student_id or not name:
-            st.warning("학번과 이름을 입력해주세요.")
-        else:
-            payload = {
-                "sheet":        sheet_name,
-                "timestamp":    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "학번":         student_id,
-                "이름":         name,
-                "수문제":       q_num,
-                "수답":         a_num,
-                "다항식문제":   q_poly,
-                "다항식답":     a_poly,
-                "새롭게알게된점": new_learning,
-                "느낀점":       feeling,
-            }
-            try:
-                resp = requests.post(gas_url, json=payload, timeout=10)
-                if resp.status_code == 200:
-                    st.success(f"✅ {name}님의 기록이 제출되었습니다!")
-                    st.balloons()
-                else:
-                    st.error(f"제출 중 오류가 발생했습니다. (상태코드: {resp.status_code})")
-            except Exception as e:
-                st.error(f"네트워크 오류: {e}")
+    render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)

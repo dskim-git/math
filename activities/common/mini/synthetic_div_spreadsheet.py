@@ -7,10 +7,21 @@ import datetime
 import streamlit as st
 import streamlit.components.v1 as components
 import requests
+from reflection_utils import render_reflection_form
 
 # ── Google Sheets 연동 (공통수학1 전용) ─────────────────────────────────────
-_GAS_URL    = "https://script.google.com/macros/s/AKfycbySLDnSYGfQmqrtpuMyIju5hiEf7Lesp6bnWzplm3oZD4WHXESl1XJmsXT_EVcKOJI/exec"
+_GAS_URL = st.secrets["gas_url_common"]
 _SHEET_NAME = "조립제법스프레드시트"
+
+_QUESTIONS = [
+    {"type": 'markdown', "text": '**📝 스프레드시트(엑셀)로 조립제법을 구현하는 문제 2개를 만들고 풀어보세요**'},
+    {"key": '문제1', "label": '문제 1 (어떤 다항식을 어떤 일차식으로 나누는지 적어주세요)', "type": 'text_area', "height": 70},
+    {"key": '답1', "label": '문제 1의 답 (각 셀에 들어가는 값과 최종 몫·나머지)', "type": 'text_input'},
+    {"key": '문제2', "label": '문제 2 (어떤 다항식을 어떤 일차식으로 나누는지 적어주세요)', "type": 'text_area', "height": 70},
+    {"key": '답2', "label": '문제 2의 답 (각 셀에 들어가는 값과 최종 몫·나머지)', "type": 'text_input'},
+    {"key": '새롭게알게된점', "label": '💡 스프레드시트 수식 구조와 조립제법이 어떻게 연결되는지 새롭게 알게 된 점', "type": 'text_area', "height": 100},
+    {"key": '느낀점', "label": '💬 이 활동을 하면서 느낀 점 (스프레드시트 활용에 대한 생각 포함)', "type": 'text_area', "height": 90},
+]
 
 META = {
     "title":       "📊 스프레드시트로 조립제법 구현",
@@ -757,55 +768,4 @@ def render():
         "직접 스프레드시트 표를 완성해 보세요."
     )
     components.html(_HTML, height=1150, scrolling=True)
-    _render_reflection_form(_SHEET_NAME, _GAS_URL)
-
-
-def _render_reflection_form(sheet_name: str, gas_url: str):
-    st.divider()
-    st.subheader("✍️ 활동 후 성찰 기록")
-    st.caption("아래 질문에 답하고 **제출하기** 버튼을 눌러주세요.")
-
-    with st.form(f"reflection_{sheet_name}", clear_on_submit=True):
-        c1, c2 = st.columns(2)
-        with c1:
-            student_id = st.text_input("학번")
-        with c2:
-            name = st.text_input("이름")
-
-        st.markdown("**📝 스프레드시트(엑셀)로 조립제법을 구현하는 문제 2개를 만들고 풀어보세요**")
-        q1 = st.text_area("문제 1 (어떤 다항식을 어떤 일차식으로 나누는지 적어주세요)", height=70)
-        a1 = st.text_input("문제 1의 답 (각 셀에 들어가는 값과 최종 몫·나머지)")
-        q2 = st.text_area("문제 2 (어떤 다항식을 어떤 일차식으로 나누는지 적어주세요)", height=70)
-        a2 = st.text_input("문제 2의 답 (각 셀에 들어가는 값과 최종 몫·나머지)")
-
-        new_learning = st.text_area(
-            "💡 스프레드시트 수식 구조와 조립제법이 어떻게 연결되는지 새롭게 알게 된 점",
-            height=100
-        )
-        feeling = st.text_area("💬 이 활동을 하면서 느낀 점 (스프레드시트 활용에 대한 생각 포함)", height=90)
-
-        submitted = st.form_submit_button("📤 제출하기", use_container_width=True, type="primary")
-
-    if submitted:
-        if not student_id or not name:
-            st.warning("학번과 이름을 입력해주세요.")
-        else:
-            payload = {
-                "sheet":       sheet_name,
-                "timestamp":   datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "학번":        student_id,
-                "이름":        name,
-                "문제1":       q1, "답1": a1,
-                "문제2":       q2, "답2": a2,
-                "새롭게알게된점": new_learning,
-                "느낀점":      feeling,
-            }
-            try:
-                resp = requests.post(gas_url, json=payload, timeout=10)
-                if resp.status_code == 200:
-                    st.success(f"✅ {name}님의 기록이 제출되었습니다!")
-                    st.balloons()
-                else:
-                    st.error(f"제출 중 오류가 발생했습니다. (상태코드: {resp.status_code})")
-            except Exception as e:
-                st.error(f"네트워크 오류: {e}")
+    render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)

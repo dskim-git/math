@@ -13,6 +13,13 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
+# 인증 모듈
+from auth_utils import (
+    authenticate, register_student, register_general,
+    check_password_policy, is_id_taken, is_student_num_taken,
+    ALL_SUBJECTS as _AUTH_SUBJECTS,
+)
+
 @lru_cache(maxsize=256)
 def _load_module_cached(path_str: str, mtime: float):
     return load_module_from_path(Path(path_str))
@@ -123,8 +130,8 @@ SUBJECTS = {
     "etc":             "기타",
 }
 
-# 일반 사용자에게 숨길 교과 키 (관리자 모드에서만 노출)
-HIDDEN_SUBJECTS: set = {"probability", "calculus"}
+# 이전 교육과정 자료도 로그인 사용자에게 공개 (관리자 모드 전용 제한 해제)
+HIDDEN_SUBJECTS: set = set()
 
 # home.py와 같은 디렉터리 기준
 ACTIVITIES_ROOT = Path(__file__).parent / "activities"
@@ -308,10 +315,7 @@ def _is_dev_mode() -> bool:
     """관리자 모드 여부를 세션 상태에서 읽습니다."""
     return st.session_state.get("_dev_mode", False)
 
-_ADMIN_PASSWORD = "1906"
-
-# OT 자료 비밀 토큰 — URL에 ?ot=<이 값> 을 붙이면 해당 과목 OT 자료가 표시됩니다.
-_OT_TOKEN = "mathot2026"
+# OT 자료 — 관리자 모드에서만 접근 가능
 _OT_CANVA: Dict[str, str] = {
     "common":          "https://www.canva.com/design/DAHC4prloOs/iLjYVxFI-b-VKCWRB3rE9A/view?embed",
     "common2":         "https://www.canva.com/design/DAHC4prloOs/iLjYVxFI-b-VKCWRB3rE9A/view?embed",
@@ -323,89 +327,325 @@ _OT_CANVA: Dict[str, str] = {
 }
 
 def _is_ot_mode() -> bool:
-    """URL ?ot=토큰 이 있으면 세션에 기억하고 OT 모드를 유지합니다."""
-    qp = _qp_get()
-    if qp.get("ot", [""])[0] == _OT_TOKEN:
-        st.session_state["_ot_mode"] = True
-    return st.session_state.get("_ot_mode", False)
+    """OT 모드: 관리자 모드일 때만 허용합니다."""
+    return _is_dev_mode()
 
-# 과목 필터 토큰 — URL에 ?class=<이 값> 을 붙이면 해당 과목만 표시됩니다.
-_SUBJECT_TOKENS: Dict[str, str] = {
-    "common1":        "common",           # 1학년 공통수학1 전용
-    "common2":        "common2",          # 1학년 공통수학2 전용
-    "algebra":        "algebra",          # 대수 전용
-    "calculus1":      "calculus1",        # 미적분1 전용
-    "calculus2":      "calculus2",        # 미적분2 전용
-    "prob2":          "probability_new",  # 2학년 확률과통계 전용
-    "econ":           "economics_math",   # 경제수학 전용
-}
 
-def _get_subject_filter() -> Optional[str]:
-    """URL ?class=토큰 이 있으면 세션에 기억하고 필터 과목 키를 반환합니다.
-    관리자 모드에서는 항상 None(필터 없음)을 반환합니다."""
+def _get_login_allowed_subjects() -> Optional[set]:
+    """로그인 기반 허용 교과 집합을 반환합니다.
+    None = 제한 없음(관리자 또는 미설정), set = 허용 key 목록."""
     if _is_dev_mode():
         return None
-    qp = _qp_get()
-    token = qp.get("class", [""])[0]
-    if token in _SUBJECT_TOKENS:
-        st.session_state["_subject_filter"] = _SUBJECT_TOKENS[token]
-    return st.session_state.get("_subject_filter", None)
+    return st.session_state.get("_login_allowed_subjects", None)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 로그인 알림 이메일
+def _send_register_notify_email(user_type: str, name: str, user_id: str,
+                                extra: str = "") -> None:
+    """신규 가입 신청 시 관리자에게 이메일로 알립니다."""
+    try:
+        email_secrets = st.secrets.get("email", {})
+        sender   = str(email_secrets.get("sender", ""))
+        password = str(email_secrets.get("password", ""))
+        if not sender or not password:
+            return
+        type_label = "학생" if user_type == "student" else "일반인"
+        subject_line = f"[MathLab] 신규 가입 신청 – {type_label} {name}({user_id})"
+        now_str  = datetime.now().strftime("%Y년 %m월 %d일 %H:%M")
+        body     = (
+            f"<h3>신규 가입 신청 알림</h3>"
+            f"<p>유형: {type_label}<br>이름: {_html.escape(name)}<br>"
+            f"아이디: {_html.escape(user_id)}<br>{_html.escape(extra)}<br>"
+            f"신청 일시: {now_str}</p>"
+            f"<p><a href='https://mathematicslab.streamlit.app/'>관리자 페이지</a>에서 승인하세요.</p>"
+        )
+        receiver = _FEEDBACK_RECEIVER  # daesobi1@gmail.com
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject_line
+        msg["From"]    = sender
+        msg["To"]      = receiver
+        msg.attach(MIMEText(body, "html", "utf-8"))
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as srv:
+            srv.login(sender, password)
+            srv.sendmail(sender, receiver, msg.as_string())
+    except Exception:
+        pass
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 로그인 / 회원가입 뷰
+def login_view():
+    """인증되지 않은 사용자에게 보이는 로그인 화면."""
+    _inject_sidebar_nav_visibility(dev=False)
+
+    _, col, _ = st.columns([1, 2, 1])
+    with col:
+        st.markdown("""
+<div style='text-align:center; padding:2.5rem 0 1.5rem;'>
+  <div style='font-size:3rem; font-weight:800;
+              background:linear-gradient(135deg,#6366f1,#a855f7);
+              -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+              background-clip:text;'>🧮 MathLab</div>
+  <div style='color:var(--secondary-text-color); font-size:1rem; margin-top:.4rem;'>
+    수학 수업 자료 공간에 오신 것을 환영합니다.<br>
+    이용하시려면 로그인이 필요합니다.
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+        tab_login, tab_register = st.tabs(["🔐 로그인", "📝 회원가입"])
+
+        # ── 로그인 탭 ──────────────────────────────────────────────────
+        with tab_login:
+            ATTEMPT_KEY = "_login_attempts"
+            if st.session_state.get(ATTEMPT_KEY, 0) >= 5:
+                st.error(
+                    "⛔ 로그인 시도 횟수(5회)를 초과했습니다. "
+                    "브라우저를 새로고침 하거나 관리자에게 문의하세요."
+                )
+            else:
+                with st.form("login_form", clear_on_submit=False):
+                    uid = st.text_input("아이디", placeholder="아이디 입력")
+                    pw  = st.text_input("비밀번호", type="password",
+                                        placeholder="비밀번호 입력")
+                    submitted = st.form_submit_button(
+                        "로그인", use_container_width=True, type="primary"
+                    )
+
+                if submitted:
+                    with st.spinner("인증 중..."):
+                        result = authenticate(uid.strip(), pw)
+
+                    if result is None:
+                        cnt = st.session_state.get(ATTEMPT_KEY, 0) + 1
+                        st.session_state[ATTEMPT_KEY] = cnt
+                        remaining = 5 - cnt
+                        st.error(
+                            f"❌ 아이디 또는 비밀번호가 틀렸습니다. "
+                            f"(남은 시도: {remaining}회)"
+                        )
+                    elif result.get("type") == "pending":
+                        st.warning(
+                            "⏳ 가입 승인 대기 중인 계정입니다. "
+                            "관리자 승인 후 로그인할 수 있습니다."
+                        )
+                    else:
+                        # 로그인 성공
+                        st.session_state["_authenticated"]       = True
+                        st.session_state["_user_type"]           = result["type"]
+                        st.session_state["_user_id"]             = result["id"]
+                        st.session_state["_user_name"]           = result["name"]
+                        st.session_state["_login_allowed_subjects"] = result["allowed_subjects"]
+                        if result["type"] == "admin":
+                            st.session_state["_dev_mode"] = True
+                        st.session_state.pop(ATTEMPT_KEY, None)
+                        _do_rerun()
+
+            st.markdown(
+                "<div style='text-align:center; margin-top:1rem; "
+                "color:var(--secondary-text-color); font-size:.85rem;'>"
+                "비밀번호를 잊으셨나요? 관리자에게 문의하세요.</div>",
+                unsafe_allow_html=True,
+            )
+
+        # ── 회원가입 탭 ────────────────────────────────────────────────
+        with tab_register:
+            reg_type = st.radio(
+                "가입 유형 선택",
+                ["🎓 학생", "👤 일반인"],
+                horizontal=True,
+                key="reg_type_radio",
+            )
+
+            st.divider()
+
+            if reg_type == "🎓 학생":
+                st.markdown("**학생 회원가입**")
+                st.caption(
+                    "학번과 이름을 입력하면 아이디가 자동 생성됩니다. "
+                    "예) 학번 20200 → 아이디 202620200"
+                )
+                with st.form("reg_student_form", clear_on_submit=True):
+                    s_num  = st.text_input("학번 *", placeholder="예: 20200",
+                                           max_chars=10)
+                    s_name = st.text_input("이름 *", placeholder="예: 홍길동",
+                                           max_chars=20)
+                    s_pw1  = st.text_input(
+                        "사용할 비밀번호 *", type="password",
+                        placeholder="8자 이상, 숫자 포함",
+                    )
+                    s_pw2  = st.text_input(
+                        "비밀번호 확인 *", type="password",
+                        placeholder="비밀번호 재입력",
+                    )
+                    sub_s = st.form_submit_button(
+                        "학생 회원가입 신청", use_container_width=True,
+                        type="primary",
+                    )
+
+                if sub_s:
+                    errs = []
+                    if not s_num.strip().isdigit():
+                        errs.append("학번은 숫자만 입력하세요.")
+                    if not s_name.strip():
+                        errs.append("이름을 입력하세요.")
+                    if s_pw1 != s_pw2:
+                        errs.append("비밀번호가 일치하지 않습니다.")
+                    errs += check_password_policy(s_pw1)
+                    if errs:
+                        for e in errs:
+                            st.error(e)
+                    else:
+                        # 학번 첫 자리로 학년 자동 감지
+                        grade = s_num.strip()[0] if s_num.strip() else "1"
+                        with st.spinner("가입 신청 중..."):
+                            ok, msg = register_student(
+                                s_num.strip(), s_name.strip(), s_pw1, grade
+                            )
+                        if ok:
+                            # 관리자 알림 이메일
+                            _send_register_notify_email(
+                                "student", s_name.strip(),
+                                msg, f"학번: {s_num.strip()}"
+                            )
+                            st.success(
+                                f"✅ 가입 신청이 완료되었습니다!\n\n"
+                                f"생성된 아이디: **{msg}**\n\n"
+                                "관리자 승인 후 로그인할 수 있습니다."
+                            )
+                        else:
+                            st.error(f"❌ {msg}")
+
+            else:
+                st.markdown("**일반인 회원가입**")
+                with st.form("reg_general_form", clear_on_submit=True):
+                    g_name    = st.text_input("이름 *", placeholder="예: 홍길동",
+                                              max_chars=20)
+                    g_id      = st.text_input(
+                        "사용할 아이디 *",
+                        placeholder="영문·숫자·밑줄, 4~20자",
+                        max_chars=20,
+                    )
+                    g_pw1     = st.text_input(
+                        "비밀번호 *", type="password",
+                        placeholder="8자 이상, 숫자 포함",
+                    )
+                    g_pw2     = st.text_input(
+                        "비밀번호 확인 *", type="password",
+                        placeholder="비밀번호 재입력",
+                    )
+                    g_purpose = st.text_area(
+                        "사용 목적 *",
+                        placeholder="예: 학부모 / 타교 교사 / 수학 관련 연구 등",
+                        max_chars=200,
+                        height=80,
+                    )
+                    sub_g = st.form_submit_button(
+                        "일반인 회원가입 신청", use_container_width=True,
+                        type="primary",
+                    )
+
+                if sub_g:
+                    errs = []
+                    if not g_name.strip():
+                        errs.append("이름을 입력하세요.")
+                    if not g_id.strip():
+                        errs.append("아이디를 입력하세요.")
+                    if g_pw1 != g_pw2:
+                        errs.append("비밀번호가 일치하지 않습니다.")
+                    errs += check_password_policy(g_pw1)
+                    if not g_purpose.strip():
+                        errs.append("사용 목적을 입력하세요.")
+                    if errs:
+                        for e in errs:
+                            st.error(e)
+                    else:
+                        with st.spinner("가입 신청 중..."):
+                            ok, msg = register_general(
+                                g_name.strip(), g_id.strip(),
+                                g_pw1, g_purpose.strip(),
+                            )
+                        if ok:
+                            _send_register_notify_email(
+                                "general", g_name.strip(), g_id.strip(),
+                                f"목적: {g_purpose.strip()}"
+                            )
+                            st.success(
+                                "✅ 가입 신청이 완료되었습니다!\n\n"
+                                f"아이디: **{g_id.strip()}**\n\n"
+                                "관리자 승인 후 로그인할 수 있습니다."
+                            )
+                        else:
+                            st.error(f"❌ {msg}")
+
+def _get_subject_filter() -> Optional[str]:
+    """URL 우회 토큰 방식은 제거됨. 항상 None(필터 없음)을 반환합니다."""
+    return None
 
 def _admin_mode_ui():
-    """사이드바 하단에 관리자 모드 토글 UI를 렌더링합니다."""
-    dev = _is_dev_mode()
+    """사이드바 하단에 사용자 정보, 로그아웃, 관리자 도구를 렌더링합니다."""
+    dev       = _is_dev_mode()
+    user_type = st.session_state.get("_user_type", "")
+    user_name = st.session_state.get("_user_name", "")
+    user_id   = st.session_state.get("_user_id",   "")
+
     st.sidebar.divider()
+
+    # 사용자 정보 표시
+    if user_name:
+        type_icon = {"admin": "🔧", "student": "🎓", "general": "👤"}.get(user_type, "👤")
+        type_lbl  = {"admin": "관리자", "student": "학생", "general": "일반인"}.get(user_type, "")
+        st.sidebar.caption(f"{type_icon} **{user_name}** ({user_id})  |  {type_lbl}")
+
+    # 로그아웃 버튼 (모든 사용자)
+    if st.sidebar.button("🚪 로그아웃", use_container_width=True, key="_logout_btn"):
+        for k in ["_authenticated", "_user_type", "_user_id", "_user_name",
+                  "_login_allowed_subjects", "_dev_mode",
+                  "_show_pw_input", "_pw_error", "_visit_logged",
+                  "_ot_mode", "_subject_filter"]:
+            st.session_state.pop(k, None)
+        set_route("home")
+        _do_rerun()
+
+    # 관리자 전용 메뉴
+    if user_type != "admin":
+        return
 
     if dev:
         st.sidebar.caption("🔧 관리자 모드 활성화 중")
-        if st.sidebar.button("🔓 일반 모드로 돌아가기", use_container_width=True, key="_admin_exit_btn"):
+        if st.sidebar.button("🔓 일반 보기 모드로 전환", use_container_width=True,
+                             key="_admin_exit_btn"):
             st.session_state["_dev_mode"] = False
-            st.session_state.pop("_show_pw_input", None)
-            st.session_state.pop("_pw_error", None)
             _do_rerun()
-        if st.sidebar.button("📁 Dev Tree (파일 구조 보기)", use_container_width=True, key="_admin_dev_tree_btn"):
+        if st.sidebar.button("👥 회원 관리", use_container_width=True,
+                             key="_admin_member_btn"):
+            st.switch_page("pages/97_회원관리.py")
+        if st.sidebar.button("📁 Dev Tree (파일 구조 보기)", use_container_width=True,
+                             key="_admin_dev_tree_btn"):
             st.switch_page("pages/99_Dev_Tree.py")
-        if st.sidebar.button("📋 진도표 관리", use_container_width=True, key="_admin_schedule_btn"):
+        if st.sidebar.button("📋 진도표 관리", use_container_width=True,
+                             key="_admin_schedule_btn"):
             st.switch_page("pages/98_진도표.py")
-        if st.sidebar.button("📥 피드백 게시판", use_container_width=True, key="_admin_feedback_board_btn"):
-            set_route("feedback_board")
-            _do_rerun()
-        if st.sidebar.button("📊 방문자 통계", use_container_width=True, key="_admin_visit_stats_btn"):
-            set_route("visit_stats")
-            _do_rerun()
+        if st.sidebar.button("📥 피드백 게시판", use_container_width=True,
+                             key="_admin_feedback_board_btn"):
+            set_route("feedback_board"); _do_rerun()
+        if st.sidebar.button("📊 방문자 통계", use_container_width=True,
+                             key="_admin_visit_stats_btn"):
+            set_route("visit_stats"); _do_rerun()
         st.sidebar.link_button(
             "🤖 AI 튜터와 대화하기",
-            "https://copilotstudio.microsoft.com/environments/Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/copilots_header_78f6d/webchat?__version__=2",
-            use_container_width=True
+            "https://copilotstudio.microsoft.com/environments/"
+            "Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/"
+            "copilots_header_78f6d/webchat?__version__=2",
+            use_container_width=True,
         )
     else:
-        if st.session_state.get("_show_pw_input", False):
-            pw = st.sidebar.text_input(
-                "관리자 비밀번호", type="password", key="_admin_pw_input",
-                placeholder="비밀번호 입력 후 Enter"
-            )
-            c1, c2 = st.sidebar.columns(2)
-            with c1:
-                if st.button("확인", key="_admin_pw_confirm", use_container_width=True):
-                    if pw == _ADMIN_PASSWORD:
-                        st.session_state["_dev_mode"] = True
-                        st.session_state["_show_pw_input"] = False
-                        st.session_state.pop("_pw_error", None)
-                        _do_rerun()
-                    else:
-                        st.session_state["_pw_error"] = True
-            with c2:
-                if st.button("취소", key="_admin_pw_cancel", use_container_width=True):
-                    st.session_state["_show_pw_input"] = False
-                    st.session_state.pop("_pw_error", None)
-                    _do_rerun()
-            if st.session_state.get("_pw_error"):
-                st.sidebar.error("비밀번호가 틀렸습니다.")
-        else:
-            if st.sidebar.button("🔐 관리자 모드", use_container_width=True, key="_admin_enter_btn"):
-                st.session_state["_show_pw_input"] = True
-                st.session_state.pop("_pw_error", None)
-                _do_rerun()
+        # 관리자지만 일반 보기 모드
+        if st.sidebar.button("🔧 관리자 모드로 전환", use_container_width=True,
+                             key="_admin_enter_btn"):
+            st.session_state["_dev_mode"] = True
+            _do_rerun()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 활동 자동 탐색
@@ -550,14 +790,17 @@ def _inject_sidebar_nav_visibility(dev: bool):
     """, height=0)
 
 def sidebar_navigation(registry: Dict[str, List[Activity]]):
-    dev = _is_dev_mode()
-    subject_filter = _get_subject_filter()  # None → 필터 없음
+    dev            = _is_dev_mode()
+    subject_filter = _get_subject_filter()       # URL 기반 단일 필터
+    login_allowed  = _get_login_allowed_subjects() # 로그인 기반 집합 필터
     _inject_sidebar_nav_visibility(dev)
     st.sidebar.header("📂 교과별 페이지")
     for key, label in SUBJECTS.items():
         if key in HIDDEN_SUBJECTS and not dev:
             continue
         if subject_filter and key != subject_filter:
+            continue
+        if login_allowed is not None and key not in login_allowed:
             continue
         with st.sidebar.expander(f"{label}", expanded=False):
             # 교과 메인
@@ -589,6 +832,12 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
     if st.button("💬 의견 · 오류 접수", type="secondary", use_container_width=True, key="_sidebar_feedback_btn"):
         set_route("feedback")
         _do_rerun()
+    # 비밀번호 변경 (관리자 제외)
+    if st.session_state.get("_user_type") in ("student", "general"):
+        if st.button("🔑 비밀번호 변경", type="secondary", use_container_width=True,
+                     key="_sidebar_chpw_btn"):
+            set_route("change_password")
+            _do_rerun()
     _admin_mode_ui()
 
 def _inject_home_styles():
@@ -713,12 +962,14 @@ def home_view():
     }
     
     # 3열 그리드 레이아웃으로 카드 배치
-    dev = _is_dev_mode()
-    subject_filter = _get_subject_filter()  # None → 필터 없음
+    dev            = _is_dev_mode()
+    subject_filter = _get_subject_filter()       # URL 기반 단일 필터
+    login_allowed  = _get_login_allowed_subjects() # 로그인 기반 집합 필터
     visible_subjects = [
         (k, v) for k, v in SUBJECTS.items()
         if (k not in HIDDEN_SUBJECTS or dev)
         and (not subject_filter or k == subject_filter)
+        and (login_allowed is None or k in login_allowed)
     ]
     cols = st.columns(3, gap="medium")
     for i, (key, label) in enumerate(visible_subjects):
@@ -1454,7 +1705,7 @@ def _load_feedback_from_sheet() -> "list[list]":
 # ─────────────────────────────────────────────────────────────────────────────
 # 방문 기록 Google Sheets 연동
 _VISIT_SHEET_NAME   = "방문기록"
-_VISIT_SHEET_HEADER = ["방문시각", "과목필터"]
+_VISIT_SHEET_HEADER = ["방문시각", "과목필터", "사용자ID"]
 
 def _get_or_create_visit_worksheet():
     """
@@ -1470,7 +1721,7 @@ def _get_or_create_visit_worksheet():
         try:
             ws = sh.worksheet(_VISIT_SHEET_NAME)
         except Exception:
-            ws = sh.add_worksheet(title=_VISIT_SHEET_NAME, rows=10000, cols=2)
+            ws = sh.add_worksheet(title=_VISIT_SHEET_NAME, rows=10000, cols=3)
             ws.append_row(_VISIT_SHEET_HEADER)
         return ws
     except Exception:
@@ -1486,11 +1737,12 @@ def _log_visit() -> None:
     st.session_state["_visit_logged"] = True
     try:
         subject_filter = st.session_state.get("_subject_filter", "(전체)")
+        user_id = st.session_state.get("_user_id", "")
         ws = _get_or_create_visit_worksheet()
         if ws is None:
             return
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        ws.append_row([now_str, subject_filter or "(전체)"])
+        ws.append_row([now_str, subject_filter or "(전체)", user_id])
     except Exception:
         pass   # 방문 기록 실패가 앱을 방해하지 않도록
 
@@ -1506,9 +1758,30 @@ def _load_visit_data() -> "list[list]":
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 성찰 기록 통계 조회
+_REFLECTION_LOG_SHEET_NAME = "성찰기록"
+
+def _load_reflection_log_data() -> "list[list]":
+    """성찰기록 시트의 모든 행(헤더 포함)을 반환합니다. 없으면 빈 리스트."""
+    try:
+        client = _get_feedback_gspread_client()
+        if client is None:
+            return []
+        spreadsheet_id: str = st.secrets["spreadsheet_id"]
+        sh = client.open_by_key(spreadsheet_id)
+        try:
+            ws = sh.worksheet(_REFLECTION_LOG_SHEET_NAME)
+        except Exception:
+            return []
+        return ws.get_all_values()
+    except Exception:
+        return []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 방문 통계 뷰 (관리자 전용)
 def visit_stats_view():
-    """[관리자 전용] 방문자 통계 대시보드."""
+    """[관리자 전용] 방문자 통계 대시보드 — 중복 허용 / 중복 제거 두 모드 지원."""
     import pandas as pd
     import plotly.express as px
 
@@ -1522,7 +1795,6 @@ def visit_stats_view():
         _do_rerun()
 
     st.title("📊 방문자 통계")
-    st.caption("세션 최초 접속 기준으로 기록된 방문 데이터입니다.")
     st.divider()
 
     if st.button("🔄 새로고침", key="vstats_refresh_btn"):
@@ -1535,36 +1807,71 @@ def visit_stats_view():
         st.info("아직 방문 기록이 없습니다.")
         return
 
-    df = pd.DataFrame(rows[1:], columns=["방문시각", "과목필터"])
+    # 열 수가 2개(구 형식)일 수도, 3개(신 형식)일 수도 있어 유연하게 처리
+    raw = [r + [""] * (3 - len(r)) for r in rows[1:]]
+    df = pd.DataFrame(raw, columns=["방문시각", "과목필터", "사용자ID"])
     df["방문시각"] = pd.to_datetime(df["방문시각"], errors="coerce")
     df = df.dropna(subset=["방문시각"])
     df["날짜"] = df["방문시각"].dt.date
 
-    today   = pd.Timestamp.now().normalize()
+    today     = pd.Timestamp.now().normalize()
     week_ago  = today - pd.Timedelta(days=6)
     month_ago = today - pd.Timedelta(days=29)
 
-    cnt_today = int((df["날짜"] == today.date()).sum())
-    cnt_week  = int((df["방문시각"] >= week_ago).sum())
-    cnt_month = int((df["방문시각"] >= month_ago).sum())
-    cnt_total = len(df)
+    # ── 집계 모드 선택 ──────────────────────────────────────────────────────
+    count_mode = st.radio(
+        "📌 집계 방식",
+        ["중복 허용 (세션 기준)", "중복 제거 (사용자 ID 기준)"],
+        horizontal=True,
+        key="vstats_count_mode",
+    )
+    is_unique = count_mode == "중복 제거 (사용자 ID 기준)"
 
-    # 요약 수치
-    m1, m2, m3, m4 = st.columns(4)
-    m1.metric("오늘",   f"{cnt_today:,} 명")
-    m2.metric("최근 7일",  f"{cnt_week:,} 명")
-    m3.metric("최근 30일", f"{cnt_month:,} 명")
-    m4.metric("누적",   f"{cnt_total:,} 명")
+    if is_unique:
+        st.caption(
+            "같은 사용자 ID로 하루에 여러 번 접속해도 하루 1회로만 집계합니다. "
+            "사용자 ID가 없는 행(구 데이터 또는 비로그인)은 제외됩니다."
+        )
+        # 사용자 ID가 있는 행만, (날짜, 사용자ID) 기준 중복 제거
+        df_u = df[df["사용자ID"] != ""].drop_duplicates(subset=["날짜", "사용자ID"])
+    else:
+        st.caption("세션 최초 접속 기준으로 기록된 모든 방문 데이터를 집계합니다.")
+        df_u = df
+
+    # ── 요약 수치 ───────────────────────────────────────────────────────────
+    cnt_today = int((df_u["날짜"] == today.date()).sum())
+    cnt_week  = int((df_u["방문시각"] >= week_ago).sum())
+    cnt_month = int((df_u["방문시각"] >= month_ago).sum())
+    cnt_total = len(df_u)
+
+    if is_unique:
+        # 누적 고유 사용자 수 (날짜 무관, ID 기준)
+        cnt_unique_total = df[df["사용자ID"] != ""]["사용자ID"].nunique()
+        m1, m2, m3, m4, m5 = st.columns(5)
+        m1.metric("오늘",          f"{cnt_today:,} 명")
+        m2.metric("최근 7일",      f"{cnt_week:,} 명")
+        m3.metric("최근 30일",     f"{cnt_month:,} 명")
+        m4.metric("집계 합계",     f"{cnt_total:,} 명")
+        m5.metric("누적 고유 사용자", f"{cnt_unique_total:,} 명")
+    else:
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("오늘",      f"{cnt_today:,} 명")
+        m2.metric("최근 7일",  f"{cnt_week:,} 명")
+        m3.metric("최근 30일", f"{cnt_month:,} 명")
+        m4.metric("누적",      f"{cnt_total:,} 명")
 
     st.divider()
 
-    # ── 기간 탭 ──
-    tab1, tab2, tab3 = st.tabs(["📅 최근 30일", "📅 최근 7일", "📅 과목별 분포"])
+    # ── 차트 탭 ──────────────────────────────────────────────────────────────
+    tab1, tab2, tab3, tab4 = st.tabs(["📅 최근 30일", "📅 최근 7일", "📅 과목별 분포", "📝 성찰 통계"])
+    chart_color_30d = "#6366f1" if not is_unique else "#0ea5e9"
+    chart_color_7d  = "#a855f7" if not is_unique else "#10b981"
+    chart_label = "방문자 수" if not is_unique else "고유 사용자 수"
 
     with tab1:
         date_range = pd.date_range(end=today, periods=30, freq="D")
         daily = (
-            df[df["방문시각"] >= month_ago]
+            df_u[df_u["방문시각"] >= month_ago]
             .groupby("날짜")
             .size()
             .reindex([d.date() for d in date_range], fill_value=0)
@@ -1574,9 +1881,9 @@ def visit_stats_view():
         daily["날짜"] = pd.to_datetime(daily["날짜"])
         fig = px.bar(
             daily, x="날짜", y="방문자",
-            title="일별 방문자 수 (최근 30일)",
-            labels={"날짜": "날짜", "방문자": "방문자 수"},
-            color_discrete_sequence=["#6366f1"],
+            title=f"일별 {'고유 사용자' if is_unique else '방문자'} 수 (최근 30일)",
+            labels={"날짜": "날짜", "방문자": chart_label},
+            color_discrete_sequence=[chart_color_30d],
         )
         fig.update_layout(hovermode="x unified")
         st.plotly_chart(fig, use_container_width=True)
@@ -1584,7 +1891,7 @@ def visit_stats_view():
     with tab2:
         date_range7 = pd.date_range(end=today, periods=7, freq="D")
         daily7 = (
-            df[df["방문시각"] >= week_ago]
+            df_u[df_u["방문시각"] >= week_ago]
             .groupby("날짜")
             .size()
             .reindex([d.date() for d in date_range7], fill_value=0)
@@ -1594,34 +1901,118 @@ def visit_stats_view():
         daily7["날짜"] = pd.to_datetime(daily7["날짜"])
         fig7 = px.bar(
             daily7, x="날짜", y="방문자",
-            title="일별 방문자 수 (최근 7일)",
-            labels={"날짜": "날짜", "방문자": "방문자 수"},
-            color_discrete_sequence=["#a855f7"],
+            title=f"일별 {'고유 사용자' if is_unique else '방문자'} 수 (최근 7일)",
+            labels={"날짜": "날짜", "방문자": chart_label},
+            color_discrete_sequence=[chart_color_7d],
         )
         fig7.update_layout(hovermode="x unified")
         st.plotly_chart(fig7, use_container_width=True)
 
     with tab3:
         subj_df = (
-            df[df["방문시각"] >= month_ago]
+            df_u[df_u["방문시각"] >= month_ago]
             .groupby("과목필터")
             .size()
             .reset_index()
         )
-        subj_df.columns = ["과목", "방문자"]
-        subj_df = subj_df.sort_values("방문자", ascending=False)
+        subj_df.columns = ["과목", chart_label]
+        subj_df = subj_df.sort_values(chart_label, ascending=False)
         fig_s = px.pie(
-            subj_df, names="과목", values="방문자",
-            title="과목별 방문 비율 (최근 30일)",
+            subj_df, names="과목", values=chart_label,
+            title=f"과목별 비율 (최근 30일, {'고유 사용자' if is_unique else '방문자'})",
         )
         fig_s.update_traces(textposition="inside", textinfo="percent+label")
         st.plotly_chart(fig_s, use_container_width=True)
         st.dataframe(subj_df, use_container_width=True, hide_index=True)
 
+    with tab4:
+        with st.spinner("성찰 기록 불러오는 중..."):
+            ref_rows = _load_reflection_log_data()
+
+        if not ref_rows or len(ref_rows) <= 1:
+            st.info("아직 성찰 제출 기록이 없습니다.")
+        else:
+            ref_raw = [r + [""] * (5 - len(r)) for r in ref_rows[1:]]
+            ref_df = pd.DataFrame(
+                ref_raw, columns=["제출시각", "과목", "활동시트명", "학번", "이름"]
+            )
+            ref_df["제출시각"] = pd.to_datetime(ref_df["제출시각"], errors="coerce")
+            ref_df = ref_df.dropna(subset=["제출시각"])
+
+            # ── 과목·활동 필터 ────────────────────────────────────────────────
+            subjects = ["전체"] + sorted(ref_df["과목"].dropna().unique().tolist())
+            fc1, fc2 = st.columns(2)
+            sel_subject = fc1.selectbox("📚 과목 선택", subjects, key="ref_filter_subj")
+            df_f = ref_df.copy()
+            if sel_subject != "전체":
+                df_f = df_f[df_f["과목"] == sel_subject]
+            activities = ["전체"] + sorted(df_f["활동시트명"].dropna().unique().tolist())
+            sel_activity = fc2.selectbox("🎯 활동 선택", activities, key="ref_filter_act")
+            if sel_activity != "전체":
+                df_f = df_f[df_f["활동시트명"] == sel_activity]
+
+            # 요약 수치 (필터 적용 후)
+            total_submissions = len(df_f)
+            unique_students   = df_f["학번"].nunique()
+            unique_activities = df_f["활동시트명"].nunique()
+            rc1, rc2, rc3 = st.columns(3)
+            rc1.metric("총 제출 건수",   f"{total_submissions:,} 건")
+            rc2.metric("참여 학생 수",   f"{unique_students:,} 명")
+            rc3.metric("활동 종류 수",   f"{unique_activities:,} 가지")
+
+            st.divider()
+
+            # 과목·활동별 집계 테이블
+            st.markdown("##### 교과별·활동별 성찰 제출 현황")
+            agg = (
+                df_f
+                .groupby(["과목", "활동시트명"])
+                .agg(
+                    제출횟수=("학번", "count"),
+                    고유학생수=("학번", "nunique"),
+                )
+                .reset_index()
+                .sort_values(["과목", "제출횟수"], ascending=[True, False])
+            )
+            st.dataframe(
+                agg,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "과목":       st.column_config.TextColumn("과목"),
+                    "활동시트명": st.column_config.TextColumn("활동명"),
+                    "제출횟수":   st.column_config.NumberColumn("제출 횟수"),
+                    "고유학생수": st.column_config.NumberColumn("고유 학생 수"),
+                },
+            )
+
+            st.divider()
+
+            # 과목별 막대 차트
+            if not agg.empty:
+                fig_ref = px.bar(
+                    agg,
+                    x="활동시트명", y="고유학생수", color="과목",
+                    title="활동별 고유 학생 성찰 제출 수",
+                    labels={"활동시트명": "활동명", "고유학생수": "고유 학생 수"},
+                    barmode="group",
+                )
+                fig_ref.update_layout(xaxis_tickangle=-30)
+                st.plotly_chart(fig_ref, use_container_width=True)
+
+            st.markdown("##### 원본 데이터 (최근 100건)")
+            st.dataframe(
+                df_f.sort_values("제출시각", ascending=False)
+                .head(100)[["제출시각", "과목", "활동시트명", "학번", "이름"]],
+                use_container_width=True,
+                hide_index=True,
+            )
+
     st.divider()
+    show_cols = ["방문시각", "과목필터", "사용자ID"]
     st.markdown("##### 원본 데이터 (최근 100건)")
     st.dataframe(
-        df.sort_values("방문시각", ascending=False).head(100)[["방문시각","과목필터"]],
+        df_u.sort_values("방문시각", ascending=False).head(100)[show_cols],
         use_container_width=True,
         hide_index=True,
     )
@@ -1715,6 +2106,50 @@ def _send_feedback_email(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 비밀번호 변경 뷰 (로그인한 일반 사용자)
+def change_password_view():
+    """로그인한 학생·일반인이 본인 비밀번호를 변경하는 페이지."""
+    from auth_utils import change_own_password
+
+    if st.button("← 홈으로", type="secondary", key="chpw_back_btn"):
+        set_route("home"); _do_rerun()
+
+    st.title("🔑 비밀번호 변경")
+    st.caption("현재 비밀번호를 확인한 뒤 새 비밀번호로 변경합니다.")
+    st.divider()
+
+    user_id   = st.session_state.get("_user_id", "")
+    user_type = st.session_state.get("_user_type", "")
+
+    with st.form("change_pw_form", clear_on_submit=True):
+        cur_pw  = st.text_input("현재 비밀번호 *", type="password")
+        new_pw1 = st.text_input("새 비밀번호 *", type="password",
+                                help="8자 이상, 숫자 1개 이상 포함")
+        new_pw2 = st.text_input("새 비밀번호 확인 *", type="password")
+        submitted = st.form_submit_button("변경하기", use_container_width=True,
+                                          type="primary")
+
+    if submitted:
+        errs = []
+        if not cur_pw:
+            errs.append("현재 비밀번호를 입력하세요.")
+        if new_pw1 != new_pw2:
+            errs.append("새 비밀번호가 일치하지 않습니다.")
+        from auth_utils import check_password_policy
+        errs += check_password_policy(new_pw1)
+
+        if errs:
+            for e in errs:
+                st.error(e)
+        else:
+            ok, msg = change_own_password(user_type, user_id, cur_pw, new_pw1)
+            if ok:
+                st.success("✅ 비밀번호가 변경되었습니다.")
+            else:
+                st.error(f"❌ {msg}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 피드백/의견 접수 뷰
 def feedback_view():
     """학생 의견 접수 페이지 (오류 신고 / 활동 건의)."""
@@ -1728,6 +2163,12 @@ def feedback_view():
     )
     st.divider()
 
+    # 로그인 사용자 정보 자동 사용
+    auto_id   = st.session_state.get("_user_id",   "")
+    auto_name = st.session_state.get("_user_name", "")
+
+    st.info(f"**{auto_name}** ({auto_id}) 님의 계정으로 접수됩니다.")
+
     # 피드백 유형 선택
     feedback_type = st.radio(
         "어떤 내용을 보내시겠어요?",
@@ -1739,20 +2180,6 @@ def feedback_view():
     st.markdown("")  # 여백
 
     with st.form("feedback_form", clear_on_submit=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            student_id = st.text_input(
-                "학번 *",
-                placeholder="예: 10101  (학년+반+번호)",
-                max_chars=20,
-            )
-        with col2:
-            student_name = st.text_input(
-                "이름 *",
-                placeholder="예: 홍길동",
-                max_chars=30,
-            )
-
         reply_email = st.text_input(
             "답변받을 이메일 (선택)",
             placeholder="예: student@example.com",
@@ -1776,10 +2203,6 @@ def feedback_view():
 
     if submitted:
         errors: list[str] = []
-        if not student_id.strip():
-            errors.append("학번을 입력해 주세요.")
-        if not student_name.strip():
-            errors.append("이름을 입력해 주세요.")
         if reply_email.strip() and "@" not in reply_email:
             errors.append("이메일 주소 형식을 확인해 주세요.")
         if not content.strip():
@@ -1792,15 +2215,15 @@ def feedback_view():
             with st.spinner("전송 중입니다..."):
                 email_ok = _send_feedback_email(
                     feedback_type=feedback_type,
-                    student_id=student_id.strip(),
-                    student_name=student_name.strip(),
+                    student_id=auto_id,
+                    student_name=auto_name,
                     reply_email=reply_email.strip(),
                     content=content.strip(),
                 )
                 sheet_ok = _save_feedback_to_sheet(
                     feedback_type=feedback_type,
-                    student_id=student_id.strip(),
-                    student_name=student_name.strip(),
+                    student_id=auto_id,
+                    student_name=auto_name,
                     reply_email=reply_email.strip(),
                     content=content.strip(),
                 )
@@ -1841,9 +2264,13 @@ def _render_footer():
 # ─────────────────────────────────────────────────────────────────────────────
 # 메인
 def main():
-    # URL 파라미터를 가장 먼저 읽어 세션에 기록 (이후 set_route로 파라미터가 지워지기 전에)
-    _is_ot_mode()
-    _get_subject_filter()
+    # ── 로그인 게이트 ──────────────────────────────────────────────────────────
+    if not st.session_state.get("_authenticated", False):
+        login_view()
+        _render_footer()
+        st.stop()
+    # ──────────────────────────────────────────────────────────────────────────
+
     _log_visit()   # 세션 최초 1회 방문 기록
     registry = discover_activities()
     sidebar_navigation(registry)
@@ -1852,6 +2279,8 @@ def main():
 
     if view == "home":
         home_view()
+    elif view == "change_password":
+        change_password_view()
     elif view == "feedback":
         feedback_view()
     elif view == "feedback_board":

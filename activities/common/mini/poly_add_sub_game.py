@@ -7,10 +7,21 @@ import datetime
 import streamlit as st
 import streamlit.components.v1 as components
 import requests
+from reflection_utils import render_reflection_form
 
 # ── Google Sheets 연동 ─────────────────────────────────────────────────────
-_GAS_URL    = "https://script.google.com/macros/s/AKfycbySLDnSYGfQmqrtpuMyIju5hiEf7Lesp6bnWzplm3oZD4WHXESl1XJmsXT_EVcKOJI/exec"   # ← 선생님이 발급한 GAS URL로 교체
+_GAS_URL = st.secrets["gas_url_common"]
 _SHEET_NAME = "다항식의덧셈뺄셈"
+
+_QUESTIONS = [
+    {"type": 'markdown', "text": '**📝 이 활동과 관련된 문제 2개를 스스로 만들고, 풀어보세요**'},
+    {"key": '문제1', "label": '문제 1 (두 다항식의 덧셈 또는 뺄셈 문제)', "type": 'text_area', "height": 70},
+    {"key": '답1', "label": '문제 1의 정답', "type": 'text_input'},
+    {"key": '문제2', "label": '문제 2 (두 다항식의 덧셈 또는 뺄셈 문제)', "type": 'text_area', "height": 70},
+    {"key": '답2', "label": '문제 2의 정답', "type": 'text_input'},
+    {"key": '새롭게알게된점', "label": '💡 이 활동을 통해 새롭게 알게 된 점', "type": 'text_area', "height": 90},
+    {"key": '느낀점', "label": '💬 이 활동을 하면서 느낀 점', "type": 'text_area', "height": 90},
+]
 
 META = {
     "title":       "다항식의 덧셈과 뺄셈 : 동류항 연결 게임",
@@ -543,57 +554,4 @@ def render():
     components.html(_GAME_HTML, height=720, scrolling=True)
 
     # ── 성찰 기록 폼 ────────────────────────────────────────────────────────
-    _render_reflection_form(_SHEET_NAME, _GAS_URL)
-
-
-def _render_reflection_form(sheet_name: str, gas_url: str):
-    st.divider()
-    st.subheader("✍️ 활동 후 성찰 기록")
-    st.caption("아래 질문에 답하고 **제출하기** 버튼을 눌러주세요.")
-
-    with st.form(f"reflection_{sheet_name}", clear_on_submit=True):
-        c1, c2 = st.columns(2)
-        with c1:
-            student_id = st.text_input("학번")
-        with c2:
-            name = st.text_input("이름")
-
-        st.markdown("**📝 이 활동과 관련된 문제 2개를 스스로 만들고, 풀어보세요**")
-        q1 = st.text_area("문제 1 (두 다항식의 덧셈 또는 뺄셈 문제)", height=70)
-        a1 = st.text_input("문제 1의 정답")
-        q2 = st.text_area("문제 2 (두 다항식의 덧셈 또는 뺄셈 문제)", height=70)
-        a2 = st.text_input("문제 2의 정답")
-
-        new_learning = st.text_area("💡 이 활동을 통해 새롭게 알게 된 점", height=90)
-        feeling      = st.text_area("💬 이 활동을 하면서 느낀 점", height=90)
-
-        submitted = st.form_submit_button("📤 제출하기", use_container_width=True, type="primary")
-
-    if submitted:
-        if not student_id or not name:
-            st.warning("학번과 이름을 입력해주세요.")
-        elif gas_url == "YOUR_COMMON1_GAS_WEB_APP_URL":
-            st.error(
-                "⚠️ Google Sheets 연동 URL이 아직 설정되지 않았습니다.  \n"
-                "선생님이 Google Apps Script를 배포하고 `_GAS_URL`을 교체해야 합니다."
-            )
-        else:
-            payload = {
-                "sheet":     sheet_name,
-                "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "학번":      student_id,
-                "이름":      name,
-                "문제1":     q1, "답1": a1,
-                "문제2":     q2, "답2": a2,
-                "새롭게알게된점": new_learning,
-                "느낀점":    feeling,
-            }
-            try:
-                resp = requests.post(gas_url, json=payload, timeout=10)
-                if resp.status_code == 200:
-                    st.success(f"✅ {name}님의 기록이 제출되었습니다!")
-                    st.balloons()
-                else:
-                    st.error(f"제출 중 오류 (상태코드: {resp.status_code})")
-            except Exception as e:
-                st.error(f"네트워크 오류: {e}")
+    render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
