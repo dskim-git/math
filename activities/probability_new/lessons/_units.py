@@ -111,36 +111,25 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "이항정리",
-                    "src": "https://www.canva.com/design/DAGNl1q_da0/TXTFw1qR_ph2kjpXxzdivQ/view?embed",
+                    "src": "https://www.canva.com/design/DAHDnrsVQ_I/5wfhrpP9svjGEfanwHR0hA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "이항정리의 활용",
+                    "src": "https://www.canva.com/design/DAHDnr-AdUg/f09JAABVbg4QfGwUTfPeug/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
                     "title": "파스칼의 삼각형",
-                    "src": "https://www.canva.com/design/DAGNlypGJuM/dZGjjww0s4Ix0bH_wUY5nQ/view?embed",
+                    "src": "https://www.canva.com/design/DAHDnplxYaU/QNqLkvHNlUrPG5kyd2253A/view?embed",
                     "height": 800
                 },
                 {
                     "type": "gsheet",
                     "title": "엑셀로 만든 파스칼의 삼각형",
                     "src": "https://docs.google.com/spreadsheets/d/17F8RhpLp8XNhiOICfUlxnFFjDEQCCjLVAQyUADkUjz8/edit?usp=drivesdk",
-                    "height": 800
-                }
-                # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
-                # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
-                # {"type":"url","title":"보충 설명","src":"https://..."},
-            ]},
-          {"key": "1-2-2", "label": "이항정리의 활용", "items": [
-                {
-                    "type": "canva",
-                    "title": "이항정리의 활용",
-                    "src": "https://www.canva.com/design/DAGNl0IVvy0/Sk5roP86VF-FxyTI3pZ6HQ/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "이항계수의 성질",
-                    "src": "https://www.canva.com/design/DAGNl45UHuA/G9hddVZMCJM13F43M7hZYw/view?embed",
                     "height": 800
                 },
                 {
@@ -149,20 +138,32 @@ CURRICULUM = [
                     "subject": "probability",
                     "slug": "pascal_modulo_view"
                 }
+                # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
+                # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
+                # {"type":"url","title":"보충 설명","src":"https://..."},
+            ]},
+          {"key": "1-2-2", "label": "중단원 마무리 문제", "items": [
+                {
+                    "type": "pdf",
+                    "title": "중단원 마무리 문제",
+                    "src": "https://drive.google.com/file/d/1RUqvu5ANdTAYE8NJX8Jvby0vOKEr8ICC/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1RUqvu5ANdTAYE8NJX8Jvby0vOKEr8ICC"  # (선택) 다운로드 버튼 표시용
+                }
             ]},
         ],
       },
       {
         "key": "1-3",
-        "label": "대단원 문제",
+        "label": "대단원 평가 문제",
         # 소단원 없이 이 레벨에서 바로 items를 둘 수도 있습니다.
         "items": [
                 {
                     "type": "pdf",
-                    "title": "단원평가문제",
-                    "src": "https://drive.google.com/file/d/1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW/preview",
+                    "title": "대단원 평가 문제",
+                    "src": "https://drive.google.com/file/d/1cbOtEmSGo-LbEInmixGozEc49KZyWbK-/preview",
                     #"height": 900,
-                    "download": "https://drive.google.com/uc?export=download&id=1P6TGjB_BKCNZRSts-aE-sPG7L7pyyZZW"  # (선택) 다운로드 버튼 표시용
+                    "download": "https://drive.google.com/uc?export=download&id=1cbOtEmSGo-LbEInmixGozEc49KZyWbK-"  # (선택) 다운로드 버튼 표시용
                 }
         ],
       },
