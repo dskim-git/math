@@ -279,7 +279,7 @@ def _bump_last_login(ws_name: str, id_col: str, id_val: str) -> None:
             return
         id_idx     = header.index(id_col) + 1
         login_idx  = header.index("마지막로그인") + 1
-        now_str    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_str    = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
         for i, row in enumerate(ws.get_all_records(), start=2):
             if str(row.get(id_col, "")).strip() == id_val:
                 ws.update_cell(i, login_idx, now_str)
@@ -432,7 +432,7 @@ def register_student(student_num: str, name: str, password: str,
         return False, "워크시트 연결에 실패했습니다."
 
     hashed  = hash_password(password)
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_str = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
     ws.append_row([student_num, name, auto_id, hashed,
                    grade, STATUS_PENDING, now_str, ""])
     st.cache_data.clear()
@@ -460,7 +460,7 @@ def register_general(name: str, user_id: str, password: str,
         return False, "워크시트 연결에 실패했습니다."
 
     hashed  = hash_password(password)
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_str = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
     ws.append_row([name, user_id, purpose, hashed,
                    "", STATUS_PENDING, now_str, ""])
     st.cache_data.clear()

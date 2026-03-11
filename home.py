@@ -11,7 +11,9 @@ import smtplib
 import html as _html
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+_KST = timezone(timedelta(hours=9))  # 한국 표준시 (UTC+9)
 
 # 인증 모듈
 from auth_utils import (
@@ -352,7 +354,7 @@ def _send_register_notify_email(user_type: str, name: str, user_id: str,
             return
         type_label = "학생" if user_type == "student" else "일반인"
         subject_line = f"[MathLab] 신규 가입 신청 – {type_label} {name}({user_id})"
-        now_str  = datetime.now().strftime("%Y년 %m월 %d일 %H:%M")
+        now_str  = datetime.now(_KST).strftime("%Y년 %m월 %d일 %H:%M")
         body     = (
             f"<h3>신규 가입 신청 알림</h3>"
             f"<p>유형: {type_label}<br>이름: {_html.escape(name)}<br>"
@@ -850,6 +852,128 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
             _do_rerun()
     _admin_mode_ui()
 
+# ─────────────────────────────────────────────────────────────────────────────
+# 관리자 홈 대시보드
+def _render_admin_dashboard():
+    """관리자 홈 대시보드: 처리 필요 항목 요약 + 빠른 바로가기"""
+    if not _is_dev_mode():
+        return
+
+    from auth_utils import (
+        _cached_students, _cached_general, _cached_lockout,
+        _get_users_spreadsheet_id, STATUS_PENDING,
+    )
+
+    sheet_id   = _get_users_spreadsheet_id()
+    students   = _cached_students(sheet_id)
+    general    = _cached_general(sheet_id)
+    lockouts   = _cached_lockout(sheet_id)
+    fb_rows    = _load_feedback_from_sheet()
+
+    pending_s  = sum(1 for r in students if str(r.get("승인상태", "")).strip() == STATUS_PENDING)
+    pending_g  = sum(1 for r in general  if str(r.get("승인상태", "")).strip() == STATUS_PENDING)
+    total_pend = pending_s + pending_g
+    locked_cnt = sum(1 for r in lockouts if str(r.get("잠금상태", "")).strip() == "잠금")
+
+    unconfirmed = 0
+    if fb_rows and len(fb_rows) > 1:
+        hdr = fb_rows[0]
+        try:
+            ci = hdr.index("확인여부")
+            unconfirmed = sum(
+                1 for r in fb_rows[1:]
+                if len(r) <= ci or not str(r[ci]).strip()
+            )
+        except ValueError:
+            unconfirmed = len(fb_rows) - 1
+
+    has_alert = total_pend > 0 or unconfirmed > 0 or locked_cnt > 0
+
+    st.markdown("""
+    <style>
+    .adm-stat {
+        border: 1px solid rgba(128,128,128,0.18);
+        border-radius: 10px;
+        padding: 0.7rem 0.8rem;
+        text-align: center;
+        height: 100%;
+    }
+    .adm-stat-lbl  { font-size:0.78rem; color:var(--secondary-text-color); margin-bottom:0.2rem; }
+    .adm-stat-val  { font-size:1.9rem; font-weight:800; line-height:1.1; margin-bottom:0.15rem; }
+    .adm-stat-sub  { font-size:0.72rem; color:var(--secondary-text-color); }
+    .adm-stat-ok   { color:#22c55e; }
+    .adm-stat-bad  { color:#ef4444; }
+    .adm-shortcut-label {
+        font-size:0.78rem; font-weight:600;
+        color:var(--secondary-text-color);
+        text-align:center; margin-bottom:0.4rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    with st.container(border=True):
+        title_col, refresh_col = st.columns([5, 1])
+        with title_col:
+            alert_msg = "⚠️ 처리 필요한 항목이 있습니다" if has_alert else "✅ 현재 처리 대기 항목 없음"
+            st.markdown(
+                f"##### 📋 관리자 현황 &nbsp;"
+                f"<span style='font-size:0.85rem;font-weight:400;"
+                f"color:var(--secondary-text-color);'>{alert_msg}</span>",
+                unsafe_allow_html=True,
+            )
+        with refresh_col:
+            if st.button("🔄", key="_adm_dash_refresh", help="현황 새로고침"):
+                st.cache_data.clear()
+                _do_rerun()
+
+        col_stats, col_shortcuts = st.columns([3, 1], gap="medium")
+
+        with col_stats:
+            m1, m2, m3 = st.columns(3, gap="small")
+            with m1:
+                vc  = "adm-stat-bad" if total_pend > 0 else "adm-stat-ok"
+                sub = f"학생 {pending_s}명 · 일반인 {pending_g}명" if total_pend > 0 else "대기 없음"
+                st.markdown(
+                    f'<div class="adm-stat">'
+                    f'<div class="adm-stat-lbl">👥 가입 승인 대기</div>'
+                    f'<div class="adm-stat-val {vc}">{total_pend}</div>'
+                    f'<div class="adm-stat-sub">{sub}</div></div>',
+                    unsafe_allow_html=True,
+                )
+            with m2:
+                vc  = "adm-stat-bad" if unconfirmed > 0 else "adm-stat-ok"
+                sub = f"미확인 {unconfirmed}건" if unconfirmed > 0 else "모두 확인됨"
+                st.markdown(
+                    f'<div class="adm-stat">'
+                    f'<div class="adm-stat-lbl">💬 미확인 피드백</div>'
+                    f'<div class="adm-stat-val {vc}">{unconfirmed}</div>'
+                    f'<div class="adm-stat-sub">{sub}</div></div>',
+                    unsafe_allow_html=True,
+                )
+            with m3:
+                vc  = "adm-stat-bad" if locked_cnt > 0 else "adm-stat-ok"
+                sub = "잠금 해제 필요" if locked_cnt > 0 else "잠금 없음"
+                st.markdown(
+                    f'<div class="adm-stat">'
+                    f'<div class="adm-stat-lbl">🔒 잠금 계정</div>'
+                    f'<div class="adm-stat-val {vc}">{locked_cnt}</div>'
+                    f'<div class="adm-stat-sub">{sub}</div></div>',
+                    unsafe_allow_html=True,
+                )
+
+        with col_shortcuts:
+            st.markdown(
+                '<div class="adm-shortcut-label">⚡ 바로가기</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button("👥 회원관리", use_container_width=True, key="_adm_dash_member"):
+                st.switch_page("pages/97_회원관리.py")
+            if st.button("📋 진도표", use_container_width=True, key="_adm_dash_schedule"):
+                st.switch_page("pages/98_진도표.py")
+            if st.button("📥 피드백 게시판", use_container_width=True, key="_adm_dash_feedback"):
+                set_route("feedback_board"); _do_rerun()
+
+
 def _inject_home_styles():
     """홈 뷰의 CSS 스타일을 주입합니다."""
     st.markdown(
@@ -922,7 +1046,10 @@ def home_view():
         """,
         unsafe_allow_html=True,
     )
-    
+
+    # 관리자 모드: 현황 대시보드 표시
+    _render_admin_dashboard()
+
     # 교과별 아이콘과 설명 데이터
     subject_data = {
         "common": {
@@ -1631,20 +1758,43 @@ def feedback_board_view():
     # 최신 순으로
     filtered = filtered.iloc[::-1].reset_index(drop=True)
 
-    st.caption(f"전체 {len(df)-0}건 · 필터 결과 {len(filtered)}건")
+    has_confirm_col = "확인여부" in df.columns
+    unconfirmed_total = 0
+    if has_confirm_col:
+        unconfirmed_total = int((df["확인여부"].fillna("").str.strip() != "확인").sum())
+    else:
+        unconfirmed_total = len(df)
+
+    st.caption(
+        f"전체 {len(df)}건 · 필터 결과 {len(filtered)}건"
+        + (f" · 미확인 {unconfirmed_total}건" if unconfirmed_total > 0 else " · 모두 확인됨")
+    )
 
     for _, row in filtered.iterrows():
-        icon = "🛠" if "오류" in row["유형"] else "💡"
+        icon = "🛠" if "오류" in str(row.get("유형", "")) else "💡"
+        is_confirmed = has_confirm_col and str(row.get("확인여부", "")).strip() == "확인"
+        check_badge  = " ✅" if is_confirmed else " 🔴"
         with st.expander(
-            f"{icon} [{row['접수시각']}]  {row['이름']}({row['학번']})  —  {row['유형']}",
+            f"{icon}{check_badge} [{row['접수시각']}]  {row['이름']}({row['학번']})  —  {row['유형']}",
             expanded=False,
         ):
-            st.markdown(f"**답변 이메일:** {row['답변이메일'] or '(미입력)'}")
+            fb_ts = str(row.get("접수시각", ""))
+            if is_confirmed:
+                st.caption("✅ 확인 완료된 항목입니다.")
+            else:
+                if st.button("✅ 확인 완료로 표시", key=f"fb_chk_{fb_ts}",
+                             type="primary", use_container_width=False):
+                    if _mark_feedback_checked(fb_ts):
+                        st.success("확인 완료로 표시했습니다.")
+                        st.rerun()
+                    else:
+                        st.error("업데이트에 실패했습니다.")
+            st.markdown(f"**답변 이메일:** {row.get('답변이메일', '') or '(미입력)'}")
             st.markdown("**내용:**")
             st.markdown(
                 f"<div style='background:#f9f9f9;border:1px solid #ddd;padding:10px;"
                 f"border-radius:6px;white-space:pre-wrap;line-height:1.6'>"
-                f"{row['내용']}</div>",
+                f"{row.get('내용', '')}</div>",
                 unsafe_allow_html=True,
             )
 
@@ -1701,7 +1851,7 @@ def _save_feedback_to_sheet(
     if ws is None:
         return False
     try:
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_str = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
         ws.append_row([
             now_str,
             feedback_type,
@@ -1723,6 +1873,30 @@ def _load_feedback_from_sheet() -> "list[list]":
         return ws.get_all_values()
     except Exception:
         return []
+
+
+def _mark_feedback_checked(timestamp_str: str) -> bool:
+    """피드백 행의 '확인여부'를 '확인'으로 업데이트합니다."""
+    ws = _get_or_create_feedback_worksheet()
+    if ws is None:
+        return False
+    try:
+        all_vals = ws.get_all_values()
+        if not all_vals:
+            return False
+        header = all_vals[0]
+        if "확인여부" in header:
+            col_idx = header.index("확인여부") + 1
+        else:
+            col_idx = len(header) + 1
+            ws.update_cell(1, col_idx, "확인여부")
+        for i, row in enumerate(all_vals[1:], start=2):
+            if row and len(row) > 0 and row[0] == timestamp_str:
+                ws.update_cell(i, col_idx, "확인")
+                return True
+        return False
+    except Exception:
+        return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1764,7 +1938,7 @@ def _log_visit() -> None:
         ws = _get_or_create_visit_worksheet()
         if ws is None:
             return
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_str = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
         ws.append_row([now_str, subject_filter or "(전체)", user_id])
     except Exception:
         pass   # 방문 기록 실패가 앱을 방해하지 않도록
@@ -1953,7 +2127,7 @@ def visit_stats_view():
     df = df.dropna(subset=["방문시각"])
     df["날짜"] = df["방문시각"].dt.date
 
-    today     = pd.Timestamp.now().normalize()
+    today     = pd.Timestamp(datetime.now(_KST).date())
     week_ago  = today - pd.Timedelta(days=6)
     month_ago = today - pd.Timedelta(days=29)
 
@@ -2192,7 +2366,7 @@ def _send_feedback_email(
     s_name  = _clean(student_name)
     s_reply = _clean(reply_email)
     f_type  = _clean(feedback_type)
-    now_str = datetime.now().strftime("%Y년 %m월 %d일 %H:%M")
+    now_str = datetime.now(_KST).strftime("%Y년 %m월 %d일 %H:%M")
 
     subject_line = f"[MathLab 피드백] {f_type} – {s_name}({s_id})"
 
@@ -2401,8 +2575,86 @@ def _render_footer():
         _privacy_policy_dialog()
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 로컬 디버깅 패널
+def _render_debug_sidebar():
+    """로컬 개발 환경 전용 빠른 로그인 패널.
+    .streamlit/secrets.toml 에  local_debug_mode = true  를 추가하면 활성화됩니다.
+    """
+    try:
+        is_debug = bool(st.secrets.get("local_debug_mode", False))
+    except Exception:
+        is_debug = False
+    if not is_debug:
+        return
+
+    _role_map = {
+        "👤 (로그인 안함)": None,
+        "🔧 관리자": {
+            "_authenticated": True, "_user_type": "admin",
+            "_user_id": "admin",    "_user_name": "관리자",
+            "_dev_mode": True,       "_login_allowed_subjects": None,
+        },
+        "🎓 학생 (테스트)": {
+            "_authenticated": True, "_user_type": "student",
+            "_user_id": "202601001", "_user_name": "테스트학생",
+            "_dev_mode": False,      "_login_allowed_subjects": None,
+        },
+        "👤 일반인 (테스트)": {
+            "_authenticated": True, "_user_type": "general",
+            "_user_id": "test_general", "_user_name": "테스트일반인",
+            "_dev_mode": False,          "_login_allowed_subjects": None,
+        },
+    }
+
+    with st.sidebar:
+        st.markdown(
+            "<div style='background:rgba(255,165,0,0.15);border:1px solid "
+            "rgba(255,165,0,0.5);border-radius:8px;padding:0.4rem 0.7rem;"
+            "margin:0.5rem 0 0.3rem;font-size:0.82rem;font-weight:700;'>🐛 LOCAL DEBUG</div>",
+            unsafe_allow_html=True,
+        )
+        # 현재 로그인 상태 표시
+        cur_type = st.session_state.get("_user_type", "")
+        cur_name = st.session_state.get("_user_name", "")
+        if st.session_state.get("_authenticated"):
+            type_icon = {"admin": "🔧", "student": "🎓", "general": "👤"}.get(cur_type, "👤")
+            st.caption(f"현재: {type_icon} {cur_name}")
+        else:
+            st.caption("현재: 비로그인")
+
+        c1, c2 = st.columns([3, 1])
+        with c1:
+            sel = st.selectbox(
+                "역할", list(_role_map.keys()),
+                key="_dbg_role_sel", label_visibility="collapsed",
+            )
+        with c2:
+            if st.button("적용", key="_dbg_apply", use_container_width=True):
+                _clear_keys = [
+                    "_authenticated", "_user_type", "_user_id", "_user_name",
+                    "_dev_mode", "_login_allowed_subjects", "_visit_logged",
+                ]
+                for k in _clear_keys:
+                    st.session_state.pop(k, None)
+                data = _role_map.get(sel)
+                if data:
+                    st.session_state.update(data)
+                _do_rerun()
+        st.markdown("---")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 메인
 def main():
+    # 로컬 디버깅 패널 (local_debug_mode = true 시 활성화)
+    _render_debug_sidebar()
+
+    # sub-page에서의 라우트 이동 요청 처리
+    if "_nav_to" in st.session_state:
+        target = st.session_state.pop("_nav_to")
+        set_route(target)
+        _do_rerun()
+
     # ── 로그인 게이트 ──────────────────────────────────────────────────────────
     if not st.session_state.get("_authenticated", False):
         login_view()

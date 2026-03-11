@@ -39,6 +39,18 @@ section[data-testid="stSidebar"] nav
 st.sidebar.page_link("home.py", label="🏠 홈으로 돌아가기",
                      use_container_width=True)
 
+# 관리자 기능 바로가기
+st.sidebar.divider()
+st.sidebar.caption("🔧 관리자 기능")
+if st.sidebar.button("📋 진도표 관리", use_container_width=True, key="_97_nav_schedule"):
+    st.switch_page("pages/98_진도표.py")
+if st.sidebar.button("📥 피드백 게시판", use_container_width=True, key="_97_nav_feedback"):
+    st.session_state["_nav_to"] = "feedback_board"
+    st.switch_page("home.py")
+if st.sidebar.button("📊 방문자 통계", use_container_width=True, key="_97_nav_stats"):
+    st.session_state["_nav_to"] = "visit_stats"
+    st.switch_page("home.py")
+
 # ── 접근 제어 ─────────────────────────────────────────────────────────────────
 if not st.session_state.get("_authenticated", False):
     st.error("🔒 로그인이 필요합니다.")
@@ -183,9 +195,13 @@ with tab_students:
         st.divider()
         st.markdown("#### 상태 변경 / 비밀번호 재설정")
 
-        student_ids = [str(r.get("아이디", "")) for r in students_all]
-        sel_uid = st.selectbox("학생 선택 (아이디)", student_ids,
-                               key="mgmt_sel_student")
+        # "이름(아이디)" 형식으로 표시
+        def _s_label(r):
+            return f"{r.get('이름', '')}({r.get('아이디', '')})"
+        student_options = {_s_label(r): str(r.get("아이디", "")) for r in students_all}
+        sel_label_s = st.selectbox("학생 선택", list(student_options.keys()),
+                                   key="mgmt_sel_student")
+        sel_uid = student_options[sel_label_s]
         sel_row = next((r for r in students_all
                         if str(r.get("아이디", "")) == sel_uid), {})
         st.caption(
@@ -246,9 +262,13 @@ with tab_general:
         st.divider()
         st.markdown("#### 그룹 배정 / 상태 변경 / 비밀번호 재설정")
 
-        gen_ids = [str(r.get("아이디", "")) for r in general_all]
-        sel_gid = st.selectbox("일반인 선택 (아이디)", gen_ids,
-                               key="mgmt_sel_general")
+        # "이름(아이디)" 형식으로 표시
+        def _g_label(r):
+            return f"{r.get('이름', '')}({r.get('아이디', '')})"
+        general_options = {_g_label(r): str(r.get("아이디", "")) for r in general_all}
+        sel_glabel = st.selectbox("일반인 선택", list(general_options.keys()),
+                                  key="mgmt_sel_general")
+        sel_gid = general_options[sel_glabel]
         sel_grow = next((r for r in general_all
                          if str(r.get("아이디", "")) == sel_gid), {})
         st.caption(
