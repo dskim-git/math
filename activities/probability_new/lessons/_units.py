@@ -79,6 +79,12 @@ CURRICULUM = [
                     "subject": "probability_new",
                     "slug": "mini/rep_comb_stars_bars",
                 },
+                {
+                    "type": "activity",
+                    "title": "미니: 다항식 전개의 항의 개수",
+                    "subject": "probability_new",
+                    "slug": "mini/poly_expand_term_count",
+                },
             ]},
           {"key": "1-1-3", "label": "중단원 마무리 문제", "items": [
                 {
