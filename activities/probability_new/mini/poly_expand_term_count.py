@@ -32,7 +32,7 @@ def render():
         "$(1+x+x^2)^n$ 처럼 한 문자의 이차 이상 다항식은 **이항정리** — "
         "두 경우를 확실히 구분해 봅시다!"
     )
-    components.html(_build_html(), height=2200, scrolling=True)
+    components.html(_build_html(), height=1600, scrolling=True)
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
 
 

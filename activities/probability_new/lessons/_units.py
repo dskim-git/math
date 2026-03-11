@@ -85,6 +85,12 @@ CURRICULUM = [
                     "subject": "probability_new",
                     "slug": "mini/poly_expand_term_count",
                 },
+                {
+                    "type": "activity",
+                    "title": "미니: 함수의 개수와 경우의 수",
+                    "subject": "probability_new",
+                    "slug": "mini/function_count_lab",
+                },
             ]},
           {"key": "1-1-3", "label": "중단원 마무리 문제", "items": [
                 {
