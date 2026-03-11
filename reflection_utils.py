@@ -26,9 +26,12 @@ questions 항목 형식
 """
 
 import datetime
+from datetime import timezone, timedelta
 
 import requests
 import streamlit as st
+
+_KST = timezone(timedelta(hours=9))
 
 # ── 성찰 로그 설정 ─────────────────────────────────────────────────────────────
 _REFLECTION_LOG_SHEET  = "성찰기록"
@@ -95,7 +98,7 @@ def _log_reflection_submission(
         ws = _get_or_create_reflection_log_ws()
         if ws is None:
             return
-        now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_str = datetime.datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
         ws.append_row([now_str, subject, sheet_name, user_id, user_name])
     except Exception:
         pass  # 로그 실패가 활동 진행을 방해하지 않도록
@@ -181,7 +184,7 @@ def render_reflection_form(
     if submitted:
         payload = {
             "sheet":     sheet_name,
-            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": datetime.datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S"),
             "학번":      _short_id,
             "이름":      student_name,
             **values,

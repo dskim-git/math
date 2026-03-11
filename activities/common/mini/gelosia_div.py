@@ -10,13 +10,11 @@ _GAS_URL = st.secrets["gas_url_common"]
 _SHEET_NAME = "갤로시아나눗셈"
 
 _QUESTIONS = [
-    {"type": 'markdown', "text": '**📝 다항식 버전 나눗셈 한 문제를 직접 풀고 과정을 기록해보세요**'},
-    {"key": '다항식문제', "label": '선택한 다항식 나눗셈 문제', "type": 'text_area', "height": 56, "placeholder": '예) (2x³−3x²+x+4) ÷ (2x+3)'},
-    {"key": '다항식답', "label": '격자를 채우고 얻은 몫 다항식과 나머지', "type": 'text_input'},
-    {"type": 'markdown', "text": '**💬 갤로시아 나눗셈과 조립제법의 공통점·차이점을 적어보세요**'},
-    {"key": '비교분석', "label": '갤로시아 나눗셈 vs 조립제법 비교', "type": 'text_area', "height": 90},
+    {"type": 'markdown', "text": '**📝 아래 질문에 자신의 생각을 서술해보세요**'},
+    {"key": '문제1', "label": '문제 1 : 갤로시아 나눗셈으로 다항식 나눗셈 한 가지를 해보세요. 어떤 문제를 골랐는지, 격자를 어떻게 채웠는지, 몫과 나머지가 무엇인지 서술하세요.', "type": 'text_area', "height": 90},
+    {"key": '문제2', "label": '문제 2 : 갤로시아 나눗셈과 조립제법(합성제법)의 공통점과 차이점은 무엇인가요?', "type": 'text_area', "height": 90},
     {"key": '새롭게알게된점', "label": '💡 이 활동을 통해 새롭게 알게 된 점', "type": 'text_area', "height": 90},
-    {"key": '느낀점', "label": '💬 이 활동을 하면서 느낀 점', "type": 'text_area', "height": 80},
+    {"key": '느낀점', "label": '💬 이 활동을 하면서 느낀 점', "type": 'text_area', "height": 90},
 ]
 
 META = {

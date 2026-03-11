@@ -14,13 +14,10 @@ _GAS_URL = st.secrets["gas_url_common"]
 _SHEET_NAME = "갤로시아곱셈"
 
 _QUESTIONS = [
-    {"type": 'markdown', "text": '**📝 수 버전 한 문제를 직접 선택해 풀고 과정을 기록해보세요**'},
-    {"key": '수문제', "label": '선택한 수 곱셈 문제 (예: 73 × 28 등)', "type": 'text_area', "height": 56, "placeholder": '예) 73 × 28'},
-    {"key": '수답', "label": '격자를 채우고 얻은 최종 답', "type": 'text_input'},
-    {"type": 'markdown', "text": '**📝 다항식 버전 한 문제를 직접 선택해 풀고 과정을 기록해보세요**'},
-    {"key": '다항식문제', "label": '선택한 다항식 곱셈 문제', "type": 'text_area', "height": 56, "placeholder": '예) (3x+1)(2x²−5x+4)'},
-    {"key": '다항식답', "label": '격자를 채우고 얻은 곱 다항식', "type": 'text_input'},
-    {"key": '새롭게알게된점', "label": '💡 이 활동을 통해 새롭게 알게 된 점\n(예: 갤로시아 곱셈과 일반 곱셈이 어떻게 연결되는지 등)', "type": 'text_area', "height": 100},
+    {"type": 'markdown', "text": '**📝 아래 질문에 자신의 생각을 서술해보세요**'},
+    {"key": '문제1', "label": '문제 1 : 갤로시아 격자 곱셈으로 수 곱셈 한 가지를 해보세요. 어떤 수를 골랐는지, 격자를 어떻게 채웠는지, 최종 답이 무엇인지 서술하세요.', "type": 'text_area', "height": 90},
+    {"key": '문제2', "label": '문제 2 : 갤로시아 곱셈 방법과 우리가 흔히 사용하는 세로 곱셈의 원리가 어떻게 연결되는지 설명해보세요.', "type": 'text_area', "height": 90},
+    {"key": '새롭게알게된점', "label": '💡 이 활동을 통해 새롭게 알게 된 점', "type": 'text_area', "height": 90},
     {"key": '느낀점', "label": '💬 이 활동을 하면서 느낀 점', "type": 'text_area', "height": 90},
 ]
 

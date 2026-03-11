@@ -15,8 +15,10 @@
 import re
 import bcrypt
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Optional
+
+_KST = timezone(timedelta(hours=9))
 
 # ── 교과 목록 (home.py의 SUBJECTS와 동기화 유지) ───────────────────────────
 ALL_SUBJECTS: dict[str, str] = {
@@ -217,7 +219,7 @@ def increment_fail_count(user_id: str) -> int:
         ws = _get_or_create_ws(client, sheet_id, WS_LOCKOUT, LOCKOUT_HEADER, rows=200)
         if not ws:
             return 0
-        now_str  = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        now_str  = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
         header   = ws.row_values(1)
         cnt_idx  = header.index("실패횟수")     + 1
         ts_idx   = header.index("최근실패시각") + 1
@@ -419,7 +421,7 @@ def register_student(student_num: str, name: str, password: str,
     if not client or not sheet_id:
         return False, "데이터베이스 연결에 실패했습니다."
 
-    year    = datetime.now().year
+    year    = datetime.now(_KST).year
     auto_id = f"{year}{student_num}"
 
     if is_student_num_taken(student_num):
