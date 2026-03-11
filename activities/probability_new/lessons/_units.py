@@ -72,7 +72,13 @@ CURRICULUM = [
                     "title": "중복조합",
                     "src": "https://www.canva.com/design/DAHC5BwlzB0/5UHPurQTyTDyvihjWyhvZg/view?embed",
                     "height": 800
-                }
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 중복조합의 3가지 이해 방법",
+                    "subject": "probability_new",
+                    "slug": "mini/rep_comb_stars_bars",
+                },
             ]},
           {"key": "1-1-3", "label": "중단원 마무리 문제", "items": [
                 {
