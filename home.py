@@ -399,13 +399,19 @@ def _inject_login_style(hide_sidebar: bool = True):
     .stApp > .main { background: transparent !important; }
     header[data-testid="stHeader"], .stDeployButton, footer { display: none !important; }
 
+    /* Streamlit 기본 상하 패딩 축소 → 한 화면에 들어오게 */
+    .block-container, [data-testid="stMainBlockContainer"] {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1rem !important;
+    }
+
     div[data-testid="stForm"] {
         background: rgba(255, 255, 255, 0.04) !important;
         backdrop-filter: blur(20px) !important;
         -webkit-backdrop-filter: blur(20px) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 20px !important;
-        padding: 36px 40px 32px !important;
+        border-radius: 16px !important;
+        padding: 20px 24px 16px !important;
         box-shadow:
             0 4px 6px rgba(0, 0, 0, 0.3),
             0 20px 60px rgba(0, 0, 0, 0.5),
@@ -465,6 +471,10 @@ def _inject_login_style(hide_sidebar: bool = True):
         box-shadow: 0 8px 28px rgba(124, 58, 237, 0.45), 0 0 0 1px rgba(139, 92, 246, 0.3) !important;
     }
 
+    /* 입력 필드 간 세로 여백 축소 */
+    .stTextInput { margin-bottom: 0 !important; }
+    [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] { gap: 0.3rem !important; }
+
     .stTabs [data-baseweb="tab-list"] {
         background: transparent !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -476,7 +486,7 @@ def _inject_login_style(hide_sidebar: bool = True):
         border: none !important;
         font-weight: 500 !important;
         font-size: 0.9rem !important;
-        padding: 10px 20px !important;
+        padding: 8px 20px !important;
     }
     .stTabs [aria-selected="true"] {
         color: #a78bfa !important;
@@ -525,24 +535,24 @@ def _render_login_header():
         transform: translate(-50%, -50%);
         pointer-events: none; z-index: 0;
     }
-    .mathlab-header { text-align: center; margin-bottom: 16px; position: relative; z-index: 1; }
-    .mathlab-logo-icon { font-size: 68px; display: block; margin-bottom: 12px; filter: drop-shadow(0 0 22px rgba(139,92,246,0.7)); }
+    .mathlab-header { text-align: center; margin-bottom: 10px; position: relative; z-index: 1; }
+    .mathlab-logo-icon { font-size: 42px; display: block; margin-bottom: 6px; filter: drop-shadow(0 0 16px rgba(139,92,246,0.7)); }
     .mathlab-logo-title {
-        font-size: 4.2rem; font-weight: 800; letter-spacing: 8px;
+        font-size: 2.8rem; font-weight: 800; letter-spacing: 6px;
         background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 40%, #818cf8 100%);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         background-clip: text; line-height: 1.1;
         margin: 0 auto; display: inline-block;
     }
     .mathlab-divider {
-        width: 80px; height: 2px;
+        width: 60px; height: 2px;
         background: linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent);
-        margin: 16px auto 10px;
+        margin: 8px auto 6px;
     }
     .mathlab-subtitle {
-        font-size: 1.05rem !important;
-        color: rgba(255,255,255,0.45) !important;
-        letter-spacing: 4px; text-transform: uppercase; margin: 0 !important;
+        font-size: 0.78rem !important;
+        color: rgba(255,255,255,0.4) !important;
+        letter-spacing: 3px; text-transform: uppercase; margin: 0 !important;
     }
     </style>
 
@@ -675,24 +685,18 @@ def login_view():
             st.divider()
 
             if reg_type == "🎓 학생":
-                st.markdown("**학생 회원가입**")
-                st.caption(
-                    "학번과 이름을 입력하면 아이디가 자동 생성됩니다. "
-                    "예) 학번 20200 → 아이디 202620200"
-                )
+                st.caption("학번과 이름 입력 시 아이디 자동 생성. 예) 학번 20200 → 아이디 202620200")
                 with st.form("reg_student_form", clear_on_submit=True):
-                    s_num  = st.text_input("학번 *", placeholder="예: 20200",
-                                           max_chars=10)
-                    s_name = st.text_input("이름 *", placeholder="예: 홍길동",
-                                           max_chars=20)
-                    s_pw1  = st.text_input(
-                        "사용할 비밀번호 *", type="password",
-                        placeholder="8자 이상, 숫자 포함",
-                    )
-                    s_pw2  = st.text_input(
-                        "비밀번호 확인 *", type="password",
-                        placeholder="비밀번호 재입력",
-                    )
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        s_num  = st.text_input("학번 *", placeholder="예: 20200", max_chars=10)
+                    with c2:
+                        s_name = st.text_input("이름 *", placeholder="예: 홍길동", max_chars=20)
+                    c3, c4 = st.columns(2)
+                    with c3:
+                        s_pw1  = st.text_input("비밀번호 *", type="password", placeholder="8자 이상, 숫자 포함")
+                    with c4:
+                        s_pw2  = st.text_input("비밀번호 확인 *", type="password", placeholder="비밀번호 재입력")
                     sub_s = st.form_submit_button(
                         "학생 회원가입 신청", use_container_width=True,
                         type="primary",
@@ -732,28 +736,22 @@ def login_view():
                             st.error(f"❌ {msg}")
 
             else:
-                st.markdown("**일반인 회원가입**")
                 with st.form("reg_general_form", clear_on_submit=True):
-                    g_name    = st.text_input("이름 *", placeholder="예: 홍길동",
-                                              max_chars=20)
-                    g_id      = st.text_input(
-                        "사용할 아이디 *",
-                        placeholder="영문·숫자·밑줄, 4~20자",
-                        max_chars=20,
-                    )
-                    g_pw1     = st.text_input(
-                        "비밀번호 *", type="password",
-                        placeholder="8자 이상, 숫자 포함",
-                    )
-                    g_pw2     = st.text_input(
-                        "비밀번호 확인 *", type="password",
-                        placeholder="비밀번호 재입력",
-                    )
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        g_name = st.text_input("이름 *", placeholder="예: 홍길동", max_chars=20)
+                    with c2:
+                        g_id   = st.text_input("아이디 *", placeholder="영문·숫자·밑줄, 4~20자", max_chars=20)
+                    c3, c4 = st.columns(2)
+                    with c3:
+                        g_pw1  = st.text_input("비밀번호 *", type="password", placeholder="8자 이상, 숫자 포함")
+                    with c4:
+                        g_pw2  = st.text_input("비밀번호 확인 *", type="password", placeholder="비밀번호 재입력")
                     g_purpose = st.text_area(
                         "사용 목적 *",
                         placeholder="예: 학부모 / 타교 교사 / 수학 관련 연구 등",
                         max_chars=200,
-                        height=80,
+                        height=60,
                     )
                     sub_g = st.form_submit_button(
                         "일반인 회원가입 신청", use_container_width=True,
