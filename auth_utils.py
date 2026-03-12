@@ -13,6 +13,7 @@
 """
 
 import re
+import threading
 import bcrypt
 import streamlit as st
 from datetime import datetime, timezone, timedelta
@@ -96,7 +97,9 @@ def _is_valid_user_id(uid: str) -> bool:
 
 # ── Google Sheets 연결 ─────────────────────────────────────────────────────────
 
+@st.cache_resource(show_spinner=False)
 def _get_gspread_client():
+    """gspread 클라이언트를 앱 수명 동안 한 번만 생성하여 재사용합니다."""
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -546,8 +549,9 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
         grade      = str(row.get("학년", "")).strip()
         grade_perms = _cached_grade_perms(sheet_id)
         allowed    = grade_perms.get(grade, None)
-        reset_lockout(user_id)
-        _bump_last_login(WS_STUDENTS, "아이디", user_id)
+        # 쓰기 작업은 백그라운드에서 처리 (로그인 응답 지연 방지)
+        threading.Thread(target=reset_lockout,     args=(user_id,),                          daemon=True).start()
+        threading.Thread(target=_bump_last_login,  args=(WS_STUDENTS, "아이디", user_id),    daemon=True).start()
         return {
             "type": "student",
             "id": user_id,
@@ -570,8 +574,9 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
         group       = str(row.get("그룹", "")).strip()
         group_perms = _cached_group_perms(sheet_id)
         allowed     = group_perms.get(group, None) if group else None
-        reset_lockout(user_id)
-        _bump_last_login(WS_GENERAL, "아이디", user_id)
+        # 쓰기 작업은 백그라운드에서 처리 (로그인 응답 지연 방지)
+        threading.Thread(target=reset_lockout,     args=(user_id,),                          daemon=True).start()
+        threading.Thread(target=_bump_last_login,  args=(WS_GENERAL, "아이디", user_id),     daemon=True).start()
         return {
             "type": "general",
             "id": user_id,

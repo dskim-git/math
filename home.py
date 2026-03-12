@@ -12,6 +12,8 @@ import html as _html
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timezone, timedelta
+import time
+import threading
 
 _KST = timezone(timedelta(hours=9))  # 한국 표준시 (UTC+9)
 
@@ -661,7 +663,18 @@ def _admin_mode_ui():
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 활동 자동 탐색
+_REGISTRY_CACHE: Dict[str, Any] = {}   # {"data": registry, "ts": float}
+_REGISTRY_TTL = 30                      # 캐시 유효 시간(초)
+
+def _clear_registry_cache() -> None:
+    """activity 레지스트리 캐시를 무효화합니다."""
+    _REGISTRY_CACHE.clear()
+
 def discover_activities() -> Dict[str, List[Activity]]:
+    now = time.monotonic()
+    if _REGISTRY_CACHE.get("data") is not None and (now - _REGISTRY_CACHE.get("ts", 0.0)) < _REGISTRY_TTL:
+        return _REGISTRY_CACHE["data"]  # type: ignore[return-value]
+
     registry: Dict[str, List[Activity]] = {k: [] for k in SUBJECTS.keys()}
     if not ACTIVITIES_ROOT.exists():
         return registry
@@ -729,6 +742,8 @@ def discover_activities() -> Dict[str, List[Activity]]:
             key=lambda a: (rank.get(a.slug, 10_000_000), a.order, a.title)
         )
 
+    _REGISTRY_CACHE["data"] = registry
+    _REGISTRY_CACHE["ts"]   = time.monotonic()
     return registry
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -776,7 +791,10 @@ def _inject_sidebar_nav_visibility(dev: bool):
     { display: none !important; visibility: hidden !important; }
     </style>
     """, unsafe_allow_html=True)
-    components.html("""
+    # JS MutationObserver는 브라우저 세션당 한 번만 주입하면 됨
+    if "_sidebar_nav_js_injected" not in st.session_state:
+        st.session_state["_sidebar_nav_js_injected"] = True
+        components.html("""
     <script>
     (function hideSidebarNav() {
         const SELECTORS = [
@@ -924,6 +942,7 @@ def _render_admin_dashboard():
         with refresh_col:
             if st.button("🔄", key="_adm_dash_refresh", help="현황 새로고침"):
                 st.cache_data.clear()
+                _clear_registry_cache()
                 _do_rerun()
 
         col_stats, col_shortcuts = st.columns([3, 1], gap="medium")
@@ -1082,11 +1101,11 @@ def home_view():
         },
         "calculus": {
             "icon": "📈",
-            "description": "[이전 교육과정] 미적분학 수업 자료입니다.<br>관리자 모드에서만 표시됩니다."
+            "description": "[이전 교육과정]<br>미적분학 수업 자료입니다."
         },
         "probability": {
             "icon": "🎲",
-            "description": "[이전 교육과정] 확률과통계 수업 자료입니다.<br>관리자 모드에서만 표시됩니다."
+            "description": "[이전 교육과정]<br>확률과통계 수업 자료입니다."
         },
         "geometry": {
             "icon": "📐",
@@ -1932,24 +1951,34 @@ def _get_or_create_visit_worksheet():
     except Exception:
         return None
 
-def _log_visit() -> None:
-    """
-    세션당 한 번만 방문 시각과 과목 필터를 Google Sheets에 기록합니다.
-    st.session_state['_visit_logged'] 플래그로 중복 기록을 방지합니다.
-    """
-    if st.session_state.get("_visit_logged"):
-        return
-    st.session_state["_visit_logged"] = True
+def _do_log_visit_write(subject_filter: str, user_id: str) -> None:
+    """방문 기록을 Google Sheets에 씁니다 (백그라운드 스레드용)."""
     try:
-        subject_filter = st.session_state.get("_subject_filter", "(전체)")
-        user_id = st.session_state.get("_user_id", "")
         ws = _get_or_create_visit_worksheet()
         if ws is None:
             return
         now_str = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
-        ws.append_row([now_str, subject_filter or "(전체)", user_id])
+        ws.append_row([now_str, subject_filter, user_id])
     except Exception:
-        pass   # 방문 기록 실패가 앱을 방해하지 않도록
+        pass
+
+def _log_visit() -> None:
+    """
+    세션당 한 번만 방문 시각과 과목 필터를 Google Sheets에 기록합니다.
+    st.session_state['_visit_logged'] 플래그로 중복 기록을 방지합니다.
+    Sheets 쓰기는 백그라운드 스레드에서 처리하여 첫 페이지 렌더링을 지연시키지 않습니다.
+    """
+    if st.session_state.get("_visit_logged"):
+        return
+    st.session_state["_visit_logged"] = True
+    # session_state는 메인 스레드에서 미리 읽어 전달
+    subject_filter = st.session_state.get("_subject_filter", "(전체)") or "(전체)"
+    user_id = st.session_state.get("_user_id", "")
+    threading.Thread(
+        target=_do_log_visit_write,
+        args=(subject_filter, user_id),
+        daemon=True,
+    ).start()
 
 def _load_visit_data() -> "list[list]":
     """방문기록 시트의 모든 행(헤더 포함)을 반환합니다."""
