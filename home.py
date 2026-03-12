@@ -1602,22 +1602,33 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
 
                 # 대단원
                 majors = curriculum
+                st.session_state.setdefault(maj_key, 0)
+                if st.session_state[maj_key] >= len(majors):
+                    st.session_state[maj_key] = 0
+
+                def _idx_on_major_change():
+                    st.session_state[mid_key] = 0
+                    st.session_state[min_key] = 0
+
                 with cols[0]:
                     st.selectbox(
                         "대단원",
                         options=range(len(majors)),
                         format_func=lambda i: majors[i]["label"],
                         key=maj_key,
+                        on_change=_idx_on_major_change,
                     )
-                maj_idx = st.session_state.get(maj_key, 0)
-                prev_maj = st.session_state.get(maj_key + "__prev")
-                if prev_maj is None or prev_maj != maj_idx:
-                    st.session_state[maj_key + "__prev"] = maj_idx
-                    st.session_state[mid_key] = 0
-                    st.session_state.pop(min_key, None)
+                maj_idx = st.session_state[maj_key]
                 mids = ch(majors[maj_idx])
 
                 # 중단원
+                st.session_state.setdefault(mid_key, 0)
+                if mids and st.session_state[mid_key] >= len(mids):
+                    st.session_state[mid_key] = 0
+
+                def _idx_on_mid_change():
+                    st.session_state[min_key] = 0
+
                 with cols[1]:
                     if mids:
                         st.selectbox(
@@ -1625,20 +1636,18 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
                             options=range(len(mids)),
                             format_func=lambda i: mids[i]["label"],
                             key=mid_key,
+                            on_change=_idx_on_mid_change,
                         )
                     else:
                         st.selectbox("중단원", options=[], key=mid_key, disabled=True, placeholder="(없음)")
-                if mids:
-                    mid_idx = st.session_state.get(mid_key, 0)
-                    prev_mid = st.session_state.get(mid_key + "__prev")
-                    if prev_mid is None or prev_mid != mid_idx:
-                        st.session_state[mid_key + "__prev"] = mid_idx
-                        st.session_state.pop(min_key, None)
-                    mins = ch(mids[mid_idx])
-                else:
-                    mins = []
+                mid_idx = st.session_state[mid_key]
+                mins = ch(mids[mid_idx]) if mids else []
 
                 # 소단원
+                st.session_state.setdefault(min_key, 0)
+                if mins and st.session_state[min_key] >= len(mins):
+                    st.session_state[min_key] = 0
+
                 with cols[2]:
                     if mins:
                         st.selectbox(
