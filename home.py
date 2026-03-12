@@ -510,6 +510,23 @@ def _inject_login_style(hide_sidebar: bool = True):
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); }
     ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 3px; }
+
+    /* 로컬 디버그 패널 */
+    .debug-panel {
+        margin-top: 14px;
+        padding: 10px 14px 12px;
+        background: rgba(251, 191, 36, 0.07);
+        border: 1px solid rgba(251, 191, 36, 0.3);
+        border-radius: 12px;
+    }
+    .debug-panel-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        color: rgba(251, 191, 36, 0.75) !important;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -666,7 +683,7 @@ def login_view():
         _is_debug = bool(st.secrets.get("local_debug_mode", False))
     except Exception:
         _is_debug = False
-    _inject_login_style(hide_sidebar=not _is_debug)
+    _inject_login_style(hide_sidebar=True)
 
     _, col, _ = st.columns([1, 2, 1])
     with col:
@@ -863,6 +880,32 @@ def login_view():
                             )
                         else:
                             st.error(f"❌ {msg}")
+
+        # ── 로컬 디버그 패널 (화면 내 빠른 접속) ──────────────────────
+        if _is_debug:
+            _DEBUG_ROLES = {
+                "🔧 관리자":     {"_authenticated": True, "_user_type": "admin",
+                                "_user_id": "admin", "_user_name": "관리자",
+                                "_dev_mode": True, "_login_allowed_subjects": None},
+                "🎓 학생":       {"_authenticated": True, "_user_type": "student",
+                                "_user_id": "202601001", "_user_name": "테스트학생",
+                                "_dev_mode": False, "_login_allowed_subjects": None},
+                "👤 일반인":     {"_authenticated": True, "_user_type": "general",
+                                "_user_id": "test_general", "_user_name": "테스트일반인",
+                                "_dev_mode": False, "_login_allowed_subjects": None},
+            }
+            st.markdown('<div class="debug-panel"><div class="debug-panel-label">🐛 Local Debug — 빠른 접속</div></div>',
+                        unsafe_allow_html=True)
+            _dc = st.columns(len(_DEBUG_ROLES))
+            _CLEAR = ["_authenticated", "_user_type", "_user_id", "_user_name",
+                      "_dev_mode", "_login_allowed_subjects", "_visit_logged"]
+            for _col, (_label, _data) in zip(_dc, _DEBUG_ROLES.items()):
+                with _col:
+                    if st.button(_label, use_container_width=True, key=f"_dbg_{_label}"):
+                        for _k in _CLEAR:
+                            st.session_state.pop(_k, None)
+                        st.session_state.update(_data)
+                        _do_rerun()
 
 def _get_subject_filter() -> Optional[str]:
     """URL 우회 토큰 방식은 제거됨. 항상 None(필터 없음)을 반환합니다."""
@@ -1284,6 +1327,10 @@ def _inject_home_styles():
             border: 1px solid rgba(99, 102, 241, 0.2);
           }
           .hero-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
             font-size: 3rem;
             font-weight: 800;
             margin: 0 0 0.75rem 0;
@@ -1291,6 +1338,11 @@ def _inject_home_styles():
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+          }
+          .hero-logo-svg {
+            width: 56px; height: 56px; flex-shrink: 0;
+            -webkit-text-fill-color: initial;
+            filter: drop-shadow(0 0 10px rgba(139,92,246,0.5));
           }
           .hero-subtitle {
             font-size: 1.15rem;
@@ -1332,7 +1384,81 @@ def home_view():
     st.markdown(
         """
         <div class="hero-container">
-          <div class="hero-title">MathLab</div>
+          <div class="hero-title">
+            <svg class="hero-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+              <defs>
+                <linearGradient id="hbgGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/>
+                </linearGradient>
+                <linearGradient id="hstrokeGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#c4b5fd"/><stop offset="100%" stop-color="#818cf8"/>
+                </linearGradient>
+                <linearGradient id="hliquidGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.75"/>
+                  <stop offset="100%" stop-color="#4338ca" stop-opacity="0.95"/>
+                </linearGradient>
+                <linearGradient id="hliquidShine" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.4"/>
+                  <stop offset="50%" stop-color="#c4b5fd" stop-opacity="0.15"/>
+                  <stop offset="100%" stop-color="#818cf8" stop-opacity="0.3"/>
+                </linearGradient>
+                <radialGradient id="hflaskGlow" cx="50%" cy="60%" r="50%">
+                  <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+                  <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+                </radialGradient>
+                <filter id="hsoftGlow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="3.5" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <filter id="hstrongGlow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feGaussianBlur stdDeviation="5" result="blur"/>
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <clipPath id="hbgClip"><rect x="0" y="0" width="200" height="200" rx="44"/></clipPath>
+                <clipPath id="hflaskBodyClip">
+                  <path d="M 82 82 L 37 162 Q 28 190 62 190 L 138 190 Q 172 190 163 162 L 118 82 Z"/>
+                </clipPath>
+              </defs>
+              <rect x="0" y="0" width="200" height="200" rx="44" fill="url(#hbgGrad)"/>
+              <g clip-path="url(#hbgClip)" stroke="rgba(99,102,241,0.11)" stroke-width="0.8" fill="none">
+                <line x1="50" y1="0" x2="50" y2="200"/><line x1="100" y1="0" x2="100" y2="200"/>
+                <line x1="150" y1="0" x2="150" y2="200"/><line x1="0" y1="50" x2="200" y2="50"/>
+                <line x1="0" y1="100" x2="200" y2="100"/><line x1="0" y1="150" x2="200" y2="150"/>
+              </g>
+              <ellipse cx="100" cy="145" rx="62" ry="38" fill="rgba(124,58,237,0.10)" filter="url(#hstrongGlow)"/>
+              <text x="14" y="46" font-family="Times New Roman,serif" font-size="20" fill="#818cf8" opacity="0.30" font-style="italic">∑</text>
+              <text x="158" y="45" font-family="Times New Roman,serif" font-size="20" fill="#a78bfa" opacity="0.30" font-style="italic">π</text>
+              <text x="12" y="185" font-family="Times New Roman,serif" font-size="14" fill="#818cf8" opacity="0.22" font-style="italic">∞</text>
+              <text x="165" y="186" font-family="Times New Roman,serif" font-size="16" fill="#a78bfa" opacity="0.22" font-style="italic">Δ</text>
+              <rect x="82" y="14" width="36" height="68" rx="6" fill="rgba(139,92,246,0.07)" stroke="url(#hstrokeGrad)" stroke-width="2.8"/>
+              <rect x="78" y="9" width="44" height="13" rx="6.5" fill="url(#hstrokeGrad)"/>
+              <line x1="88" y1="16" x2="88" y2="80" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M 82 82 L 37 162 Q 28 190 62 190 L 138 190 Q 172 190 163 162 L 118 82 Z" fill="rgba(139,92,246,0.07)" stroke="url(#hstrokeGrad)" stroke-width="2.8" stroke-linejoin="round"/>
+              <path d="M 82 82 L 37 162 Q 28 190 62 190 L 138 190 Q 172 190 163 162 L 118 82 Z" fill="url(#hflaskGlow)"/>
+              <rect x="0" y="142" width="200" height="55" fill="url(#hliquidGrad)" clip-path="url(#hflaskBodyClip)"/>
+              <rect x="0" y="142" width="200" height="18" fill="url(#hliquidShine)" clip-path="url(#hflaskBodyClip)"/>
+              <path d="M 36 142 Q 48 132 60 142 Q 72 152 84 142 Q 96 132 108 142 Q 120 152 132 142 Q 144 132 156 142 Q 161 147 164 143" fill="none" stroke="#ddd6fe" stroke-width="2.4" stroke-linecap="round" filter="url(#hsoftGlow)" clip-path="url(#hflaskBodyClip)"/>
+              <circle cx="68" cy="162" r="5.5" fill="#a78bfa" opacity="0.45"/>
+              <circle cx="100" cy="172" r="3.8" fill="#818cf8" opacity="0.38"/>
+              <circle cx="133" cy="160" r="4.5" fill="#a78bfa" opacity="0.40"/>
+              <circle cx="82" cy="178" r="2.8" fill="#c4b5fd" opacity="0.32"/>
+              <circle cx="118" cy="180" r="2.2" fill="#c4b5fd" opacity="0.28"/>
+              <circle cx="58" cy="135" r="2.2" fill="#c4b5fd" opacity="0.28"/>
+              <circle cx="77" cy="118" r="1.6" fill="#c4b5fd" opacity="0.20"/>
+              <circle cx="112" cy="122" r="1.8" fill="#c4b5fd" opacity="0.22"/>
+              <circle cx="138" cy="132" r="1.4" fill="#c4b5fd" opacity="0.18"/>
+              <path d="M 90 85 L 52 155" stroke="rgba(255,255,255,0.10)" stroke-width="6" stroke-linecap="round" clip-path="url(#hflaskBodyClip)"/>
+              <line x1="111" y1="16" x2="111" y2="78" stroke="rgba(255,255,255,0.09)" stroke-width="4" stroke-linecap="round"/>
+              <g opacity="0.18" transform="translate(148,138)">
+                <line x1="0" y1="34" x2="36" y2="34" stroke="#8b5cf6" stroke-width="1.2"/>
+                <line x1="0" y1="0" x2="0" y2="34" stroke="#8b5cf6" stroke-width="1.2"/>
+                <polyline points="3,28 10,18 17,23 24,10 33,4" stroke="#a78bfa" stroke-width="1.2" fill="none"/>
+                <polygon points="36,34 32,31 32,37" fill="#8b5cf6"/>
+                <polygon points="0,0 -3,6 3,6" fill="#8b5cf6"/>
+              </g>
+            </svg>
+            MathLab
+          </div>
           <div class="hero-subtitle">
             수학 수업에서 활용할 수 있는 시뮬레이션과 활동을 한 곳에 모은 공간입니다.<br>
             원하는 교과를 선택하여 다양한 수학 활동을 체험해보세요.
