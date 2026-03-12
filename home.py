@@ -399,10 +399,17 @@ def _inject_login_style(hide_sidebar: bool = True):
     .stApp > .main { background: transparent !important; }
     header[data-testid="stHeader"], .stDeployButton, footer { display: none !important; }
 
+    /* 세로 중앙 정렬 */
+    [data-testid="stMain"] {
+        display: flex !important;
+        align-items: center !important;
+        min-height: 100vh !important;
+    }
     /* Streamlit 기본 상하 패딩 축소 → 한 화면에 들어오게 */
     .block-container, [data-testid="stMainBlockContainer"] {
-        padding-top: 1.5rem !important;
+        padding-top: 1rem !important;
         padding-bottom: 1rem !important;
+        width: 100% !important;
     }
 
     div[data-testid="stForm"] {
@@ -535,67 +542,119 @@ def _render_login_header():
         transform: translate(-50%, -50%);
         pointer-events: none; z-index: 0;
     }
-    .mathlab-header { text-align: center; margin-bottom: 10px; position: relative; z-index: 1; }
-    .mathlab-logo-icon { font-size: 42px; display: block; margin-bottom: 6px; filter: drop-shadow(0 0 16px rgba(139,92,246,0.7)); }
+    .mathlab-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        margin-bottom: 12px;
+        position: relative;
+        z-index: 1;
+    }
+    .mathlab-logo-svg {
+        width: 81px; height: 81px; flex-shrink: 0;
+        filter: drop-shadow(0 0 18px rgba(139,92,246,0.65));
+    }
     .mathlab-logo-title {
-        font-size: 2.8rem; font-weight: 800; letter-spacing: 6px;
+        font-size: 4.2rem; font-weight: 800; letter-spacing: 8px;
         background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 40%, #818cf8 100%);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        background-clip: text; line-height: 1.1;
-        margin: 0 auto; display: inline-block;
-    }
-    .mathlab-divider {
-        width: 60px; height: 2px;
-        background: linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent);
-        margin: 8px auto 6px;
-    }
-    .mathlab-subtitle {
-        font-size: 0.78rem !important;
-        color: rgba(255,255,255,0.4) !important;
-        letter-spacing: 3px; text-transform: uppercase; margin: 0 !important;
+        background-clip: text; line-height: 1;
+        margin: 0;
     }
     </style>
 
     <div class="center-glow"></div>
 
     <div class="math-bg-symbols">
-        <span class="math-sym" style="top:7%; left:5%; font-size:2.2rem; transform:rotate(-15deg);">∑</span>
+        <span class="math-sym" style="top:7%;  left:5%;  font-size:2.2rem; transform:rotate(-15deg);">∑</span>
         <span class="math-sym" style="top:11%; left:18%; font-size:1rem;">f(x) = ax² + bx + c</span>
         <span class="math-sym" style="top:16%; right:7%; font-size:2.5rem; transform:rotate(10deg);">∫</span>
         <span class="math-sym" style="top:26%; right:17%; font-size:1rem;">lim<sub>x→0</sub></span>
-        <span class="math-sym" style="top:4%; right:30%; font-size:1.8rem;">π</span>
-        <span class="math-sym" style="bottom:20%; left:4%; font-size:1.4rem; transform:rotate(-5deg);">√x</span>
+        <span class="math-sym" style="top:4%;  right:30%; font-size:1.8rem;">π</span>
+        <span class="math-sym" style="bottom:20%; left:4%;  font-size:1.4rem; transform:rotate(-5deg);">√x</span>
         <span class="math-sym" style="bottom:28%; left:16%; font-size:0.95rem;">e<sup>iπ</sup> + 1 = 0</span>
-        <span class="math-sym" style="bottom:14%; left:36%; font-size:1.1rem;">∂f/∂x</span>
         <span class="math-sym" style="bottom:23%; right:5%; font-size:1.8rem; transform:rotate(8deg);">Δ</span>
         <span class="math-sym" style="bottom:11%; right:20%; font-size:1rem;">∞</span>
-        <span class="math-sym" style="top:40%; left:3%; font-size:2rem; transform:rotate(-8deg);">θ</span>
+        <span class="math-sym" style="top:40%; left:3%;  font-size:2rem; transform:rotate(-8deg);">θ</span>
         <span class="math-sym" style="top:53%; right:3%; font-size:1.6rem; transform:rotate(5deg);">λ</span>
-        <span class="math-sym" style="top:66%; left:9%; font-size:0.9rem;">sin²θ + cos²θ = 1</span>
-        <span class="math-sym" style="top:20%; left:40%; font-size:1.05rem; transform:rotate(-3deg);">∇²φ</span>
-    </div>
-
-    <div class="axis-deco">
-        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <line x1="10" y1="110" x2="110" y2="110" stroke="#8b5cf6" stroke-width="1.5"/>
-            <line x1="10" y1="10" x2="10" y2="110" stroke="#8b5cf6" stroke-width="1.5"/>
-            <polyline points="25,85 40,60 55,70 70,40 85,50 100,20" stroke="#a78bfa" stroke-width="1.5" fill="none"/>
-            <polygon points="110,110 104,106 104,114" fill="#8b5cf6"/>
-            <polygon points="10,10 6,16 14,16" fill="#8b5cf6"/>
-            <circle cx="25" cy="85" r="2.5" fill="#a78bfa"/>
-            <circle cx="40" cy="60" r="2.5" fill="#a78bfa"/>
-            <circle cx="55" cy="70" r="2.5" fill="#a78bfa"/>
-            <circle cx="70" cy="40" r="2.5" fill="#a78bfa"/>
-            <circle cx="85" cy="50" r="2.5" fill="#a78bfa"/>
-            <circle cx="100" cy="20" r="2.5" fill="#a78bfa"/>
-        </svg>
+        <span class="math-sym" style="top:66%; left:9%;  font-size:0.9rem;">sin²θ + cos²θ = 1</span>
     </div>
 
     <div class="mathlab-header">
-        <span class="mathlab-logo-icon">🧮</span>
-        <div class="mathlab-logo-title">MathLab</div>
-        <div class="mathlab-divider"></div>
-        <p class="mathlab-subtitle">수학 수업 자료 공간</p>
+      <svg class="mathlab-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#0f172a"/>
+          </linearGradient>
+          <linearGradient id="strokeGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#c4b5fd"/><stop offset="100%" stop-color="#818cf8"/>
+          </linearGradient>
+          <linearGradient id="liquidGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.75"/>
+            <stop offset="100%" stop-color="#4338ca" stop-opacity="0.95"/>
+          </linearGradient>
+          <linearGradient id="liquidShine" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.4"/>
+            <stop offset="50%" stop-color="#c4b5fd" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#818cf8" stop-opacity="0.3"/>
+          </linearGradient>
+          <radialGradient id="flaskGlow" cx="50%" cy="60%" r="50%">
+            <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+          </radialGradient>
+          <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="strongGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <clipPath id="bgClip"><rect x="0" y="0" width="200" height="200" rx="44"/></clipPath>
+          <clipPath id="flaskBodyClip">
+            <path d="M 82 82 L 37 162 Q 28 190 62 190 L 138 190 Q 172 190 163 162 L 118 82 Z"/>
+          </clipPath>
+        </defs>
+        <rect x="0" y="0" width="200" height="200" rx="44" fill="url(#bgGrad)"/>
+        <g clip-path="url(#bgClip)" stroke="rgba(99,102,241,0.11)" stroke-width="0.8" fill="none">
+          <line x1="50" y1="0" x2="50" y2="200"/><line x1="100" y1="0" x2="100" y2="200"/>
+          <line x1="150" y1="0" x2="150" y2="200"/><line x1="0" y1="50" x2="200" y2="50"/>
+          <line x1="0" y1="100" x2="200" y2="100"/><line x1="0" y1="150" x2="200" y2="150"/>
+        </g>
+        <ellipse cx="100" cy="145" rx="62" ry="38" fill="rgba(124,58,237,0.10)" filter="url(#strongGlow)"/>
+        <text x="14" y="46" font-family="Times New Roman,serif" font-size="20" fill="#818cf8" opacity="0.30" font-style="italic">∑</text>
+        <text x="158" y="45" font-family="Times New Roman,serif" font-size="20" fill="#a78bfa" opacity="0.30" font-style="italic">π</text>
+        <text x="12" y="185" font-family="Times New Roman,serif" font-size="14" fill="#818cf8" opacity="0.22" font-style="italic">∞</text>
+        <text x="165" y="186" font-family="Times New Roman,serif" font-size="16" fill="#a78bfa" opacity="0.22" font-style="italic">Δ</text>
+        <rect x="82" y="14" width="36" height="68" rx="6" fill="rgba(139,92,246,0.07)" stroke="url(#strokeGrad)" stroke-width="2.8"/>
+        <rect x="78" y="9" width="44" height="13" rx="6.5" fill="url(#strokeGrad)"/>
+        <line x1="88" y1="16" x2="88" y2="80" stroke="rgba(255,255,255,0.12)" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M 82 82 L 37 162 Q 28 190 62 190 L 138 190 Q 172 190 163 162 L 118 82 Z" fill="rgba(139,92,246,0.07)" stroke="url(#strokeGrad)" stroke-width="2.8" stroke-linejoin="round"/>
+        <path d="M 82 82 L 37 162 Q 28 190 62 190 L 138 190 Q 172 190 163 162 L 118 82 Z" fill="url(#flaskGlow)"/>
+        <rect x="0" y="142" width="200" height="55" fill="url(#liquidGrad)" clip-path="url(#flaskBodyClip)"/>
+        <rect x="0" y="142" width="200" height="18" fill="url(#liquidShine)" clip-path="url(#flaskBodyClip)"/>
+        <path d="M 36 142 Q 48 132 60 142 Q 72 152 84 142 Q 96 132 108 142 Q 120 152 132 142 Q 144 132 156 142 Q 161 147 164 143" fill="none" stroke="#ddd6fe" stroke-width="2.4" stroke-linecap="round" filter="url(#softGlow)" clip-path="url(#flaskBodyClip)"/>
+        <circle cx="68" cy="162" r="5.5" fill="#a78bfa" opacity="0.45"/>
+        <circle cx="100" cy="172" r="3.8" fill="#818cf8" opacity="0.38"/>
+        <circle cx="133" cy="160" r="4.5" fill="#a78bfa" opacity="0.40"/>
+        <circle cx="82" cy="178" r="2.8" fill="#c4b5fd" opacity="0.32"/>
+        <circle cx="118" cy="180" r="2.2" fill="#c4b5fd" opacity="0.28"/>
+        <circle cx="58" cy="135" r="2.2" fill="#c4b5fd" opacity="0.28"/>
+        <circle cx="77" cy="118" r="1.6" fill="#c4b5fd" opacity="0.20"/>
+        <circle cx="112" cy="122" r="1.8" fill="#c4b5fd" opacity="0.22"/>
+        <circle cx="138" cy="132" r="1.4" fill="#c4b5fd" opacity="0.18"/>
+        <path d="M 90 85 L 52 155" stroke="rgba(255,255,255,0.10)" stroke-width="6" stroke-linecap="round" clip-path="url(#flaskBodyClip)"/>
+        <line x1="111" y1="16" x2="111" y2="78" stroke="rgba(255,255,255,0.09)" stroke-width="4" stroke-linecap="round"/>
+        <g opacity="0.18" transform="translate(148,138)">
+          <line x1="0" y1="34" x2="36" y2="34" stroke="#8b5cf6" stroke-width="1.2"/>
+          <line x1="0" y1="0" x2="0" y2="34" stroke="#8b5cf6" stroke-width="1.2"/>
+          <polyline points="3,28 10,18 17,23 24,10 33,4" stroke="#a78bfa" stroke-width="1.2" fill="none"/>
+          <polygon points="36,34 32,31 32,37" fill="#8b5cf6"/>
+          <polygon points="0,0 -3,6 3,6" fill="#8b5cf6"/>
+        </g>
+      </svg>
+      <div class="mathlab-logo-title">MathLab</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -613,10 +672,24 @@ def login_view():
     with col:
         _render_login_header()
 
-        tab_login, tab_register = st.tabs(["🔐 로그인", "📝 회원가입"])
+        # ── 탭 선택 버튼 (session_state로 관리 → 라디오 클릭 시 탭 초기화 방지) ──
+        if "_login_active_tab" not in st.session_state:
+            st.session_state["_login_active_tab"] = "login"
+        _tc1, _tc2 = st.columns(2)
+        with _tc1:
+            if st.button("🔐  로그인", use_container_width=True, key="_tab_btn_login",
+                         type="primary" if st.session_state["_login_active_tab"] == "login" else "secondary"):
+                st.session_state["_login_active_tab"] = "login"
+        with _tc2:
+            if st.button("📝  회원가입", use_container_width=True, key="_tab_btn_reg",
+                         type="primary" if st.session_state["_login_active_tab"] == "register" else "secondary"):
+                st.session_state["_login_active_tab"] = "register"
+
+        st.markdown("<hr style='margin:4px 0 10px; border:none; border-top:1px solid rgba(255,255,255,0.1);'>",
+                    unsafe_allow_html=True)
 
         # ── 로그인 탭 ──────────────────────────────────────────────────
-        with tab_login:
+        if st.session_state["_login_active_tab"] == "login":
             ATTEMPT_KEY = "_login_attempts"
             if st.session_state.get(ATTEMPT_KEY, 0) >= 5:
                 st.error(
@@ -674,15 +747,15 @@ def login_view():
             )
 
         # ── 회원가입 탭 ────────────────────────────────────────────────
-        with tab_register:
+        else:
             reg_type = st.radio(
                 "가입 유형 선택",
                 ["🎓 학생", "👤 일반인"],
                 horizontal=True,
                 key="reg_type_radio",
             )
-
-            st.divider()
+            st.markdown("<hr style='margin:2px 0 6px; border:none; border-top:1px solid rgba(255,255,255,0.1);'>",
+                        unsafe_allow_html=True)
 
             if reg_type == "🎓 학생":
                 st.caption("학번과 이름 입력 시 아이디 자동 생성. 예) 학번 20200 → 아이디 202620200")
@@ -2794,25 +2867,26 @@ def _render_footer():
         """
         <style>
           .site-footer {
-            margin-top: 3rem;
-            padding: 1.25rem 1rem;
+            margin-top: 1.5rem;
+            padding: 0.75rem 1rem;
             border-top: 1px solid rgba(128,128,128,0.25);
             font-size: 0.82rem;
             color: var(--secondary-text-color);
             text-align: center;
             line-height: 1.8;
           }
-          .site-footer a { color: inherit; text-decoration: underline; cursor: pointer; }
         </style>
         <div class="site-footer">
-          © 2026 MathLab. All rights reserved.<br>
+          © 2026 MathLab. All rights reserved. &nbsp;|&nbsp;
           개인정보책임자: 김대섭 교사 (휘문고등학교) &nbsp;|&nbsp; 문의: 02-500-9513
         </div>
         """,
         unsafe_allow_html=True,
     )
-    if st.button("📋 개인정보처리방침", key="_footer_privacy_btn", use_container_width=False):
-        _privacy_policy_dialog()
+    _, _fc2, _ = st.columns([1, 1, 1])
+    with _fc2:
+        if st.button("📋 개인정보처리방침", key="_footer_privacy_btn", use_container_width=True):
+            _privacy_policy_dialog()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 로컬 디버깅 패널
