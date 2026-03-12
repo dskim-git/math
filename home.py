@@ -379,24 +379,229 @@ def _send_register_notify_email(user_type: str, name: str, user_id: str,
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 로그인 / 회원가입 뷰
+def _inject_login_style(hide_sidebar: bool = True):
+    """MathLab 로그인 화면 전용 다크 그리드 스타일을 주입합니다."""
+    sidebar_css = """
+    section[data-testid="stSidebar"],
+    [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+    .stMainBlockContainer, .block-container { margin-left: auto !important; }
+    """ if hide_sidebar else ""
+    st.markdown("""
+    <style>
+    """ + sidebar_css + """
+    .stApp {
+        background-color: #0f172a !important;
+        background-image:
+            linear-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99, 102, 241, 0.08) 1px, transparent 1px) !important;
+        background-size: 50px 50px !important;
+    }
+    .stApp > .main { background: transparent !important; }
+    header[data-testid="stHeader"], .stDeployButton, footer { display: none !important; }
+
+    div[data-testid="stForm"] {
+        background: rgba(255, 255, 255, 0.04) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px !important;
+        padding: 36px 40px 32px !important;
+        box-shadow:
+            0 4px 6px rgba(0, 0, 0, 0.3),
+            0 20px 60px rgba(0, 0, 0, 0.5),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            0 0 0 1px rgba(139, 92, 246, 0.08) !important;
+    }
+
+    .stApp p, .stApp label, .stApp span, .stApp div, .stApp li {
+        color: rgba(255, 255, 255, 0.75) !important;
+    }
+    /* 사이드바(로컬 디버그 패널)는 라이트 테마 색상 유지 */
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] label,
+    section[data-testid="stSidebar"] span:not(.st-emotion-cache-hidden),
+    section[data-testid="stSidebar"] div,
+    section[data-testid="stSidebar"] li,
+    section[data-testid="stSidebar"] caption,
+    section[data-testid="stSidebar"] small {
+        color: unset !important;
+    }
+
+    .stTextInput > div > div > input,
+    .stTextInput > div > div {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 10px !important;
+        color: rgba(255, 255, 255, 0.85) !important;
+        caret-color: #a78bfa !important;
+    }
+    .stTextInput > div > div > input::placeholder { color: rgba(255, 255, 255, 0.25) !important; }
+    .stTextInput > div > div > input:focus {
+        border-color: rgba(139, 92, 246, 0.5) !important;
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12) !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+    }
+    .stTextInput label {
+        color: rgba(255, 255, 255, 0.55) !important;
+        font-size: 0.82rem !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.5px !important;
+    }
+
+    .stFormSubmitButton > button, .stButton > button {
+        background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        letter-spacing: 2px !important;
+        padding: 12px 24px !important;
+        width: 100% !important;
+        box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35), 0 0 0 1px rgba(139, 92, 246, 0.2) !important;
+        transition: all 0.2s ease !important;
+    }
+    .stFormSubmitButton > button:hover, .stButton > button:hover {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 8px 28px rgba(124, 58, 237, 0.45), 0 0 0 1px rgba(139, 92, 246, 0.3) !important;
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        background: transparent !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        gap: 0 !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background: transparent !important;
+        color: rgba(255, 255, 255, 0.35) !important;
+        border: none !important;
+        font-weight: 500 !important;
+        font-size: 0.9rem !important;
+        padding: 10px 20px !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #a78bfa !important;
+        border-bottom: 2px solid #a78bfa !important;
+    }
+    .stTabs [data-baseweb="tab-panel"] { background: transparent !important; }
+
+    .stAlert {
+        background: rgba(239, 68, 68, 0.12) !important;
+        border: 1px solid rgba(239, 68, 68, 0.25) !important;
+        border-radius: 10px !important;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); }
+    ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 3px; }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def _render_login_header():
+    """MathLab 로그인 화면 헤더(로고 + 배경 장식)를 렌더링합니다."""
+    st.markdown("""
+    <style>
+    .math-bg-symbols {
+        position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        pointer-events: none; z-index: 0; overflow: hidden;
+    }
+    .math-sym {
+        position: absolute;
+        color: rgba(139, 92, 246, 0.12);
+        font-family: 'Times New Roman', Georgia, serif;
+        font-style: italic; user-select: none;
+    }
+    .axis-deco {
+        position: fixed; bottom: 36px; left: 36px;
+        opacity: 0.12; z-index: 0; pointer-events: none;
+    }
+    .center-glow {
+        position: fixed;
+        width: 700px; height: 700px;
+        background: radial-gradient(circle, rgba(139,92,246,0.07) 0%, transparent 65%);
+        border-radius: 50%;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        pointer-events: none; z-index: 0;
+    }
+    .mathlab-header { text-align: center; margin-bottom: 16px; position: relative; z-index: 1; }
+    .mathlab-logo-icon { font-size: 68px; display: block; margin-bottom: 12px; filter: drop-shadow(0 0 22px rgba(139,92,246,0.7)); }
+    .mathlab-logo-title {
+        font-size: 4.2rem; font-weight: 800; letter-spacing: 8px;
+        background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 40%, #818cf8 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text; line-height: 1.1;
+        margin: 0 auto; display: inline-block;
+    }
+    .mathlab-divider {
+        width: 80px; height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent);
+        margin: 16px auto 10px;
+    }
+    .mathlab-subtitle {
+        font-size: 1.05rem !important;
+        color: rgba(255,255,255,0.45) !important;
+        letter-spacing: 4px; text-transform: uppercase; margin: 0 !important;
+    }
+    </style>
+
+    <div class="center-glow"></div>
+
+    <div class="math-bg-symbols">
+        <span class="math-sym" style="top:7%; left:5%; font-size:2.2rem; transform:rotate(-15deg);">∑</span>
+        <span class="math-sym" style="top:11%; left:18%; font-size:1rem;">f(x) = ax² + bx + c</span>
+        <span class="math-sym" style="top:16%; right:7%; font-size:2.5rem; transform:rotate(10deg);">∫</span>
+        <span class="math-sym" style="top:26%; right:17%; font-size:1rem;">lim<sub>x→0</sub></span>
+        <span class="math-sym" style="top:4%; right:30%; font-size:1.8rem;">π</span>
+        <span class="math-sym" style="bottom:20%; left:4%; font-size:1.4rem; transform:rotate(-5deg);">√x</span>
+        <span class="math-sym" style="bottom:28%; left:16%; font-size:0.95rem;">e<sup>iπ</sup> + 1 = 0</span>
+        <span class="math-sym" style="bottom:14%; left:36%; font-size:1.1rem;">∂f/∂x</span>
+        <span class="math-sym" style="bottom:23%; right:5%; font-size:1.8rem; transform:rotate(8deg);">Δ</span>
+        <span class="math-sym" style="bottom:11%; right:20%; font-size:1rem;">∞</span>
+        <span class="math-sym" style="top:40%; left:3%; font-size:2rem; transform:rotate(-8deg);">θ</span>
+        <span class="math-sym" style="top:53%; right:3%; font-size:1.6rem; transform:rotate(5deg);">λ</span>
+        <span class="math-sym" style="top:66%; left:9%; font-size:0.9rem;">sin²θ + cos²θ = 1</span>
+        <span class="math-sym" style="top:20%; left:40%; font-size:1.05rem; transform:rotate(-3deg);">∇²φ</span>
+    </div>
+
+    <div class="axis-deco">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="10" y1="110" x2="110" y2="110" stroke="#8b5cf6" stroke-width="1.5"/>
+            <line x1="10" y1="10" x2="10" y2="110" stroke="#8b5cf6" stroke-width="1.5"/>
+            <polyline points="25,85 40,60 55,70 70,40 85,50 100,20" stroke="#a78bfa" stroke-width="1.5" fill="none"/>
+            <polygon points="110,110 104,106 104,114" fill="#8b5cf6"/>
+            <polygon points="10,10 6,16 14,16" fill="#8b5cf6"/>
+            <circle cx="25" cy="85" r="2.5" fill="#a78bfa"/>
+            <circle cx="40" cy="60" r="2.5" fill="#a78bfa"/>
+            <circle cx="55" cy="70" r="2.5" fill="#a78bfa"/>
+            <circle cx="70" cy="40" r="2.5" fill="#a78bfa"/>
+            <circle cx="85" cy="50" r="2.5" fill="#a78bfa"/>
+            <circle cx="100" cy="20" r="2.5" fill="#a78bfa"/>
+        </svg>
+    </div>
+
+    <div class="mathlab-header">
+        <span class="mathlab-logo-icon">🧮</span>
+        <div class="mathlab-logo-title">MathLab</div>
+        <div class="mathlab-divider"></div>
+        <p class="mathlab-subtitle">수학 수업 자료 공간</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 def login_view():
     """인증되지 않은 사용자에게 보이는 로그인 화면."""
     _inject_sidebar_nav_visibility(dev=False)
+    try:
+        _is_debug = bool(st.secrets.get("local_debug_mode", False))
+    except Exception:
+        _is_debug = False
+    _inject_login_style(hide_sidebar=not _is_debug)
 
     _, col, _ = st.columns([1, 2, 1])
     with col:
-        st.markdown("""
-<div style='text-align:center; padding:2.5rem 0 1.5rem;'>
-  <div style='font-size:3rem; font-weight:800;
-              background:linear-gradient(135deg,#6366f1,#a855f7);
-              -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-              background-clip:text;'>🧮 MathLab</div>
-  <div style='color:var(--secondary-text-color); font-size:1rem; margin-top:.4rem;'>
-    수학 수업 자료 공간에 오신 것을 환영합니다.<br>
-    이용하시려면 로그인이 필요합니다.
-  </div>
-</div>
-""", unsafe_allow_html=True)
+        _render_login_header()
 
         tab_login, tab_register = st.tabs(["🔐 로그인", "📝 회원가입"])
 
