@@ -45,8 +45,10 @@ def render():
 
 # ──────────────────────────────────────────────────────────────────────────────
 @st.cache_data(ttl=60, show_spinner=False)
-def _load_ranking_data(sheet_id: str) -> list:
-    """이항정리 도전 모드 랭킹 데이터를 구글 시트에서 읽어옵니다."""
+def _load_ranking_data(sheet_id: str) -> tuple:
+    """이항정리 도전 모드 랭킹 데이터를 구글 시트에서 읽어옵니다.
+    Returns: (records: list, error: str | None)
+    """
     try:
         import gspread
         from google.oauth2.service_account import Credentials
@@ -56,9 +58,9 @@ def _load_ranking_data(sheet_id: str) -> list:
         )
         client = gspread.authorize(creds)
         ws = client.open_by_key(sheet_id).worksheet("이항정리랭킹")
-        return ws.get_all_records()
-    except Exception:
-        return []
+        return ws.get_all_records(), None
+    except Exception as e:
+        return [], str(e)
 
 
 def _render_ranking() -> None:
@@ -75,7 +77,11 @@ def _render_ranking() -> None:
     except Exception:
         sheet_id = ""
 
-    records = _load_ranking_data(sheet_id)
+    records, err = _load_ranking_data(sheet_id)
+
+    if err:
+        st.error(f"랭킹을 불러오지 못했습니다.\n\n```\n{err}\n```")
+        return
 
     if not records:
         st.info("아직 도전 기록이 없습니다. 첫 번째 도전자가 되어보세요! 🎯")
