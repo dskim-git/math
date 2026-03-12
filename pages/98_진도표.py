@@ -4,6 +4,13 @@
 - 관리자 모드 전용
 - 수업 진도를 날짜별/반별로 기록하고 구글 시트와 실시간 연동
 """
+import sys
+from pathlib import Path
+
+_root = str(Path(__file__).parent.parent)
+if _root not in sys.path:
+    sys.path.insert(0, _root)
+
 import streamlit as st
 import pandas as pd
 from datetime import date, timedelta, datetime, timezone
@@ -44,6 +51,49 @@ if not st.session_state.get("_dev_mode", False):
     st.info("홈 화면 사이드바에서 관리자 모드로 로그인한 후 다시 방문해 주세요.")
     st.stop()
 
+# ── auth_utils 수강생 명단 연동 ───────────────────────────────────────────────
+from auth_utils import (
+    _cached_roster, get_roster_student_counts, _get_users_spreadsheet_id,
+)
+
+# 반 이름 매핑: 시트 '반' 컬럼 값(예: '1학년 9반') → 진도표 컬럼명(예: '1학년 9반 (공통수학)')
+_ROSTER_CLS_MAP = {
+    "1학년 9반":  "1학년 9반 (공통수학)",
+    "1학년 10반": "1학년 10반 (공통수학)",
+    "2학년 9반":  "2학년 9반 (확률과통계)",
+    "2학년 10반": "2학년 10반 (확률과통계)",
+    "2학년 11반": "2학년 11반 (확률과통계)",
+}
+
+def _get_student_counts() -> dict[str, int]:
+    """
+    구글 시트 '2026수강생명단'에서 학급별 인원 수를 읽어 반환합니다.
+    실패 시 기본값으로 폴백.
+    """
+    _default = {
+        "1학년 9반 (공통수학)": 35,
+        "1학년 10반 (공통수학)": 35,
+        "2학년 9반 (확률과통계)": 34,
+        "2학년 10반 (확률과통계)": 35,
+        "2학년 11반 (확률과통계)": 34,
+    }
+    try:
+        users_sheet_id = _get_users_spreadsheet_id()
+        raw = get_roster_student_counts(users_sheet_id)
+        if not raw:
+            return _default
+        result = {}
+        for short, full in _ROSTER_CLS_MAP.items():
+            cnt = raw.get(short, raw.get(full, None))
+            result[full] = cnt if cnt is not None else _default.get(full, 0)
+        # 시트에 있지만 매핑에 없는 반도 포함
+        for cls_key, cnt in raw.items():
+            if cls_key not in result and cls_key not in _ROSTER_CLS_MAP:
+                result[cls_key] = cnt
+        return result if result else _default
+    except Exception:
+        return _default
+
 # ── 상수 / 설정 ───────────────────────────────────────────────────────────────
 CLASSES = [
     "1학년 9반 (공통수학)",
@@ -52,13 +102,7 @@ CLASSES = [
     "2학년 10반 (확률과통계)",
     "2학년 11반 (확률과통계)",
 ]
-STUDENT_COUNTS = {
-    "1학년 9반 (공통수학)": 35,
-    "1학년 10반 (공통수학)": 35,
-    "2학년 9반 (확률과통계)": 34,
-    "2학년 10반 (확률과통계)": 35,
-    "2학년 11반 (확률과통계)": 34,
-}
+STUDENT_COUNTS = _get_student_counts()
 
 DAY_KR = ["월", "화", "수", "목", "금"]
 

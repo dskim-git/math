@@ -43,6 +43,9 @@ WS_GENERAL    = "일반인"
 WS_GRADE_PERM = "학년권한"
 WS_GROUP_PERM = "그룹권한"
 
+# ── 2026 수강생 명단 (회원가입 검증 및 학급별 현황용) ────────────────────────
+WS_ROSTER = "2026수강생명단"   # 구글 시트 탭 이름
+
 STUDENTS_HEADER   = ["학번", "이름", "아이디", "해시비밀번호", "학년",
                       "승인상태", "가입일", "마지막로그인"]
 GENERAL_HEADER    = ["이름", "아이디", "사용목적", "해시비밀번호", "그룹",
@@ -198,6 +201,202 @@ def _cached_lockout(sheet_id: str) -> list[dict]:
         return []
     ws = _get_or_create_ws(client, sheet_id, WS_LOCKOUT, LOCKOUT_HEADER, rows=200)
     return ws.get_all_records() if ws else []
+
+
+def _fill_merged(row: list) -> list:
+    """병합 셀처럼 비어 있는 셀을 왼쪽의 마지막 값으로 채웁니다."""
+    result = list(row)
+    last = ""
+    for i, v in enumerate(result):
+        s = str(v).strip()
+        if s:
+            last = s
+        result[i] = last
+    return result
+
+
+def _normalize_class_name(subject: str, cls: str) -> str:
+    """
+    과목명 + 반 이름 → '1학년 9반' 형식으로 정규화.
+    예) subject='공통수학', cls='9반'  → '1학년 9반'
+        subject='확률과 통계', cls='10반' → '2학년 10반'
+    """
+    subj = subject.replace(" ", "")
+    if "공통수학" in subj or ("공통" in subj and "수학" in subj):
+        grade = "1학년"
+    elif "확률" in subj and "통계" in subj:
+        grade = "2학년"
+    else:
+        grade = ""
+    cls_num = cls.replace("반", "").strip()
+    if grade and cls_num:
+        return f"{grade} {cls_num}반"
+    return f"{cls_num}반" if cls_num else cls
+
+
+def _parse_roster_flat(all_values: list) -> list[dict]:
+    """형식 A: 첫 행이 헤더인 단순 세로 목록 파싱."""
+    headers_row = all_values[0]
+    valid_idx = [i for i, h in enumerate(headers_row) if str(h).strip()]
+    headers = [str(headers_row[i]).strip() for i in valid_idx]
+    result = []
+    for row in all_values[1:]:
+        if not any(row):
+            continue
+        record = {headers[j]: (str(row[valid_idx[j]]).strip() if valid_idx[j] < len(row) else "")
+                  for j in range(len(headers))}
+        result.append(record)
+    return result
+
+
+def _parse_roster_horizontal(all_values: list) -> list[dict]:
+    """
+    형식 B: 가로 나열 파싱.
+      행 0 : 과목명 (병합 셀 → 첫 셀에만 값)
+      행 1 : 반 이름 (병합 셀 → 첫 셀에만 값)
+      행 2 : '학번' / '이름' 반복 헤더
+      행 3+: 데이터
+    """
+    # '학번'이 2회 이상 등장하는 헤더 행 탐색 (최대 5행 이내)
+    header_row_idx = None
+    for i, row in enumerate(all_values[:5]):
+        if [str(c).strip() for c in row].count("학번") >= 2:
+            header_row_idx = i
+            break
+    if header_row_idx is None:
+        return []
+
+    header_row = [str(c).strip() for c in all_values[header_row_idx]]
+    # 병합 셀 값 채우기
+    row1 = _fill_merged(all_values[0]) if header_row_idx >= 1 else []
+    row2 = _fill_merged(all_values[1]) if header_row_idx >= 2 else []
+
+    # (학번 col index, 이름 col index, 반 이름) 쌍 수집
+    col_pairs = []
+    for i, h in enumerate(header_row):
+        if h == "학번":
+            # 바로 뒤에 '이름' 컬럼 탐색
+            name_col = next(
+                (j for j in range(i + 1, min(i + 3, len(header_row)))
+                 if header_row[j] == "이름"),
+                None,
+            )
+            if name_col is None:
+                continue
+            subject = row1[i] if i < len(row1) else ""
+            cls     = row2[i] if i < len(row2) else ""
+            class_name = _normalize_class_name(subject, cls)
+            col_pairs.append((i, name_col, class_name))
+
+    if not col_pairs:
+        return []
+
+    result = []
+    for row in all_values[header_row_idx + 1:]:
+        if not any(row):
+            continue
+        for num_col, name_col, class_name in col_pairs:
+            num  = str(row[num_col]).strip()  if num_col  < len(row) else ""
+            name = str(row[name_col]).strip() if name_col < len(row) else ""
+            if num and name:
+                result.append({"학번": num, "이름": name, "반": class_name})
+    return result
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _cached_roster(sheet_id: str) -> list[dict]:
+    """
+    '2026수강생명단' 시트에서 전체 수강생 목록을 읽어옵니다.
+
+    형식 A (세로 목록):  헤더행(학번|이름|반) + 데이터 행
+    형식 B (가로 나열):  과목→반→학번/이름 쌍이 옆으로 나열 (현재 시트 형식)
+
+    반환: [{"학번": "...", "이름": "...", "반": "..."}, ...]
+    """
+    client = _get_gspread_client()
+    if not client or not sheet_id:
+        return []
+    try:
+        sh = client.open_by_key(sheet_id)
+        ws = sh.worksheet(WS_ROSTER)
+        all_values = ws.get_all_values()
+        if not all_values:
+            return []
+
+        first_row = [str(c).strip() for c in all_values[0]]
+
+        # 형식 A: 첫 행에 '학번'·'이름' 포함 (단순 세로 목록)
+        if "학번" in first_row and "이름" in first_row:
+            return _parse_roster_flat(all_values)
+
+        # 형식 B: 어딘가 행에 '학번'이 2번 이상 → 가로 나열
+        for row in all_values[:5]:
+            if [str(c).strip() for c in row].count("학번") >= 2:
+                return _parse_roster_horizontal(all_values)
+
+        return []
+    except Exception:
+        return []
+
+
+def get_roster_debug_info(sheet_id: str) -> dict:
+    """
+    수강생 명단 로드 상태를 점검합니다. (오류 진단용 — 캐시 없음)
+    반환: {"ok": bool, "error": str, "sheet_id": str, "worksheets": list[str]}
+    """
+    client = _get_gspread_client()
+    if not client:
+        return {"ok": False, "error": "gspread 클라이언트 초기화 실패 (서비스 계정 설정을 확인하세요)", "sheet_id": sheet_id, "worksheets": []}
+    if not sheet_id:
+        return {"ok": False, "error": "users_spreadsheet_id secret이 설정되지 않았습니다", "sheet_id": sheet_id, "worksheets": []}
+    try:
+        sh = client.open_by_key(sheet_id)
+        ws_list = [ws.title for ws in sh.worksheets()]
+        if WS_ROSTER not in ws_list:
+            return {
+                "ok": False,
+                "error": f"'{WS_ROSTER}' 시트가 없습니다. 현재 탭 목록: {ws_list}",
+                "sheet_id": sheet_id,
+                "worksheets": ws_list,
+            }
+        ws = sh.worksheet(WS_ROSTER)
+        all_values = ws.get_all_values()
+        if not all_values:
+            return {"ok": False, "error": "시트가 비어 있습니다", "sheet_id": sheet_id, "worksheets": ws_list}
+        first_row = [str(c).strip() for c in all_values[0]]
+        fmt = "A(세로목록)" if ("학번" in first_row and "이름" in first_row) else "B(가로나열)"
+        data = _cached_roster(sheet_id)
+        return {"ok": True, "error": "", "sheet_id": sheet_id, "worksheets": ws_list,
+                "format": fmt, "rows": len(data)}
+    except Exception as e:
+        return {"ok": False, "error": str(e), "sheet_id": sheet_id, "worksheets": []}
+
+
+def get_roster_student_counts(sheet_id: str) -> dict[str, int]:
+    """
+    학급별 수강생 수를 반환합니다.
+    반환: {"1학년 9반": 35, ...}  — 반 이름은 시트 '반' 또는 '학급' 컬럼 값 기준
+    """
+    from collections import Counter
+    rows = _cached_roster(sheet_id)
+    counts: Counter = Counter()
+    for r in rows:
+        cls = str(r.get("반", "") or r.get("학급", "")).strip()
+        if cls:
+            counts[cls] += 1
+    return dict(counts)
+
+
+def verify_roster_student(sheet_id: str, student_num: str, name: str) -> bool:
+    """
+    수강생 명단에 해당 학번+이름 조합이 있는지 확인합니다.
+    """
+    num  = student_num.strip()
+    name = name.strip()
+    for r in _cached_roster(sheet_id):
+        if str(r.get("학번", "")).strip() == num and str(r.get("이름", "")).strip() == name:
+            return True
+    return False
 
 
 def is_account_locked(user_id: str) -> bool:

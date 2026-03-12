@@ -68,6 +68,8 @@ from auth_utils import (
     STATUS_PENDING, STATUS_APPROVED, STATUS_REJECTED,
     _cached_students, _cached_general,
     _cached_grade_perms, _cached_group_perms, _cached_lockout,
+    _cached_roster, get_roster_student_counts, verify_roster_student,
+    get_roster_debug_info,
     _get_users_spreadsheet_id,
     update_user_status, reset_user_password,
     update_user_group, save_grade_permissions,
@@ -122,16 +124,31 @@ with tab_approve:
     # 학생 대기
     if pending_s:
         st.markdown("#### 📚 학생")
+        roster_rows = _cached_roster(sheet_id)
         for row in pending_s:
             uid   = str(row.get("아이디", ""))
             name  = str(row.get("이름", ""))
             num   = str(row.get("학번", ""))
             grade = str(row.get("학년", ""))
             joined = str(row.get("가입일", ""))
+
+            # 명단 검증
+            in_roster = verify_roster_student(sheet_id, num, name)
+            roster_badge = (
+                "✅ 명단 확인됨"  if in_roster
+                else "⚠️ 명단에 없음 (학번·이름 불일치 또는 미등록)"
+            )
+            roster_color = "green" if in_roster else "red"
+
             with st.container(border=True):
                 st.markdown(
                     f"**{name}** (`{uid}`)  |  학번: `{num}`  |  "
                     f"학년: {grade}  |  가입일: {joined}"
+                )
+                st.markdown(
+                    f'<span style="color:{roster_color};font-size:0.88em">'
+                    f'{roster_badge}</span>',
+                    unsafe_allow_html=True,
                 )
                 c1, c2 = st.columns(2)
                 with c1:
@@ -245,6 +262,131 @@ with tab_students:
                     st.success(f"{sel_uid} 비밀번호 재설정 완료")
                 else:
                     st.error("비밀번호 재설정에 실패했습니다.")
+
+    # ── 학급별 가입 현황 ──────────────────────────────────────────────────────
+    st.divider()
+    st.subheader("📊 학급별 가입 현황")
+    st.caption("구글 시트 '2026수강생명단'을 기준으로 가입 상태를 확인합니다.")
+
+    roster_all = _cached_roster(sheet_id)
+    if not roster_all:
+        debug = get_roster_debug_info(sheet_id)
+        if debug["ok"]:
+            st.info("ℹ️ '2026수강생명단' 시트에 데이터가 없습니다.")
+        else:
+            st.error(f"❌ 명단 로드 실패: {debug['error']}")
+            if debug.get("worksheets"):
+                st.caption(f"스프레드시트({debug['sheet_id'][:20]}…) 탭 목록: {', '.join(debug['worksheets'])}")
+            else:
+                st.caption(f"접근한 스프레드시트 ID: `{debug['sheet_id']}`")
+            st.caption(
+                "💡 '2026수강생명단' 시트가 **회원관리 구글시트** (`users_spreadsheet_id`)에 있는지 확인하세요. "
+                "진도표용 시트(`spreadsheet_id`)가 아닌 회원관리용 시트에 추가해야 합니다."
+            )
+    else:
+        # 이미 가입된 학생의 (학번, 이름) 집합
+        registered_nums = {
+            str(r.get("학번", "")).strip()
+            for r in students_all
+            if str(r.get("승인상태", "")).strip() in (STATUS_APPROVED, STATUS_PENDING)
+        }
+
+        # 반 목록 추출 (시트 순서 유지)
+        all_classes_in_roster = []
+        seen = set()
+        for r in roster_all:
+            cls = str(r.get("반", "") or r.get("학급", "")).strip()
+            if cls and cls not in seen:
+                all_classes_in_roster.append(cls)
+                seen.add(cls)
+
+        # 학급 선택 탭 (사이드 탭)
+        sel_cls = st.selectbox(
+            "학급 선택",
+            all_classes_in_roster,
+            key="roster_cls_sel",
+        )
+
+        cls_students = [
+            r for r in roster_all
+            if str(r.get("반", "") or r.get("학급", "")).strip() == sel_cls
+        ]
+        total_cnt  = len(cls_students)
+        joined_cnt = sum(1 for r in cls_students
+                         if str(r.get("학번", "")).strip() in registered_nums)
+        not_joined = [r for r in cls_students
+                      if str(r.get("학번", "")).strip() not in registered_nums]
+
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("전체 수강생", f"{total_cnt}명")
+        col_m2.metric("가입 완료", f"{joined_cnt}명")
+        col_m3.metric("미가입", f"{total_cnt - joined_cnt}명")
+
+        # 전체 명단 (가입 여부 포함)
+        with st.expander("📋 전체 명단 보기", expanded=False):
+            roster_display = []
+            for r in cls_students:
+                num  = str(r.get("학번", "")).strip()
+                nm   = str(r.get("이름", "")).strip()
+                is_joined = num in registered_nums
+                # 가입 상태 상세
+                matched = next(
+                    (s for s in students_all
+                     if str(s.get("학번", "")).strip() == num),
+                    None
+                )
+                status_str = matched.get("승인상태", "") if matched else ""
+                if not is_joined:
+                    disp_status = "미가입"
+                elif status_str == STATUS_APPROVED:
+                    disp_status = "승인"
+                elif status_str == STATUS_PENDING:
+                    disp_status = "대기"
+                elif status_str == STATUS_REJECTED:
+                    disp_status = "거부"
+                else:
+                    disp_status = status_str
+                roster_display.append({"학번": num, "이름": nm, "가입상태": disp_status})
+
+            df_roster = pd.DataFrame(roster_display, columns=["학번", "이름", "가입상태"])
+
+            def _color_status(val):
+                if val == "승인":
+                    return "background-color:#166534;color:#bbf7d0"
+                if val == "대기":
+                    return "background-color:#854d0e;color:#fef9c3"
+                if val == "거부":
+                    return "background-color:#7f1d1d;color:#fecaca"
+                return "background-color:#334155;color:#94a3b8"  # 미가입
+
+            if df_roster.empty:
+                st.info("명단 데이터가 없습니다.")
+            else:
+                # pandas 버전에 따라 applymap → map 폴백
+                try:
+                    styled = df_roster.style.map(_color_status, subset=["가입상태"])
+                except AttributeError:
+                    styled = df_roster.style.applymap(_color_status, subset=["가입상태"])
+                st.dataframe(styled, use_container_width=True, hide_index=True)
+
+        # 미가입 학생 목록
+        if not_joined:
+            with st.expander(f"⚠️ 미가입 학생 ({len(not_joined)}명)", expanded=True):
+                cols_nj = st.columns(4)
+                for i, r in enumerate(not_joined):
+                    with cols_nj[i % 4]:
+                        num = str(r.get("학번", "")).strip()
+                        nm  = str(r.get("이름", "")).strip()
+                        st.markdown(
+                            f'<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;'
+                            f'padding:10px 12px;margin-bottom:8px;text-align:center">'
+                            f'<span style="font-size:1.05em;font-weight:700;color:#e2e8f0">{nm}</span>'
+                            f'<br><span style="font-size:0.95em;color:#94a3b8;letter-spacing:0.03em">{num}</span>'
+                            f'</div>',
+                            unsafe_allow_html=True
+                        )
+        else:
+            st.success(f"🎉 {sel_cls} 학생 전원이 가입되어 있습니다!")
 
 
 # ─── 3. 일반인 관리 ──────────────────────────────────────────────────────────
