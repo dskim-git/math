@@ -1802,7 +1802,7 @@ def feedback_board_view():
 # ─────────────────────────────────────────────────────────────────────────────
 # 피드백 Google Sheets 연동
 _FEEDBACK_SHEET_NAME = "피드백"
-_FEEDBACK_SHEET_HEADER = ["접수시각", "유형", "학번", "이름", "답변이메일", "내용"]
+_FEEDBACK_SHEET_HEADER = ["접수시각", "유형", "학번", "이름", "답변이메일", "내용", "확인여부"]
 
 def _get_feedback_gspread_client():
     """gspread 클라이언트를 반환. 실패 시 None."""
@@ -1885,17 +1885,25 @@ def _mark_feedback_checked(timestamp_str: str) -> bool:
         if not all_vals:
             return False
         header = all_vals[0]
-        if "확인여부" in header:
-            col_idx = header.index("확인여부") + 1
-        else:
+        if "확인여부" not in header:
+            # 헤더에 컬럼이 없으면 시트 열 수를 먼저 늘린 뒤 추가
             col_idx = len(header) + 1
+            ws.resize(rows=ws.row_count, cols=col_idx)
             ws.update_cell(1, col_idx, "확인여부")
+            header = header + ["확인여부"]
+        else:
+            col_idx = header.index("확인여부") + 1
+        ts_col = header.index("접수시각") if "접수시각" in header else 0
         for i, row in enumerate(all_vals[1:], start=2):
-            if row and len(row) > 0 and row[0] == timestamp_str:
+            if not row:
+                continue
+            cell_ts = row[ts_col].strip() if ts_col < len(row) else ""
+            if cell_ts == timestamp_str.strip():
                 ws.update_cell(i, col_idx, "확인")
                 return True
         return False
-    except Exception:
+    except Exception as e:
+        st.error(f"[_mark_feedback_checked] {e}")
         return False
 
 
