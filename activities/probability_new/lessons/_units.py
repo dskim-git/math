@@ -137,7 +137,13 @@ CURRICULUM = [
                     "title": "파스칼의 삼각형에서 찾아보는 프랙털",
                     "subject": "probability",
                     "slug": "pascal_modulo_view"
-                }
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 이항정리 계수의 탄생",
+                    "subject": "probability_new",
+                    "slug": "mini/binomial_coeff_viz",
+                },
                 # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
                 # {"type":"url","title":"보충 설명","src":"https://..."},
