@@ -72,15 +72,20 @@ def _render_ranking() -> None:
             st.cache_data.clear()
             st.rerun()
 
-    try:
-        sheet_id = st.secrets["reflection_spreadsheet_probability_new"]
-    except Exception:
-        sheet_id = ""
+    sheet_id = st.secrets.get("reflection_spreadsheet_probability_new", "")
+    if not sheet_id:
+        st.error("⚠️ Streamlit Cloud secrets에 `reflection_spreadsheet_probability_new` 키가 없습니다.")
+        return
 
     records, err = _load_ranking_data(sheet_id)
 
     if err:
-        st.error(f"랭킹을 불러오지 못했습니다.\n\n```\n{err}\n```")
+        st.error(
+            f"랭킹을 불러오지 못했습니다. (sheet_id: `{sheet_id[:8]}...`)\n\n"
+            f"```\n{err}\n```\n\n"
+            "서비스 계정이 해당 스프레드시트에 공유(뷰어 이상)되어 있는지, "
+            "그리고 '이항정리랭킹' 시트가 존재하는지 확인하세요."
+        )
         return
 
     if not records:
