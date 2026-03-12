@@ -220,22 +220,21 @@ def _has_lessons(subject_key: str) -> bool:
     return (ACTIVITIES_ROOT / subject_key / "lessons" / "_units.py").exists()
 
 def _inject_subject_styles():
-    """교과 메인에서 쓸 '수업 카드' 전용 스타일을 한 번만 주입."""
-    if "_subject_styles" in st.session_state:
-        return
-    st.session_state["_subject_styles"] = True
+    """교과 메인에서 쓸 '수업 카드' 전용 스타일을 주입."""
     st.markdown(
         """
         <style>
-          .lesson-card{
-            background: linear-gradient(180deg, rgba(240,244,255,.9), rgba(235,248,255,.9));
-            border: 1px solid rgba(0,90,200,.22);
+          .lesson-card {
+            background: rgba(99,102,241,0.08);
+            border: 1px solid rgba(99,102,241,0.28);
             border-radius: 12px;
             padding: 14px 16px;
             margin: 0.25rem 0 1rem 0;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
           }
-          .lesson-card h4{ margin: 0 0 .35rem 0; font-weight: 700; }
-          .lesson-card p{ margin: .15rem 0 .5rem 0; color: var(--secondary-text-color); }
+          .lesson-card h4 { margin: 0 0 .35rem 0; font-weight: 700; color: rgba(255,255,255,0.93); }
+          .lesson-card p  { margin: .15rem 0 .5rem 0; color: rgba(255,255,255,0.52); }
         </style>
         """,
         unsafe_allow_html=True,
@@ -511,21 +510,21 @@ def _inject_login_style(hide_sidebar: bool = True):
     ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.03); }
     ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 3px; }
 
-    /* 로컬 디버그 패널 */
-    .debug-panel {
-        margin-top: 14px;
-        padding: 10px 14px 12px;
-        background: rgba(251, 191, 36, 0.07);
-        border: 1px solid rgba(251, 191, 36, 0.3);
-        border-radius: 12px;
+    /* 로컬 디버그 패널 — container 전체를 하나의 박스로 */
+    [data-testid="stVerticalBlock"]:has(> div > .stMarkdown .debug-panel-header) {
+        margin-top: 2.2rem;
+        background: rgba(251, 191, 36, 0.07) !important;
+        border: 1px solid rgba(251, 191, 36, 0.35) !important;
+        border-radius: 12px !important;
+        padding: 10px 14px 12px !important;
     }
-    .debug-panel-label {
+    .debug-panel-header {
         font-size: 0.72rem;
         font-weight: 700;
         letter-spacing: 1.5px;
-        color: rgba(251, 191, 36, 0.75) !important;
+        color: rgba(251, 191, 36, 0.80) !important;
         text-transform: uppercase;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -894,91 +893,23 @@ def login_view():
                                 "_user_id": "test_general", "_user_name": "테스트일반인",
                                 "_dev_mode": False, "_login_allowed_subjects": None},
             }
-            st.markdown('<div class="debug-panel"><div class="debug-panel-label">🐛 Local Debug — 빠른 접속</div></div>',
-                        unsafe_allow_html=True)
-            _dc = st.columns(len(_DEBUG_ROLES))
-            _CLEAR = ["_authenticated", "_user_type", "_user_id", "_user_name",
-                      "_dev_mode", "_login_allowed_subjects", "_visit_logged"]
-            for _col, (_label, _data) in zip(_dc, _DEBUG_ROLES.items()):
-                with _col:
-                    if st.button(_label, use_container_width=True, key=f"_dbg_{_label}"):
-                        for _k in _CLEAR:
-                            st.session_state.pop(_k, None)
-                        st.session_state.update(_data)
-                        _do_rerun()
+            with st.container():
+                st.markdown('<div class="debug-panel-header">🐛 LOCAL DEBUG — 빠른 접속</div>',
+                            unsafe_allow_html=True)
+                _dc = st.columns(len(_DEBUG_ROLES))
+                _CLEAR = ["_authenticated", "_user_type", "_user_id", "_user_name",
+                          "_dev_mode", "_login_allowed_subjects", "_visit_logged"]
+                for _col, (_label, _data) in zip(_dc, _DEBUG_ROLES.items()):
+                    with _col:
+                        if st.button(_label, use_container_width=True, key=f"_dbg_{_label}"):
+                            for _k in _CLEAR:
+                                st.session_state.pop(_k, None)
+                            st.session_state.update(_data)
+                            _do_rerun()
 
 def _get_subject_filter() -> Optional[str]:
     """URL 우회 토큰 방식은 제거됨. 항상 None(필터 없음)을 반환합니다."""
     return None
-
-def _admin_mode_ui():
-    """사이드바 하단에 사용자 정보, 로그아웃, 관리자 도구를 렌더링합니다."""
-    dev       = _is_dev_mode()
-    user_type = st.session_state.get("_user_type", "")
-    user_name = st.session_state.get("_user_name", "")
-    user_id   = st.session_state.get("_user_id",   "")
-
-    st.sidebar.divider()
-
-    # 사용자 정보 표시
-    if user_name:
-        type_icon = {"admin": "🔧", "student": "🎓", "general": "👤"}.get(user_type, "👤")
-        type_lbl  = {"admin": "관리자", "student": "학생", "general": "일반인"}.get(user_type, "")
-        st.sidebar.caption(f"{type_icon} **{user_name}** ({user_id})  |  {type_lbl}")
-
-    # 로그아웃 버튼 (모든 사용자)
-    if st.sidebar.button("🚪 로그아웃", use_container_width=True, key="_logout_btn"):
-        for k in ["_authenticated", "_user_type", "_user_id", "_user_name",
-                  "_login_allowed_subjects", "_dev_mode",
-                  "_show_pw_input", "_pw_error", "_visit_logged",
-                  "_ot_mode", "_subject_filter"]:
-            st.session_state.pop(k, None)
-        set_route("home")
-        _do_rerun()
-
-    # 학생 전용 메뉴
-    if user_type == "student":
-        if st.sidebar.button("📖 내 성찰 기록", use_container_width=True, key="_my_reflection_btn"):
-            set_route("my_reflection"); _do_rerun()
-
-    # 관리자 전용 메뉴
-    if user_type != "admin":
-        return
-
-    if dev:
-        st.sidebar.caption("🔧 관리자 모드 활성화 중")
-        if st.sidebar.button("🔓 일반 보기 모드로 전환", use_container_width=True,
-                             key="_admin_exit_btn"):
-            st.session_state["_dev_mode"] = False
-            _do_rerun()
-        if st.sidebar.button("👥 회원 관리", use_container_width=True,
-                             key="_admin_member_btn"):
-            st.switch_page("pages/97_회원관리.py")
-        if st.sidebar.button("📁 Dev Tree (파일 구조 보기)", use_container_width=True,
-                             key="_admin_dev_tree_btn"):
-            st.switch_page("pages/99_Dev_Tree.py")
-        if st.sidebar.button("📋 진도표 관리", use_container_width=True,
-                             key="_admin_schedule_btn"):
-            st.switch_page("pages/98_진도표.py")
-        if st.sidebar.button("📥 피드백 게시판", use_container_width=True,
-                             key="_admin_feedback_board_btn"):
-            set_route("feedback_board"); _do_rerun()
-        if st.sidebar.button("📊 방문자 통계", use_container_width=True,
-                             key="_admin_visit_stats_btn"):
-            set_route("visit_stats"); _do_rerun()
-        st.sidebar.link_button(
-            "🤖 AI 튜터와 대화하기",
-            "https://copilotstudio.microsoft.com/environments/"
-            "Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/"
-            "copilots_header_78f6d/webchat?__version__=2",
-            use_container_width=True,
-        )
-    else:
-        # 관리자지만 일반 보기 모드
-        if st.sidebar.button("🔧 관리자 모드로 전환", use_container_width=True,
-                             key="_admin_enter_btn"):
-            st.session_state["_dev_mode"] = True
-            _do_rerun()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 활동 자동 탐색
@@ -1138,12 +1069,43 @@ def _inject_sidebar_nav_visibility(dev: bool):
     </script>
     """, height=0)
 
+def _inject_app_theme():
+    """로그인 후 전체 앱에 다크 테마를 적용합니다."""
+    from theme_utils import inject_dark_theme
+    inject_dark_theme()
+
+
 def sidebar_navigation(registry: Dict[str, List[Activity]]):
     dev            = _is_dev_mode()
-    subject_filter = _get_subject_filter()       # URL 기반 단일 필터
-    login_allowed  = _get_login_allowed_subjects() # 로그인 기반 집합 필터
+    subject_filter = _get_subject_filter()
+    login_allowed  = _get_login_allowed_subjects()
+    user_type      = st.session_state.get("_user_type", "")
+    user_name      = st.session_state.get("_user_name", "")
+    user_id        = st.session_state.get("_user_id",   "")
     _inject_sidebar_nav_visibility(dev)
-    st.sidebar.header("📂 교과별 페이지")
+
+    # ── 1. 사용자 정보 / 로그아웃 ────────────────────────────
+    if user_name:
+        type_icon = {"admin": "🔧", "student": "🎓", "general": "👤"}.get(user_type, "👤")
+        type_lbl  = {"admin": "관리자", "student": "학생", "general": "일반인"}.get(user_type, "")
+        st.sidebar.caption(f"{type_icon} **{user_name}** ({user_id})  |  {type_lbl}")
+    if st.sidebar.button("🚪 로그아웃", use_container_width=True, key="_logout_btn"):
+        for k in ["_authenticated", "_user_type", "_user_id", "_user_name",
+                  "_login_allowed_subjects", "_dev_mode",
+                  "_show_pw_input", "_pw_error", "_visit_logged",
+                  "_ot_mode", "_subject_filter"]:
+            st.session_state.pop(k, None)
+        set_route("home")
+        _do_rerun()
+
+    st.sidebar.divider()
+
+    # ── 2. 내비게이션 ─────────────────────────────────────────
+    if st.sidebar.button("🏠 홈으로", use_container_width=True, key="_sidebar_home_btn"):
+        set_route("home")
+        _do_rerun()
+
+    st.sidebar.markdown("**📂 교과별 활동**")
     for key, label in SUBJECTS.items():
         if key in HIDDEN_SUBJECTS and not dev:
             continue
@@ -1152,22 +1114,16 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
         if login_allowed is not None and key not in login_allowed:
             continue
         with st.sidebar.expander(f"{label}", expanded=False):
-            # 교과 메인
             if st.button("교과 메인 열기", key=f"open_{key}_index", use_container_width=True):
                 set_route("subject", subject=key)
                 _do_rerun()
-
-            # lessons 진입
             if (ACTIVITIES_ROOT / key / "lessons" / "_units.py").exists():
                 if st.button("수업 열기 (단원별 자료)", key=f"open_{key}_lessons", use_container_width=True):
                     set_route("lessons", subject=key)
                     _do_rerun()
-
-            # 활동 목록 (숨김 제외)
-            acts_all = registry.get(key, [])
-            acts = [a for a in acts_all if not a.hidden]
+            acts = [a for a in registry.get(key, []) if not a.hidden]
             if not acts:
-                st.caption("아직 활동이 없습니다. 파일을 추가하면 자동 등록됩니다.")
+                st.caption("아직 활동이 없습니다.")
             else:
                 for act in acts:
                     if st.button(f"• {act.title}", key=f"open_{key}_{act.slug}", use_container_width=True):
@@ -1175,19 +1131,53 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
                         _do_rerun()
 
     st.sidebar.divider()
-    if st.button("🏠 홈으로", type="secondary", use_container_width=True):
-        set_route("home")
-        _do_rerun()
-    if st.button("💬 의견 · 오류 접수", type="secondary", use_container_width=True, key="_sidebar_feedback_btn"):
-        set_route("feedback")
-        _do_rerun()
-    # 비밀번호 변경 (관리자 제외)
-    if st.session_state.get("_user_type") in ("student", "general"):
-        if st.button("🔑 비밀번호 변경", type="secondary", use_container_width=True,
-                     key="_sidebar_chpw_btn"):
-            set_route("change_password")
-            _do_rerun()
-    _admin_mode_ui()
+
+    # ── 3. 개인 메뉴 ──────────────────────────────────────────
+    if user_type == "student":
+        if st.sidebar.button("📖 내 성찰 기록", use_container_width=True, key="_my_reflection_btn"):
+            set_route("my_reflection"); _do_rerun()
+    if st.sidebar.button("💬 의견 · 오류 접수", use_container_width=True, key="_sidebar_feedback_btn"):
+        set_route("feedback"); _do_rerun()
+    if user_type in ("student", "general"):
+        if st.sidebar.button("🔑 비밀번호 변경", use_container_width=True, key="_sidebar_chpw_btn"):
+            set_route("change_password"); _do_rerun()
+
+    # ── 4. 관리자 도구 ────────────────────────────────────────
+    if user_type == "admin":
+        st.sidebar.divider()
+        if dev:
+            st.sidebar.caption("🔧 **관리자 모드** 활성화 중")
+            if st.sidebar.button("🔓 일반 보기 모드로 전환", use_container_width=True,
+                                 key="_admin_exit_btn"):
+                st.session_state["_dev_mode"] = False
+                _do_rerun()
+            if st.sidebar.button("👥 회원 관리", use_container_width=True,
+                                 key="_admin_member_btn"):
+                st.switch_page("pages/97_회원관리.py")
+            if st.sidebar.button("📋 진도표 관리", use_container_width=True,
+                                 key="_admin_schedule_btn"):
+                st.switch_page("pages/98_진도표.py")
+            if st.sidebar.button("📁 Dev Tree (파일 구조 보기)", use_container_width=True,
+                                 key="_admin_dev_tree_btn"):
+                st.switch_page("pages/99_Dev_Tree.py")
+            if st.sidebar.button("📥 피드백 게시판", use_container_width=True,
+                                 key="_admin_feedback_board_btn"):
+                set_route("feedback_board"); _do_rerun()
+            if st.sidebar.button("📊 방문자 통계", use_container_width=True,
+                                 key="_admin_visit_stats_btn"):
+                set_route("visit_stats"); _do_rerun()
+            st.sidebar.link_button(
+                "🤖 AI 튜터와 대화하기",
+                "https://copilotstudio.microsoft.com/environments/"
+                "Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/"
+                "copilots_header_78f6d/webchat?__version__=2",
+                use_container_width=True,
+            )
+        else:
+            if st.sidebar.button("🔧 관리자 모드로 전환", use_container_width=True,
+                                 key="_admin_enter_btn"):
+                st.session_state["_dev_mode"] = True
+                _do_rerun()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 관리자 홈 대시보드
@@ -1229,20 +1219,21 @@ def _render_admin_dashboard():
     st.markdown("""
     <style>
     .adm-stat {
-        border: 1px solid rgba(128,128,128,0.18);
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(99,102,241,0.22);
         border-radius: 10px;
         padding: 0.7rem 0.8rem;
         text-align: center;
         height: 100%;
     }
-    .adm-stat-lbl  { font-size:0.78rem; color:var(--secondary-text-color); margin-bottom:0.2rem; }
-    .adm-stat-val  { font-size:1.9rem; font-weight:800; line-height:1.1; margin-bottom:0.15rem; }
-    .adm-stat-sub  { font-size:0.72rem; color:var(--secondary-text-color); }
-    .adm-stat-ok   { color:#22c55e; }
-    .adm-stat-bad  { color:#ef4444; }
+    .adm-stat-lbl  { font-size:0.78rem; color:rgba(255,255,255,0.48); margin-bottom:0.2rem; }
+    .adm-stat-val  { font-size:1.9rem; font-weight:800; line-height:1.1; margin-bottom:0.15rem; color:rgba(255,255,255,0.90); }
+    .adm-stat-sub  { font-size:0.72rem; color:rgba(255,255,255,0.45); }
+    .adm-stat-ok   { color:#4ade80 !important; }
+    .adm-stat-bad  { color:#f87171 !important; }
     .adm-shortcut-label {
         font-size:0.78rem; font-weight:600;
-        color:var(--secondary-text-color);
+        color:rgba(255,255,255,0.48);
         text-align:center; margin-bottom:0.4rem;
     }
     </style>
@@ -1317,14 +1308,18 @@ def _inject_home_styles():
     st.markdown(
         """
         <style>
-          /* 히어로 섹션 스타일 */
+          /* 히어로 섹션 — 다크 유리 카드 */
           .hero-container {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1));
-            border-radius: 16px;
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 20px;
             padding: 2.5rem 2rem;
             margin-bottom: 2.5rem;
             text-align: center;
-            border: 1px solid rgba(99, 102, 241, 0.2);
+            box-shadow: 0 8px 40px rgba(0,0,0,0.30),
+                        inset 0 1px 0 rgba(255,255,255,0.06);
           }
           .hero-title {
             display: flex;
@@ -1334,7 +1329,7 @@ def _inject_home_styles():
             font-size: 3rem;
             font-weight: 800;
             margin: 0 0 0.75rem 0;
-            background: linear-gradient(135deg, #6366f1, #a855f7);
+            background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 45%, #818cf8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -1342,33 +1337,28 @@ def _inject_home_styles():
           .hero-logo-svg {
             width: 56px; height: 56px; flex-shrink: 0;
             -webkit-text-fill-color: initial;
-            filter: drop-shadow(0 0 10px rgba(139,92,246,0.5));
+            filter: drop-shadow(0 0 12px rgba(139,92,246,0.65));
           }
           .hero-subtitle {
-            font-size: 1.15rem;
-            color: var(--secondary-text-color);
-            line-height: 1.6;
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.55);
+            line-height: 1.7;
             margin: 0;
           }
-          
-          /* 카드 스타일 */
-          .subject-card {
-            height: 100%;
-          }
-          .subject-card-icon {
-            font-size: 3rem;
-            margin-bottom: 0.75rem;
-          }
+
+          /* 교과 카드 */
+          .subject-card { height: 100%; }
+          .subject-card-icon { font-size: 2.6rem; margin-bottom: 0.6rem; }
           .subject-card-title {
-            font-size: 1.35rem;
+            font-size: 1.25rem;
             font-weight: 700;
-            margin: 0 0 0.5rem 0;
-            color: var(--text-color);
+            margin: 0 0 0.45rem 0;
+            color: rgba(255,255,255,0.93);
           }
           .subject-card-desc {
-            font-size: 0.95rem;
-            color: var(--secondary-text-color);
-            line-height: 1.5;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.50);
+            line-height: 1.55;
             margin: 0 0 1rem 0;
           }
         </style>
@@ -2213,8 +2203,9 @@ def feedback_board_view():
             st.markdown(f"**답변 이메일:** {row.get('답변이메일', '') or '(미입력)'}")
             st.markdown("**내용:**")
             st.markdown(
-                f"<div style='background:#f9f9f9;border:1px solid #ddd;padding:10px;"
-                f"border-radius:6px;white-space:pre-wrap;line-height:1.6'>"
+                f"<div style='background:rgba(255,255,255,0.04);border:1px solid rgba(99,102,241,0.22);"
+                f"padding:10px;border-radius:8px;white-space:pre-wrap;line-height:1.6;"
+                f"color:rgba(255,255,255,0.85);'>"
                 f"{row.get('내용', '')}</div>",
                 unsafe_allow_html=True,
             )
@@ -2537,6 +2528,23 @@ def visit_stats_view():
     import pandas as pd
     import plotly.express as px
 
+    def _dark_fig(fig):
+        """Plotly 차트에 다크 테마를 적용합니다."""
+        _gc = dict(gridcolor="rgba(99,102,241,0.15)", linecolor="rgba(99,102,241,0.25)",
+                   tickfont=dict(color="rgba(255,255,255,0.60)"),
+                   title_font=dict(color="rgba(255,255,255,0.70)"))
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(15,23,42,0.45)",
+            font=dict(color="rgba(255,255,255,0.75)", size=12),
+            title_font=dict(color="rgba(255,255,255,0.90)"),
+            xaxis=_gc, yaxis=_gc,
+            legend=dict(bgcolor="rgba(15,23,42,0.70)",
+                        bordercolor="rgba(99,102,241,0.22)",
+                        font=dict(color="rgba(255,255,255,0.75)")),
+        )
+        return fig
+
     if not _is_dev_mode():
         set_route("home")
         _do_rerun()
@@ -2638,6 +2646,7 @@ def visit_stats_view():
             color_discrete_sequence=[chart_color_30d],
         )
         fig.update_layout(hovermode="x unified")
+        _dark_fig(fig)
         st.plotly_chart(fig, use_container_width=True)
 
     with tab2:
@@ -2658,6 +2667,7 @@ def visit_stats_view():
             color_discrete_sequence=[chart_color_7d],
         )
         fig7.update_layout(hovermode="x unified")
+        _dark_fig(fig7)
         st.plotly_chart(fig7, use_container_width=True)
 
     with tab3:
@@ -2674,6 +2684,7 @@ def visit_stats_view():
             title=f"과목별 비율 (최근 30일, {'고유 사용자' if is_unique else '방문자'})",
         )
         fig_s.update_traces(textposition="inside", textinfo="percent+label")
+        _dark_fig(fig_s)
         st.plotly_chart(fig_s, use_container_width=True)
         st.dataframe(subj_df, use_container_width=True, hide_index=True)
 
@@ -2750,6 +2761,7 @@ def visit_stats_view():
                     barmode="group",
                 )
                 fig_ref.update_layout(xaxis_tickangle=-30)
+                _dark_fig(fig_ref)
                 st.plotly_chart(fig_ref, use_container_width=True)
 
             st.markdown("##### 원본 데이터 (최근 100건)")
@@ -2995,9 +3007,9 @@ def _render_footer():
           .site-footer {
             margin-top: 1.5rem;
             padding: 0.75rem 1rem;
-            border-top: 1px solid rgba(128,128,128,0.25);
+            border-top: 1px solid rgba(99,102,241,0.18);
             font-size: 0.82rem;
-            color: var(--secondary-text-color);
+            color: rgba(255,255,255,0.35);
             text-align: center;
             line-height: 1.8;
           }
@@ -3103,6 +3115,7 @@ def main():
     # ──────────────────────────────────────────────────────────────────────────
 
     _log_visit()   # 세션 최초 1회 방문 기록
+    _inject_app_theme()  # 전체 앱 다크 테마 적용
     registry = discover_activities()
     sidebar_navigation(registry)
 

@@ -24,17 +24,9 @@ from io import StringIO
 
 st.set_page_config(page_title="회원 관리", layout="wide")
 
-# 기본 멀티페이지 내비게이션 숨김
-st.markdown("""
-<style>
-[data-testid="stSidebarNav"],
-[data-testid="stSidebarNavContainer"],
-[data-testid="stSidebarNavItems"],
-[data-testid="stSidebarNavLink"],
-section[data-testid="stSidebar"] nav
-{ display: none !important; visibility: hidden !important; }
-</style>
-""", unsafe_allow_html=True)
+from theme_utils import inject_dark_theme, inject_hide_nav
+inject_dark_theme()
+inject_hide_nav()
 
 st.sidebar.page_link("home.py", label="🏠 홈으로 돌아가기",
                      use_container_width=True)

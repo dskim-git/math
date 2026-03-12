@@ -18,17 +18,9 @@ import json
 
 st.set_page_config(page_title="진도표 관리", layout="wide")
 
-# ── 기본 멀티페이지 nav 숨김 ─────────────────────────────────────────────────
-st.markdown("""
-<style>
-[data-testid="stSidebarNav"],
-[data-testid="stSidebarNavContainer"],
-[data-testid="stSidebarNavItems"],
-[data-testid="stSidebarNavLink"],
-section[data-testid="stSidebar"] nav
-{ display: none !important; visibility: hidden !important; }
-</style>
-""", unsafe_allow_html=True)
+from theme_utils import inject_dark_theme, inject_hide_nav
+inject_dark_theme()
+inject_hide_nav()
 
 # ── 사이드바 ─────────────────────────────────────────────────────────────────
 st.sidebar.page_link("home.py", label="🏠 홈으로 돌아가기", use_container_width=True)
@@ -116,13 +108,13 @@ DEFAULT_SCHEDULE: dict = {
     "금": ["1학년 9반 (공통수학)", "1학년 10반 (공통수학)", "2학년 9반 (확률과통계)", "2학년 10반 (확률과통계)"],
 }
 
-# 반별 음영 색상 (공통수학 계열 / 확률과통계 계열)
+# 반별 음영 색상 — 다크 테마에 어울리는 진한 색상
 CLASS_COLORS = {
-    "1학년 9반 (공통수학)":    ("#fef9c3", "#854d0e"),  # 연노랑
-    "1학년 10반 (공통수학)":   ("#fef9c3", "#854d0e"),  # 연노랑
-    "2학년 9반 (확률과통계)":  ("#ffedd5", "#9a3412"),  # 연주황
-    "2학년 10반 (확률과통계)": ("#ffedd5", "#9a3412"),  # 연주황
-    "2학년 11반 (확률과통계)": ("#ffedd5", "#9a3412"),  # 연주황
+    "1학년 9반 (공통수학)":    ("rgba(30,58,138,0.70)",  "#bfdbfe"),  # 파란 계열
+    "1학년 10반 (공통수학)":   ("rgba(30,58,138,0.70)",  "#bfdbfe"),
+    "2학년 9반 (확률과통계)":  ("rgba(120,53,15,0.70)",  "#fed7aa"),  # 주황 계열
+    "2학년 10반 (확률과통계)": ("rgba(120,53,15,0.70)",  "#fed7aa"),
+    "2학년 11반 (확률과통계)": ("rgba(120,53,15,0.70)",  "#fed7aa"),
 }
 
 def _get_schedule() -> dict:
@@ -454,7 +446,8 @@ def _render_week_html_table(week_dates: list) -> str:
 
     th_base = (
         "padding:6px 10px;text-align:center;font-size:0.8em;font-weight:600;"
-        "border-bottom:2px solid #cbd5e1;white-space:nowrap;background:#f8fafc"
+        "border-bottom:2px solid rgba(99,102,241,0.35);white-space:nowrap;"
+        "background:rgba(10,18,40,0.95);color:rgba(255,255,255,0.90);"
     )
     headers_html = "".join(
         f'<th style="{th_base}">{_html.escape(col)}</th>' for col in display_cols
@@ -468,7 +461,7 @@ def _render_week_html_table(week_dates: list) -> str:
         has_override = date_iso in _get_date_overrides()
         cells = ""
         for col in display_cols:
-            base = "padding:5px 8px;vertical-align:top;font-size:0.82em;border-bottom:1px solid #e2e8f0;"
+            base = "padding:5px 8px;vertical-align:top;font-size:0.82em;border-bottom:1px solid rgba(99,102,241,0.15);color:rgba(255,255,255,0.85);"
             if col in CLASSES and col in active:
                 bg, fg = CLASS_COLORS.get(col, ("#e0f2fe", "#0c4a6e"))
                 extra = f"background:{bg};color:{fg};font-weight:500;"
