@@ -115,6 +115,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 이항정리 계수의 탄생",
+                    "subject": "probability_new",
+                    "slug": "mini/binomial_coeff_viz",
+                },
+                {
                     "type": "canva",
                     "title": "이항정리의 활용",
                     "src": "https://www.canva.com/design/DAHDnr-AdUg/f09JAABVbg4QfGwUTfPeug/view?embed",
@@ -134,15 +140,9 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
-                    "title": "파스칼의 삼각형에서 찾아보는 프랙털",
-                    "subject": "probability",
-                    "slug": "pascal_modulo_view"
-                },
-                {
-                    "type": "activity",
-                    "title": "미니: 이항정리 계수의 탄생",
+                    "title": "미니: 파스칼 삼각형에서 찾아보는 프랙털",
                     "subject": "probability_new",
-                    "slug": "mini/binomial_coeff_viz",
+                    "slug": "mini/pascal_fractal",
                 },
                 # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
