@@ -342,6 +342,7 @@ def _cached_roster(sheet_id: str) -> list[dict]:
         return []
 
 
+@st.cache_data(ttl=300, show_spinner=False)
 def get_roster_debug_info(sheet_id: str) -> dict:
     """
     수강생 명단 로드 상태를 점검합니다. (오류 진단용 — 캐시 없음)
