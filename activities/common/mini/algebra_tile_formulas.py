@@ -366,11 +366,11 @@ function buildGrid(fi) {
       const cell = document.createElement('div'); cell.id = 'cell-' + fi + '-' + r + '-' + c;
       cell.dataset.fi = fi; cell.dataset.r = r; cell.dataset.c = c;
       const placed = gS[fi][r][c];
-      if (placed) setCellPlaced(cell, fi, r, c, placed); else cell.className = 'grid-cell empty';
-      cell.addEventListener('dragover', e => { e.preventDefault(); if (!gS[fi][r][c]) cell.style.borderColor = '#06b6d4'; });
-      cell.addEventListener('dragleave', () => { if (!gS[fi][r][c]) cell.style.borderColor = ''; });
+      if (placed !== null) setCellPlaced(cell, fi, r, c, placed); else cell.className = 'grid-cell empty';
+      cell.addEventListener('dragover', e => { e.preventDefault(); if (gS[fi][r][c] === null) cell.style.borderColor = '#06b6d4'; });
+      cell.addEventListener('dragleave', () => { if (gS[fi][r][c] === null) cell.style.borderColor = ''; });
       cell.addEventListener('drop', e => { e.preventDefault(); cell.style.borderColor = ''; doDropOnCell(fi, r, c, JSON.parse(e.dataTransfer.getData('text/plain'))); });
-      cell.addEventListener('click', () => { if (gS[fi][r][c]) removeFromCell(fi, r, c); });
+      cell.addEventListener('click', () => { if (gS[fi][r][c] !== null) removeFromCell(fi, r, c); });
       table.appendChild(cell);
     }
   }
@@ -400,15 +400,15 @@ function renderPool(fi) {
 }
 
 function doDropOnCell(fi, r, c, data) {
-  if (gS[fi][r][c]) returnToPool(fi, gS[fi][r][c]);
-  pC[fi][data.pi]--; gS[fi][r][c] = data.type;
+  if (gS[fi][r][c] !== null) returnToPool(fi, gS[fi][r][c]);
+  pC[fi][data.pi]--; gS[fi][r][c] = data.pi;
   const cell = document.getElementById('cell-' + fi + '-' + r + '-' + c);
-  setCellPlaced(cell, fi, r, c, data.type); renderPool(fi);
+  setCellPlaced(cell, fi, r, c, data.pi); renderPool(fi);
 }
 
-function setCellPlaced(cell, fi, r, c, type) {
-  cell.className = 'grid-cell placed ' + type;
-  const item = FDATA[fi].pool.find(p => p.type === type);
+function setCellPlaced(cell, fi, r, c, pi) {
+  const item = FDATA[fi].pool[pi];
+  cell.className = 'grid-cell placed ' + (item ? item.type : '');
   cell.innerHTML = katex.renderToString(item ? item.tex : '?', {throwOnError:false});
   cell.title = '클릭해서 제거';
 }
@@ -419,8 +419,8 @@ function removeFromCell(fi, r, c) {
   cell.className = 'grid-cell empty'; cell.innerHTML = ''; cell.title = ''; renderPool(fi);
 }
 
-function returnToPool(fi, type) {
-  const idx = FDATA[fi].pool.findIndex(p => p.type === type); if (idx !== -1) pC[fi][idx]++;
+function returnToPool(fi, pi) {
+  if (pi !== null && pi !== undefined) pC[fi][pi]++;
 }
 
 // ── 확인 / 힌트 / 초기화 ──
@@ -429,8 +429,9 @@ function checkGrid(fi) {
   for (let r = 0; r < f.rows; r++) for (let c = 0; c < f.cols; c++) {
     const placed = gS[fi][r][c], exp = f.ans[r][c];
     const cell = document.getElementById('cell-' + fi + '-' + r + '-' + c);
-    if (!placed) { allFilled = false; continue; }
-    if (placed === exp) cell.style.outline = '2px solid #10b981';
+    if (placed === null) { allFilled = false; continue; }
+    const placedType = FDATA[fi].pool[placed].type;
+    if (placedType === exp) cell.style.outline = '2px solid #10b981';
     else { cell.style.outline = '2px solid #ef4444'; allOk = false; }
   }
   const msg = document.getElementById('msg' + fi); msg.className = 'msg-box show';

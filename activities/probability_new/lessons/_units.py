@@ -127,6 +127,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 이항정리의 활용",
+                    "subject": "probability_new",
+                    "slug": "mini/binomial_theorem_apply",
+                },
+                {
                     "type": "canva",
                     "title": "파스칼의 삼각형",
                     "src": "https://www.canva.com/design/DAHDnplxYaU/QNqLkvHNlUrPG5kyd2253A/view?embed",
