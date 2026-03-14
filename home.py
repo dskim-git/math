@@ -131,6 +131,7 @@ SUBJECTS = {
     "calculus":        "미적분학(이전 교육과정)",
     "probability":     "확률과통계(이전 교육과정)",
     "geometry":        "기하학",
+    "gifted":          "영재",
     "etc":             "기타",
 }
 
@@ -1503,6 +1504,10 @@ def home_view():
             "icon": "📐",
             "description": "평면과 공간 도형의 성질,<br>변환과 작도의 원리를 탐구합니다."
         },
+        "gifted": {
+            "icon": "🌟",
+            "description": "영재 수업 주제별 자료를 한눈에 보고<br>각 수업 페이지로 이동합니다."
+        },
         "etc": {
             "icon": "🧩",
             "description": "프랙털, 게임 이론 등<br>흥미로운 수학 주제들을 만납니다."
@@ -1721,6 +1726,33 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
 LESSON_HEADER_VISIBLE = False
 
 LESSON_HEADER_VISIBLE = False
+
+def gifted_subject_view():
+    """영재 교과 메인 — 수업 주제 카드 목록. 클릭하면 해당 수업 lessons 페이지로 직행."""
+    st.title("🌟 영재 메인")
+    st.markdown("수업 주제를 선택하면 해당 수업 자료 페이지로 바로 이동합니다.")
+
+    _inject_subject_styles()
+
+    curriculum = load_curriculum("gifted")
+    if not curriculum:
+        st.info("`activities/gifted/lessons/_units.py`의 CURRICULUM에 수업 주제를 추가하세요.")
+        return
+
+    for topic in curriculum:
+        with st.container(border=True):
+            st.subheader(topic.get("label", ""))
+            items = topic.get("items", [])
+            if items:
+                st.caption(f"자료 {len(items)}개")
+            else:
+                st.caption("아직 자료가 없습니다.")
+            c1, _ = st.columns([1, 3])
+            with c1:
+                if st.button("열기", key=f"gifted_topic_{topic['key']}", use_container_width=True):
+                    set_route("lessons", subject="gifted", unit=topic["key"])
+                    _do_rerun()
+
 
 def ot_view(subject_key: str):
     """OT 자료 전용 페이지."""
@@ -3142,6 +3174,8 @@ def main():
         visit_stats_view()
     elif view == "my_reflection":
         my_reflection_view()
+    elif view == "subject" and subject == "gifted":
+        gifted_subject_view()
     elif view == "subject" and subject in SUBJECTS:
         subject_index_view(subject, registry)
     elif view == "ot" and subject in SUBJECTS and _is_ot_mode() and subject in _OT_CANVA:

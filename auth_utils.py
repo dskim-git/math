@@ -33,6 +33,7 @@ ALL_SUBJECTS: dict[str, str] = {
     "calculus":        "미적분학(이전 교육과정)",
     "probability":     "확률과통계(이전 교육과정)",
     "geometry":        "기하학",
+    "gifted":          "영재",
     "etc":             "기타",
 }
 
