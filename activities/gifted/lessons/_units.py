@@ -95,6 +95,24 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 이중진자 시뮬레이션",
+                "subject": "gifted",
+                "slug": "double_pendulum",
+            },
+            {
+                "type": "activity",
+                "title": "미니: 나비효과 — 로렌츠의 기상 모델",
+                "subject": "gifted",
+                "slug": "lorenz_butterfly",
+            },
+            {
+                "type": "activity",
+                "title": "미니: 로렌츠 끌개 — 불규칙 속의 규칙성",
+                "subject": "gifted",
+                "slug": "lorenz_attractor",
+            },
+            {
                 "type": "canva",
                 "title": "다양한 프랙털 도형",
                 "src": "https://www.canva.com/design/DAHD5JsqxbI/6dfNM09iN6uDmYC7IytVdg/view?embed",
