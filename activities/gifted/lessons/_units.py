@@ -28,6 +28,36 @@ CURRICULUM = [
                 "src": "https://www.canva.com/design/DAHD5LMHQfo/Wbj346X7lGusCY5yVP4DQQ/view?embed",
                 "height": 800
             },
+            {
+                "type": "canva",
+                "title": "소수와 리만가설",
+                "src": "https://www.canva.com/design/DAHD5LJD7BI/1AX4h8M2mF3ewTuVSdLzfQ/view?embed",
+                "height": 800
+            },
+            {
+                "type": "activity",
+                "title": "미니: 에라토스테네스의 체와 소수정리",
+                "subject": "gifted",
+                "slug": "sieve_eratosthenes",
+            },
+            {
+                "type": "canva",
+                "title": "산술함수와 곱셈함수",
+                "src": "https://www.canva.com/design/DAHD5HOoNBw/tf71lw0Erw4t_FTcN9qK_Q/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "제타함수",
+                "src": "https://www.canva.com/design/DAHDhAAK3IQ/rYmEOCarMu7uZhfSz3fgww/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "제타함수와 산술함수의 관계",
+                "src": "https://www.canva.com/design/DAHD5CIkUFI/a35IjIcviQ5ArnAcsemrxQ/view?embed",
+                "height": 800
+            },
             
         ],
     },
@@ -35,14 +65,90 @@ CURRICULUM = [
         "key": "2",
         "label": "시어핀스키 삼각형과 카오스 게임",
         "items": [
-            # 수업 자료를 여기에 추가하세요.
+            {
+                "type": "canva",
+                "title": "프랙털",
+                "src": "https://www.canva.com/design/DAHD5HHqt2Y/AOPdrz4lXeVPmO3XuzPYhg/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "카오스",
+                "src": "https://www.canva.com/design/DAHD5FRQrWU/N54TY2k5dSGI5EO4V6VbLw/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "다양한 프랙털 도형",
+                "src": "https://www.canva.com/design/DAHD5JsqxbI/6dfNM09iN6uDmYC7IytVdg/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "시에르핀스키 삼각형",
+                "src": "https://www.canva.com/design/DAHD5IG1GG4/XR0RX4RCEMDknSfkDQTuOw/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "파스칼의 삼각형의 비밀",
+                "src": "https://www.canva.com/design/DAHD5CslE68/-sWcAMCzq2edQEi2xpjnDQ/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "카오스 게임",
+                "src": "https://www.canva.com/design/DAHD5CdyCP8/aa1HvPgknv6BW6zdUwQnNw/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "인터넷 카오스 게임",
+                "src": "https://www.canva.com/design/DAHD4zEWKHQ/FpmkwsTl-3d4Ezyw6ldBfQ/view?embed",
+                "height": 800
+            },
         ],
     },
     {
         "key": "3",
         "label": "사진과 그림을 활용한 시선에 대한 연구",
         "items": [
-            # 수업 자료를 여기에 추가하세요.
+            {
+                "type": "canva",
+                "title": "원근법",
+                "src": "https://www.canva.com/design/DAHD5AeS3rM/6s_eBGEgqif4Nt1_xzEycA/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "소실점",
+                "src": "https://www.canva.com/design/DAHD5PdSLCc/sxzTgo_NqG5pQL4sLgmmAg/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "투시원근법에서의 거리 측정",
+                "src": "https://www.canva.com/design/DAHD5JryAbM/SFA8M6MMJV7vUa4n0B0VhQ/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "그림 속 실제 사물과 그림 사이의 거리",
+                "src": "https://www.canva.com/design/DAHD5DczdKk/R77ntzzhXDc18cht19ns7A/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "등간격으로 나열된 사물의 화폭에서의 간격",
+                "src": "https://www.canva.com/design/DAHD5EOnQ_w/101r0AgevDf4vJtBt5WBeQ/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "성 삼위일체(마사초) 분석",
+                "src": "https://www.canva.com/design/DAHD490esgo/XIZ5XR5G1LnzInU9ysyhqw/view?embed",
+                "height": 800
+            },
         ],
     },
     {
