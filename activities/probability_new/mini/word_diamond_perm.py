@@ -133,7 +133,7 @@ svg.diamond{overflow:visible}
     매 단계에서 <span style="color:#67e8f9">왼쪽(↙)</span> 또는 <span style="color:#f472b6">오른쪽(↘)</span>을 선택합니다.<br>
     총 <strong style="color:#fbbf24">$2k$번</strong> 선택 중 정확히 <strong style="color:#67e8f9">$k$번 왼쪽</strong>,
     <strong style="color:#f472b6">$k$번 오른쪽</strong>을 선택해야 맨 아래에 도달하므로<br>
-    경우의 수 = $\dfrac{(2k)!}{k! \times k!} = \binom{2k}{k}$
+    경우의 수 = $\dfrac{(2k)!}{k! \times k!} = {}_{2k}C_{k}$
   </div>
 </div>
 
@@ -464,12 +464,12 @@ function render() {
     `단어 길이 $n = ${n} = 2 \\times ${k} + 1$<br>` +
     `맨 위에서 맨 아래까지 총 <strong style="color:#fbbf24">$2k = ${2*k}$번</strong> 선택하며,` +
     ` 정확히 <span style="color:#67e8f9">왼쪽 ${k}번</span> + <span style="color:#f472b6">오른쪽 ${k}번</span> 이동해야 합니다.<br>` +
-    `$\\displaystyle \\binom{${2*k}}{${k}} = \\frac{${2*k}!}{${k}! \\times ${k}!} = ${fmt(result)}$가지`;
+    `$\displaystyle {}_{${2*k}}C_{${k}} = \\frac{${2*k}!}{${k}! \\times ${k}!} = ${fmt(result)}$가지`;
   document.getElementById('kpiRow').innerHTML = `
     <div class="kpi"><div class="knum">${n}</div><div class="klbl">단어 글자 수 n</div></div>
     <div class="kpi"><div class="knum">${k}</div><div class="klbl">절반 k</div></div>
     <div class="kpi"><div class="knum">${2*k}</div><div class="klbl">총 선택 횟수 2k</div></div>
-    <div class="kpi"><div class="knum" style="color:#34d399;font-size:${fmt(result).length>6?'18px':'28px'}">${fmt(result)}</div><div class="klbl">경우의 수 C(2k,k)</div></div>
+    <div class="kpi"><div class="knum" style="color:#34d399;font-size:${fmt(result).length>6?'18px':'28px'}">${fmt(result)}</div><div class="klbl">경우의 수 ₂ₖCₖ</div></div>
   `;
 
   // ── 단계 분석표 ──
@@ -556,7 +556,7 @@ function render() {
       <div class="step-num">4</div>
       <div class="step-body">
         <strong>공식 적용</strong><br>
-        $\\displaystyle \\frac{(${2*k})!}{${k}! \\times ${k}!} = \\binom{${2*k}}{${k}} = ${fmt(result)}$가지<br>
+        $\\displaystyle \\frac{(${2*k})!}{${k}! \\times ${k}!} = {}_{${2*k}}C_{${k}} = ${fmt(result)}$가지<br>
         격자 위에서 각 셀에 마우스를 올려 경로 수가 맞는지 확인해 보세요!
       </div>
     </div>
@@ -590,21 +590,21 @@ def _render_quiz():
             "a": "252",
             "hint": r"$n = 11 = 2 \times 5 + 1$ 이므로 $k = 5$. 왼쪽 5번, 오른쪽 5번 선택하는 순열의 수를 구하세요: $\dfrac{10!}{5! \times 5!}$",
             "sol": r"""왼쪽(↙) $5$번, 오른쪽(↘) $5$번을 일렬로 나열하는 **같은 것이 있는 순열**의 수와 같습니다.
-$$\frac{(2 \times 5)!}{5! \times 5!} = \frac{10!}{5! \times 5!} = \binom{10}{5} = 252$$"""
+$$\frac{(2 \times 5)!}{5! \times 5!} = \frac{10!}{5! \times 5!} = {}_{10}C_{5} = 252$$"""
         },
         {
             "q": r"단어 **LEVEL** (5글자)로 만든 다이아몬드 격자에서 LEVEL을 읽을 수 있는 경우의 수를 구하시오. (단, $n = 5 = 2 \times 2 + 1$이므로 $k = 2$)",
             "a": "6",
             "hint": r"왼쪽 $k=2$번, 오른쪽 $k=2$번 선택. $\dfrac{4!}{2! \times 2!}$를 계산하세요.",
             "sol": r"""$n = 5,\ k = 2$ 이므로 총 $2k = 4$번 이동합니다.
-$$\frac{4!}{2! \times 2!} = \binom{4}{2} = 6$$"""
+$$\frac{4!}{2! \times 2!} = {}_{4}C_{2} = 6$$"""
         },
         {
             "q": r"단어 **RACECAR** (7글자)로 만든 다이아몬드 격자에서 RACECAR를 읽을 수 있는 경우의 수를 구하시오. (단, $n = 7 = 2 \times 3 + 1$이므로 $k = 3$)",
             "a": "20",
             "hint": r"왼쪽 $k=3$번, 오른쪽 $k=3$번 선택. $\dfrac{6!}{3! \times 3!}$를 계산하세요.",
             "sol": r"""$n = 7,\ k = 3$ 이므로 총 $2k = 6$번 이동합니다.
-$$\frac{6!}{3! \times 3!} = \binom{6}{3} = 20$$"""
+$$\frac{6!}{3! \times 3!} = {}_{6}C_{3} = 20$$"""
         },
     ]
 

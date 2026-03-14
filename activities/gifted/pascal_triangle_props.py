@@ -1,25 +1,11 @@
 import streamlit as st
 import streamlit.components.v1 as components
-from reflection_utils import render_reflection_form
-
-_GAS_URL    = st.secrets["gas_url_probability_new"]
-_SHEET_NAME = "파스칼삼각형성질탐구"
-
-_QUESTIONS = [
-    {"type": "markdown", "text": "**📝 이 활동과 관련된 이항계수·파스칼의 삼각형 문제 2개를 스스로 만들고 풀어보세요**"},
-    {"key": "문제1", "label": "문제 1", "type": "text_area",  "height": 80},
-    {"key": "답1",   "label": "문제 1의 답", "type": "text_input"},
-    {"key": "문제2", "label": "문제 2", "type": "text_area",  "height": 80},
-    {"key": "답2",   "label": "문제 2의 답", "type": "text_input"},
-    {"key": "새롭게알게된점", "label": "💡 이 활동을 통해 새롭게 알게 된 점", "type": "text_area", "height": 100},
-    {"key": "느낀점",        "label": "💬 이 활동을 통해 느낀 점",           "type": "text_area", "height": 100},
-]
 
 META = {
-    "title":       "파스칼의 삼각형 성질 탐구",
+    "title": "미니: 파스칼의 삼각형 성질 탐구",
     "description": "파스칼의 삼각형에서 이항계수의 6가지 성질을 직접 셀을 클릭하며 탐구하고 퀴즈로 확인합니다.",
-    "order":       62,
-    "hidden":      True,
+    "order": 26,
+    "hidden": True,
 }
 
 HTML = r"""
@@ -69,7 +55,7 @@ body {
 }
 .vt-btn.active { background: #0f4c81; border-color: #3b82f6; color: #93c5fd; }
 
-/* ── 삼각형: width:100%, overflow:hidden으로 가로 스크롤 없음 ── */
+/* ── 삼각형 ── */
 #triWrap {
   width: 100%; overflow: hidden;
   background: #0f172a; border-radius: 10px; padding: 2px 0;
@@ -171,7 +157,6 @@ body {
 (function(){
 "use strict";
 
-// ── 이항계수 ──
 function C(n, k) {
   if (k < 0 || k > n) return 0;
   if (k === 0 || k === n) return 1;
@@ -180,17 +165,12 @@ function C(n, k) {
   for (let i = 0; i < k; i++) r = r * (n - i) / (i + 1);
   return Math.round(r);
 }
-function combHtml(a, b) {
-  return `<sub>${a}</sub>C<sub>${b}</sub>`;
-}
 function isPrime(n) {
   if (n < 2) return false;
   for (let i = 2; i * i <= n; i++) if (n % i === 0) return false;
   return true;
 }
 
-// ── SVG 레이아웃 ──
-// viewBox 고정 좌표계 + width="100%" → 컨테이너에 맞게 자동 스케일, 가로 스크롤 없음
 const ROWS = 9;
 const VW = 760, VH = 490;
 const CW = 68, CH = 42, GAP_X = 8, GAP_Y = 10;
@@ -203,18 +183,15 @@ function cellPos(r, c) {
   return { x: sx + c * (CW + GAP_X), y: PAD_Y + r * (CH + GAP_Y) };
 }
 
-// ── 상태 ──
 let activeTab  = 1;
 let viewMode   = 'num';
-let hockeyDir  = 'right';   // 'right' | 'left'
+let hockeyDir  = 'right';
 let highlights = [];
 
-// ── SVG 생성 ──
 function buildSVG() {
   const hMap = {};
   highlights.forEach(h => { hMap[`${h.r},${h.c}`] = h; });
 
-  // width="100%", height="auto", viewBox 고정 → 절대 가로 스크롤 없음
   let svg = `<svg xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 ${VW} ${VH}" width="100%" height="auto"
     preserveAspectRatio="xMidYMid meet">`;
@@ -233,8 +210,6 @@ function buildSVG() {
         fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>`;
 
       if (viewMode === 'comb') {
-        // nCr 표기: n·C·r 모두 아래 첨자(subscript) 위치
-        // n(왼쪽 아래) C(중앙) r(오른쪽 아래)
         const cx = x + CW / 2;
         const cy = y + CH / 2;
         svg += `<text x="${cx-10}" y="${cy+13}" text-anchor="middle"
@@ -264,7 +239,6 @@ function renderTriangle() {
   });
 }
 
-// ── 결과 표시 ──
 function setResult(html) {
   const el = document.getElementById('result');
   el.innerHTML = html;
@@ -276,9 +250,6 @@ function clearResult() {
   el.style.color = '#64748b';
 }
 
-// ── 성질 핸들러 ──
-
-// ① 좌우대칭
 function doSymmetry(r, c) {
   const mirror = r - c;
   const isMid  = (c === mirror);
@@ -293,15 +264,14 @@ function doSymmetry(r, c) {
   highlights = hl; renderTriangle();
   setResult(
     isMid
-      ? `<span style="color:#c4b5fd">${combHtml(r,c)} = ${C(r,c)} &nbsp;←&nbsp; 중앙값 (자기 자신과 대칭)</span>`
-      : `<span style="color:#60a5fa">${combHtml(r,Math.min(c,mirror))} = ${C(r,Math.min(c,mirror))}</span>`
+      ? `<span style="color:#c4b5fd">${r}C${c} = ${C(r,c)} &nbsp;←&nbsp; 중앙값 (자기 자신과 대칭)</span>`
+      : `<span style="color:#60a5fa">${r}C${Math.min(c,mirror)} = ${C(r,Math.min(c,mirror))}</span>`
         + ` &nbsp;=&nbsp; `
-        + `<span style="color:#34d399">${combHtml(r,Math.max(c,mirror))} = ${C(r,Math.max(c,mirror))}</span>`
+        + `<span style="color:#34d399">${r}C${Math.max(c,mirror)} = ${C(r,Math.max(c,mirror))}</span>`
         + `&nbsp;&nbsp;✔&nbsp; <em>ₙCᵣ = ₙCₙ₋ᵣ</em>&nbsp;(n=${r}, r=${Math.min(c,mirror)}, n−r=${Math.max(c,mirror)})`
   );
 }
 
-// ② 역삼각형 (파스칼의 법칙)
 function doPascal(r, c) {
   if (r === 0) {
     highlights = [{ r, c, fill: '#1e3a5f', stroke: '#3b82f6', textColor: '#93c5fd' }];
@@ -317,16 +287,15 @@ function doPascal(r, c) {
   highlights = hl; renderTriangle();
 
   const lv = hasL ? C(r-1,c-1) : 0, rv = hasR ? C(r-1,c) : 0;
-  const ls = hasL ? `<span style="color:#60a5fa">${combHtml(r-1,c-1)}(=${lv})</span>` : '';
-  const rs = hasR ? `<span style="color:#60a5fa">${combHtml(r-1,c)}(=${rv})</span>`   : '';
+  const ls = hasL ? `<span style="color:#60a5fa">${r-1}C${c-1}(=${lv})</span>` : '';
+  const rs = hasR ? `<span style="color:#60a5fa">${r-1}C${c}(=${rv})</span>`   : '';
   setResult(
     [ls,rs].filter(Boolean).join(' + ')
-    + ` = <span style="color:#34d399"><strong>${combHtml(r,c)} = ${lv+rv}</strong></span>`
+    + ` = <span style="color:#34d399"><strong>${r}C${c} = ${lv+rv}</strong></span>`
     + `&nbsp;&nbsp;✔&nbsp;<em>ₙCᵣ = ₙ₋₁Cᵣ₋₁ + ₙ₋₁Cᵣ</em>`
   );
 }
 
-// ③ 이항전개
 function doBinom(r, c) {
   highlights = Array.from({length: r+1}, (_, k) => ({
     r, c: k, fill: '#78350f', stroke: '#f59e0b', textColor: '#fde68a'
@@ -342,7 +311,6 @@ function doBinom(r, c) {
   setResult(`<span style="color:#fbbf24">(a+b)<sup>${r}</sup> = ${terms.join(' + ')}</span>`);
 }
 
-// ④ 행의 합
 function doRowSum(r, c) {
   highlights = Array.from({length: r+1}, (_, k) => ({
     r, c: k, fill: '#3b0764', stroke: '#a78bfa', textColor: '#e9d5ff'
@@ -356,8 +324,6 @@ function doRowSum(r, c) {
   );
 }
 
-// ⑤ 하키스틱 — 우방향: 열 c를 고정, (c,c)~(r,c) 합 = (r+1, c+1)
-// Σᵢ₌ᶜʳ C(i,c) = C(r+1, c+1)
 function doHockeyRight(r, c) {
   if (c > r) return;
   const hl = [];
@@ -368,10 +334,10 @@ function doHockeyRight(r, c) {
   highlights = hl; renderTriangle();
 
   const parts = Array.from({length: r-c+1}, (_, i) => {
-    const row = c+i; return `${combHtml(row,c)}(=${C(row,c)})`;
+    const row = c+i; return `${row}C${c}(=${C(row,c)})`;
   }).join(' + ');
   const tipStr = r+1 < ROWS
-    ? `<span style="color:#10b981"><strong>${combHtml(r+1,c+1)} = ${C(r+1,c+1)}</strong></span>`
+    ? `<span style="color:#10b981"><strong>${r+1}C${c+1} = ${C(r+1,c+1)}</strong></span>`
     : `<strong>${C(r+1,c+1)}</strong>`;
   setResult(
     `<span style="color:#60a5fa">${parts}</span> = ${tipStr}`
@@ -379,12 +345,9 @@ function doHockeyRight(r, c) {
   );
 }
 
-// ⑤ 하키스틱 — 좌방향: 대각선 d = r-c를 고정
-// 손잡이: (d,0)~(r,c)  대각선 방향 / 끝: (r+1, c)
-// Σᵢ₌₀ᶜ C(d+i, i) = C(r+1, c)
 function doHockeyLeft(r, c) {
   if (c > r) return;
-  const d = r - c;  // 고정 대각선 번호
+  const d = r - c;
   const hl = [];
   for (let i = 0; i <= c; i++) {
     hl.push({ r: d+i, c: i, fill: '#1e3a5f', stroke: '#3b82f6', textColor: '#93c5fd' });
@@ -393,10 +356,10 @@ function doHockeyLeft(r, c) {
   highlights = hl; renderTriangle();
 
   const parts = Array.from({length: c+1}, (_, i) => {
-    return `${combHtml(d+i,i)}(=${C(d+i,i)})`;
+    return `${d+i}C${i}(=${C(d+i,i)})`;
   }).join(' + ');
   const tipStr = r+1 < ROWS
-    ? `<span style="color:#10b981"><strong>${combHtml(r+1,c)} = ${C(r+1,c)}</strong></span>`
+    ? `<span style="color:#10b981"><strong>${r+1}C${c} = ${C(r+1,c)}</strong></span>`
     : `<strong>${C(r+1,c)}</strong>`;
   setResult(
     `<span style="color:#60a5fa">${parts}</span> = ${tipStr}`
@@ -409,7 +372,6 @@ function doHockey(r, c) {
   else                        doHockeyLeft(r, c);
 }
 
-// ⑥ 소수 행
 function doPrime(r, c) {
   if (r < 2) {
     highlights = [{ r, c, fill:'#1e3a5f', stroke:'#3b82f6', textColor:'#93c5fd' }];
@@ -432,14 +394,13 @@ function doPrime(r, c) {
   if (isPrime(r)) {
     setResult(`<span style="color:#86efac">p = ${r} (소수): 양 끝 1을 제외한 모든 수가 ${r}의 배수입니다. ✔</span>`);
   } else if (notDiv.length > 0) {
-    const ex = notDiv.slice(0,3).map(k=>`${combHtml(r,k)}=${C(r,k)}`).join(', ');
+    const ex = notDiv.slice(0,3).map(k=>`${r}C${k}=${C(r,k)}`).join(', ');
     setResult(`<span style="color:#f87171">n = ${r} (합성수): ${ex} → ${r}의 배수 아님 ✘ (소수 성질 불성립)</span>`);
   } else {
     setResult(`<span style="color:#fbbf24">n = ${r} (합성수): 이 범위에서 우연히 모두 배수처럼 보이지만 소수 성질이 보장되지는 않습니다.</span>`);
   }
 }
 
-// ── 클릭 라우터 ──
 function handleCellClick(r, c) {
   switch(activeTab) {
     case 1: doSymmetry(r,c); break;
@@ -451,7 +412,6 @@ function handleCellClick(r, c) {
   }
 }
 
-// ── 탭 메타 정보 ──
 const TAB_INFO = {
   1:{ title:'성질 ① 중앙 축을 기준으로 좌우대칭',
       formula:'ₙCᵣ = ₙCₙ₋ᵣ',
@@ -484,7 +444,6 @@ function switchTab(tab) {
     document.getElementById(id).style.display = isQ ? 'none' : '';
   });
   document.getElementById('quizPanel').style.display = isQ ? '' : 'none';
-
   document.getElementById('hockeyToggle').style.display = (!isQ && tab === 5) ? '' : 'none';
 
   if (!isQ) {
@@ -497,7 +456,6 @@ function switchTab(tab) {
   }
 }
 
-// ── 뷰 토글 ──
 document.getElementById('btnNum').addEventListener('click', () => {
   viewMode = 'num';
   document.getElementById('btnNum').classList.add('active');
@@ -511,7 +469,6 @@ document.getElementById('btnComb').addEventListener('click', () => {
   renderTriangle();
 });
 
-// ── 하키스틱 방향 토글 ──
 document.getElementById('btnHockeyR').addEventListener('click', () => {
   hockeyDir = 'right';
   document.getElementById('btnHockeyR').classList.add('active');
@@ -525,7 +482,6 @@ document.getElementById('btnHockeyL').addEventListener('click', () => {
   highlights = []; clearResult(); renderTriangle();
 });
 
-// ── 탭 클릭 ──
 document.getElementById('tabBar').addEventListener('click', e => {
   const btn = e.target.closest('.tab-btn');
   if (!btn) return;
@@ -533,7 +489,6 @@ document.getElementById('tabBar').addEventListener('click', e => {
   switchTab(t === 'Q' ? 'Q' : +t);
 });
 
-// ── 퀴즈 ──
 const QUIZ = [
   { q:'ₙCᵣ = ₙCₙ₋ᵣ 가 성립하는 근본적인 이유는?',
     choices:['r개를 선택하는 것은 (n−r)개를 제외하는 것과 같기 때문',
@@ -552,7 +507,7 @@ const QUIZ = [
     answer:1, explain:'₅C₃ = 10 (b를 3번, a를 2번 선택하는 경우의 수)' },
   { q:'하키스틱 법칙: ₂C₂ + ₃C₂ + ₄C₂ + ₅C₂ = ?',
     choices:['₅C₃','₆C₃','₆C₂','₅C₂'],
-    answer:1, explain:'r=2, m=5이면 ₂C₂+₃C₂+₄C₂+₅C₂ = ₆C₃ = 20 ✓' },
+    answer:1, explain:'r=2, m=5이면 2C2+3C2+4C2+5C2 = 6C3 = 20 ✓' },
   { q:'p=7(소수)일 때, ₇C₃의 값은 7의 배수인가?',
     choices:['예, 35 = 5×7이므로 7의 배수',
              '아니오, 35는 7의 배수가 아님',
@@ -561,7 +516,7 @@ const QUIZ = [
     answer:0, explain:'₇C₃ = 35 = 5×7. 소수 p에서 양 끝(1) 제외 모두 p의 배수 ✓' },
   { q:'n=5 행의 수를 전부 나열하면?',
     choices:['1 4 6 4 1','1 5 10 10 5 1','1 5 10 5 1','1 6 15 20 15 6 1'],
-    answer:1, explain:'₅C₀=1, ₅C₁=5, ₅C₂=10, ₅C₃=10, ₅C₄=5, ₅C₅=1' },
+    answer:1, explain:'5C0=1, 5C1=5, 5C2=10, 5C3=10, 5C4=5, 5C5=1' },
 ];
 
 const quizScores = new Array(QUIZ.length).fill(null);
@@ -628,7 +583,6 @@ function updateScore() {
   }
 }
 
-// ── 초기화 ──
 buildQuiz();
 switchTab(1);
 
@@ -643,4 +597,3 @@ def render():
     st.header("🔺 파스칼의 삼각형 성질 탐구")
     st.caption("이항계수의 6가지 성질을 직접 셀을 클릭하며 탐구하고, 퀴즈로 확인합니다.")
     components.html(HTML, height=1000, scrolling=True)
-    render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)

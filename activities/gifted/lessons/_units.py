@@ -131,10 +131,28 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 시에르핀스키 삼각형 — 단계별 분석",
+                "subject": "gifted",
+                "slug": "sierpinski_props",
+            },
+            {
                 "type": "canva",
                 "title": "파스칼의 삼각형의 비밀",
                 "src": "https://www.canva.com/design/DAHD5CslE68/-sWcAMCzq2edQEi2xpjnDQ/view?embed",
                 "height": 800
+            },
+            {
+                "type": "activity",
+                "title": "미니: 갈톤보드 시뮬레이션",
+                "subject": "gifted",
+                "slug": "galton_board",
+            },
+            {
+                "type": "activity",
+                "title": "미니: 파스칼의 삼각형 성질 탐구",
+                "subject": "gifted",
+                "slug": "pascal_triangle_props",
             },
             {
                 "type": "canva",
@@ -143,10 +161,22 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 카오스 게임으로 이해하는 시에르핀스키 삼각형",
+                "subject": "gifted",
+                "slug": "chaosgame_address",
+            },
+            {
                 "type": "canva",
                 "title": "인터넷 카오스 게임",
                 "src": "https://www.canva.com/design/DAHD4zEWKHQ/FpmkwsTl-3d4Ezyw6ldBfQ/view?embed",
                 "height": 800
+            },
+            {
+                "type": "activity",
+                "title": "미니: 카오스 게임",
+                "subject": "etc",
+                "slug": "chaosgame",
             },
         ],
     },

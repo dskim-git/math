@@ -566,6 +566,10 @@ function C(n,k){
   return Math.round(r);
 }
 
+const SUBMAP={'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','-':'₋','n':'ₙ','k':'ₖ','r':'ᵣ','m':'ₘ'};
+function usub(v){ return String(v).split('').map(c=>SUBMAP[c]||c).join(''); }
+function combTxt(a,b){ return usub(a)+'C'+usub(b); }
+
 /** All C(n,k) selections: 1=pick a, 0=pick b */
 function genSel(n,k){
   const out=[];
@@ -672,7 +676,7 @@ function renderViz(){
   const sum=document.getElementById('vizSummary');
   sum.style.display='block';
   document.getElementById('sumFormula').innerHTML=
-    `C(${n}, ${k}) = <span class="sum-coeff">${cnt}</span>`;
+    `${combTxt(n,k)} = <span class="sum-coeff">${cnt}</span>`;
   document.getElementById('sumSub').innerHTML=
     `${n}개의 인수 중 <strong style="color:#c4b5fd">${k}개</strong>에서 a를 선택하는 방법 = ` +
     `(a+b)<sup>${n}</sup>에서 ${tgt} 항의 계수 = <strong style="color:#4ade80;font-size:20px">${cnt}</strong>`;
@@ -748,7 +752,7 @@ function renderGen(){
     bd.innerHTML=
       `<div class="bd-title">📦 ${mono(r,nk2)} 항의 계수 분해</div>`+
       `<div class="bd-grid">`+
-        `<div class="bd-box"><div class="bd-expr">C(${n},${r})</div>`+
+        `<div class="bd-box"><div class="bd-expr">${combTxt(n,r)}</div>`+
           `<div class="bd-v" style="color:#4ade80">${cn}</div>`+
           `<div class="bd-l">${n}개 중 ${r}개에서 a 선택</div></div>`+
         `<div class="bd-op">×</div>`+
@@ -763,7 +767,7 @@ function renderGen(){
         `<div class="bd-res"><div class="bd-rv">${tot}</div><div class="bd-l">계수</div></div>`+
       `</div>`+
       `<div style="font-size:13px;color:#64748b;text-align:center;margin-top:10px">`+
-        `C(${n},${r}) × (${p})<sup>${r}</sup> × (${q})<sup>${nk2}</sup> `+
+        `${combTxt(n,r)} × (${p})<sup>${r}</sup> × (${q})<sup>${nk2}</sup> `+
         `= ${cn} × ${pr} × ${qnk} = <strong style="color:#4ade80">${tot}</strong>`+
       `</div>`;
   } else { bd.style.display='none'; }
@@ -785,7 +789,7 @@ function renderPascal(hiN){
       const cell=document.createElement('div');
       cell.className='p-cell'+(n===hiN?' hi':'');
       cell.textContent=C(n,k);
-      cell.title=`C(${n},${k})=${C(n,k)}`;
+      cell.title=`${combTxt(n,k)} = ${C(n,k)}`;
       row.appendChild(cell);
     }
     wrap.appendChild(row);
@@ -840,7 +844,7 @@ function checkAns(){
   const hint=document.getElementById('qHint');
   hint.style.display='block';
   document.getElementById('qHintBody').innerHTML=
-    `C(${qN},${qR}) × (${qP})<sup>${qR}</sup> × (${qQ})<sup>${nk}</sup><br>`+
+    `${combTxt(qN,qR)} × (${qP})<sup>${qR}</sup> × (${qQ})<sup>${nk}</sup><br>`+
     `= <strong style="color:#c4b5fd">${cn}</strong> × `+
     `<strong style="color:#fbbf24">${pr}</strong> × `+
     `<strong style="color:#f9a8d4">${qnk}</strong>`+

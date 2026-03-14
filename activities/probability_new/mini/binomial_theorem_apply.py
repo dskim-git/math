@@ -292,7 +292,7 @@ body { font-family: 'Segoe UI', sans-serif; background: #f8fafc; color: #1e293b;
         <div class="flip-face flip-back">
           <div class="btitle">🔮 반데몬드의 특수한 경우</div>
           <div class="bkey" id="cf6b"></div>
-          <div class="bnote">⑤에서 m=n, r=n으로 놓고<br>C(n,k)=C(n,n−k)를 이용!</div>
+          <div class="bnote">⑤에서 m=n, r=n으로 놓고<br>ₙCₖ = ₙCₙ₋ₖ를 이용!</div>
         </div>
       </div>
     </div>
@@ -360,6 +360,9 @@ function K(s, el, d) {
   try { katex.render(s, el, { throwOnError: false, displayMode: !!d }); }
   catch(e) { el.textContent = s; }
 }
+function CH(a, b) {
+  return '{}_{' + a + '}C_{' + b + '}';
+}
 function C(n, k) {
   if (k < 0 || k > n) return 0;
   if (k === 0 || k === n) return 1;
@@ -414,7 +417,7 @@ function doSub(mode, btn) {
 
   if (mode === 'x1') {
     const sum = Math.pow(2, n);
-    const terms = Array.from({length: n+1}, (_, k) => '\\binom{' + n + '}{' + k + '}').join('+');
+    const terms = Array.from({length: n+1}, (_, k) => CH(n, k)).join('+');
     rb.innerHTML = '<div class="res-tag" style="color:#166534">✅ x = 1을 대입하면</div>'
       + '<div class="res-formula" id="rr1"></div>'
       + '<div class="res-formula" id="rr2"></div>'
@@ -424,8 +427,7 @@ function doSub(mode, btn) {
 
   } else if (mode === 'xm1') {
     const terms = Array.from({length: n+1}, (_, k) => {
-      const s = k % 2 === 0 ? '' : '-';
-      return (k === 0 ? '' : (k % 2 === 0 ? '+' : '-')) + '\\binom{' + n + '}{' + k + '}';
+      return (k === 0 ? '' : (k % 2 === 0 ? '+' : '-')) + CH(n, k);
     }).join('');
     rb.innerHTML = '<div class="res-tag" style="color:#dc2626">🔴 x = −1을 대입하면</div>'
       + '<div class="res-formula" id="rr1"></div>'
@@ -438,21 +440,21 @@ function doSub(mode, btn) {
     const sum = n * Math.pow(2, n - 1);
     const terms = Array.from({length: n}, (_, i) => {
       const k = i + 1;
-      return (k === 1 ? '' : k + '\\cdot') + '\\binom{' + n + '}{' + k + '}';
+      return (k === 1 ? '' : k + '\\cdot') + CH(n, k);
     }).join('+');
     rb.innerHTML = '<div class="res-tag" style="color:#d97706">📐 양변을 x로 미분한 후 x=1 대입</div>'
       + '<div class="res-formula" id="rr1"></div>'
       + '<div class="res-formula" id="rr2"></div>'
       + '<div class="res-formula" id="rr3"></div>'
       + '<div class="res-note">k를 곱한 이항계수의 합 = n × 2<sup>n−1</sup> = <strong>' + sum + '</strong></div>';
-    K('\\text{미분:}\\quad n(1+x)^{n-1} = \\textstyle\\sum_{k=1}^{n}k\\binom{n}{k}x^{k-1}', gel('rr1'), true);
+    K('\\text{미분:}\\quad n(1+x)^{n-1} = \\textstyle\\sum_{k=1}^{n}k' + CH('n', 'k') + 'x^{k-1}', gel('rr1'), true);
     K('\\text{x=1 대입:}\\quad ' + n + '\\cdot 2^{' + (n-1) + '} = ' + terms, gel('rr2'), true);
     K('\\Rightarrow\\; ' + terms + ' = ' + sum, gel('rr3'), true);
 
   } else if (mode === 'intg') {
     const num = Math.pow(2, n + 1) - 1;
     const den = n + 1;
-    const terms = Array.from({length: n+1}, (_, k) => '\\dfrac{\\binom{' + n + '}{' + k + '}}{' + (k+1) + '}').join('+');
+    const terms = Array.from({length: n+1}, (_, k) => '\\dfrac{' + CH(n, k) + '}{' + (k+1) + '}').join('+');
     rb.innerHTML = '<div class="res-tag" style="color:#0891b2">∫ 양변을 0부터 1까지 적분</div>'
       + '<div class="res-formula" id="rr1"></div>'
       + '<div class="res-formula" id="rr2"></div>'
@@ -463,9 +465,9 @@ function doSub(mode, btn) {
   } else if (mode === 'x2') {
     const sum = Math.pow(3, n);
     const terms = Array.from({length: n+1}, (_, k) => {
-      if (k === 0) return '\\binom{' + n + '}{0}';
-      if (k === 1) return '2\\binom{' + n + '}{1}';
-      return '2^{' + k + '}\\binom{' + n + '}{' + k + '}';
+      if (k === 0) return CH(n, 0);
+      if (k === 1) return '2' + CH(n, 1);
+      return '2^{' + k + '}' + CH(n, k);
     }).join('+');
     rb.innerHTML = '<div class="res-tag" style="color:#7c3aed">💜 x = 2를 대입하면</div>'
       + '<div class="res-formula" id="rr1"></div>'
@@ -478,45 +480,45 @@ function doSub(mode, btn) {
 
 // ─── Summary table ────────────────────────────────────────────────────────
 function renderTable() {
-  K('\\binom{n}{0}+\\binom{n}{1}+\\cdots+\\binom{n}{n}=2^n', gel('st1'));
-  K('\\binom{n}{0}-\\binom{n}{1}+\\cdots+(-1)^n\\binom{n}{n}=0', gel('st2'));
-  K('\\binom{n}{1}+2\\binom{n}{2}+\\cdots+n\\binom{n}{n}=n\\cdot 2^{n-1}', gel('st3'));
-  K('\\binom{n}{0}+\\dfrac{\\binom{n}{1}}{2}+\\cdots+\\dfrac{\\binom{n}{n}}{n+1}=\\dfrac{2^{n+1}-1}{n+1}', gel('st4'));
+  K(CH('n', 0) + '+' + CH('n', 1) + '+\\cdots+' + CH('n', 'n') + '=2^n', gel('st1'));
+  K(CH('n', 0) + '-' + CH('n', 1) + '+\\cdots+(-1)^n' + CH('n', 'n') + '=0', gel('st2'));
+  K(CH('n', 1) + '+2' + CH('n', 2) + '+\\cdots+n' + CH('n', 'n') + '=n\\cdot 2^{n-1}', gel('st3'));
+  K(CH('n', 0) + '+\\dfrac{' + CH('n', 1) + '}{2}+\\cdots+\\dfrac{' + CH('n', 'n') + '}{n+1}=\\dfrac{2^{n+1}-1}{n+1}', gel('st4'));
 }
 
 // ─── Formula cards ────────────────────────────────────────────────────────
 const FDATA = [
   {
-    f: '\\binom{n}{0}+\\binom{n}{1}+\\cdots+\\binom{n}{n}=2^n',
-    b: '(1+1)^n=2^n \\;\\Rightarrow\\; \\displaystyle\\sum_{k=0}^n\\binom{n}{k}=2^n'
+    f: '{}_{n}C_{0}+{}_{n}C_{1}+\\cdots+{}_{n}C_{n}=2^n',
+    b: '(1+1)^n=2^n \\;\\Rightarrow\\; \\displaystyle\\sum_{k=0}^n {}_{n}C_{k}=2^n'
   },
   {
-    f: '\\binom{n}{0}-\\binom{n}{1}+\\binom{n}{2}-\\cdots+(-1)^n\\binom{n}{n}=0',
-    b: '(1{-}1)^n=0 \\;\\Rightarrow\\; \\displaystyle\\sum_{k=0}^n(-1)^k\\binom{n}{k}=0'
+    f: '{}_{n}C_{0}-{}_{n}C_{1}+{}_{n}C_{2}-\\cdots+(-1)^n{}_{n}C_{n}=0',
+    b: '(1{-}1)^n=0 \\;\\Rightarrow\\; \\displaystyle\\sum_{k=0}^n(-1)^k{}_{n}C_{k}=0'
   },
   {
-    f: '\\binom{n}{1}+2\\binom{n}{2}+\\cdots+n\\binom{n}{n}=n\\cdot 2^{n-1}',
-    b: '\\tfrac{d}{dx}(1{+}x)^n\\big|_{x=1}:\\; n\\cdot 2^{n-1}=\\textstyle\\sum_{k=1}^n k\\binom{n}{k}'
+    f: '{}_{n}C_{1}+2{}_{n}C_{2}+\\cdots+n{}_{n}C_{n}=n\\cdot 2^{n-1}',
+    b: '\\tfrac{d}{dx}(1{+}x)^n\\big|_{x=1}:\\; n\\cdot 2^{n-1}=\\textstyle\\sum_{k=1}^n k{}_{n}C_{k}'
   },
   {
-    f: '\\binom{n}{0}+\\dfrac{\\binom{n}{1}}{2}+\\cdots+\\dfrac{\\binom{n}{n}}{n+1}=\\dfrac{2^{n+1}-1}{n+1}',
-    b: '\\displaystyle\\int_0^1(1{+}x)^ndx=\\dfrac{2^{n+1}-1}{n+1}=\\sum_{k=0}^n\\dfrac{\\binom{n}{k}}{k+1}'
+    f: '{}_{n}C_{0}+\\dfrac{{}_{n}C_{1}}{2}+\\cdots+\\dfrac{{}_{n}C_{n}}{n+1}=\\dfrac{2^{n+1}-1}{n+1}',
+    b: '\\displaystyle\\int_0^1(1{+}x)^ndx=\\dfrac{2^{n+1}-1}{n+1}=\\sum_{k=0}^n\\dfrac{{}_{n}C_{k}}{k+1}'
   },
   {
-    f: '\\displaystyle\\sum_{k=0}^{r}\\binom{m}{k}\\binom{n}{r-k}=\\binom{m+n}{r}',
+    f: '\\displaystyle\\sum_{k=0}^{r}{}_{m}C_{k}{}_{n}C_{r-k}={}_{m+n}C_{r}',
     b: '(1{+}x)^{m+n}=(1{+}x)^m(1{+}x)^n\\text{의 }x^r\\text{ 계수 비교}'
   },
   {
-    f: '\\binom{n}{0}^2+\\binom{n}{1}^2+\\cdots+\\binom{n}{n}^2=\\binom{2n}{n}',
-    b: '\\text{⑤에서 }m{=}n,\\,r{=}n\\text{: }\\,\\binom{n}{k}=\\binom{n}{n-k}\\text{ 이용}'
+    f: '{}_{n}C_{0}^2+{}_{n}C_{1}^2+\\cdots+{}_{n}C_{n}^2={}_{2n}C_{n}',
+    b: '\\text{⑤에서 }m{=}n,\\,r{=}n\\text{: }\\,{}_{n}C_{k}={}_{n}C_{n-k}\\text{ 이용}'
   },
   {
-    f: '\\binom{n}{0}+\\binom{n+1}{1}+\\binom{n+2}{2}+\\cdots+\\binom{n+r}{r}=\\binom{n+r+1}{r}',
-    b: '\\binom{n{+}r{+}1}{r}=\\binom{n{+}r}{r}+\\binom{n{+}r}{r-1}=\\cdots \\text{(반복)}'
+    f: '{}_{n}C_{0}+{}_{n+1}C_{1}+{}_{n+2}C_{2}+\\cdots+{}_{n+r}C_{r}={}_{n+r+1}C_{r}',
+    b: '{}_{n{+}r{+}1}C_{r}={}_{n{+}r}C_{r}+{}_{n{+}r}C_{r-1}=\\cdots \\text{(반복)}'
   },
   {
-    f: '\\binom{r}{r}+\\binom{r+1}{r}+\\binom{r+2}{r}+\\cdots+\\binom{n}{r}=\\binom{n+1}{r+1}\\;(n\\geq r)',
-    b: '\\binom{r}{r}=\\binom{r+1}{r+1}\\text{, 이후 }\\binom{k+1}{r+1}+\\binom{k+1}{r}=\\binom{k+2}{r+1}\\text{ 반복}'
+    f: '{}_{r}C_{r}+{}_{r+1}C_{r}+{}_{r+2}C_{r}+\\cdots+{}_{n}C_{r}={}_{n+1}C_{r+1}\\;(n\\geq r)',
+    b: '{}_{r}C_{r}={}_{r+1}C_{r+1}\\text{, 이후 }{}_{k+1}C_{r+1}+{}_{k+1}C_{r}={}_{k+2}C_{r+1}\\text{ 반복}'
   },
 ];
 
@@ -534,10 +536,10 @@ const QUIZ = [
   {
     q: '이항정리 (1+x)ⁿ에서 x = 1을 대입하면 나오는 공식은?',
     ch: [
-      '\\binom{n}{0}+\\binom{n}{1}+\\cdots+\\binom{n}{n}=2^n',
-      '\\binom{n}{0}-\\binom{n}{1}+\\cdots+(-1)^n\\binom{n}{n}=0',
-      '\\binom{n}{1}+2\\binom{n}{2}+\\cdots+n\\binom{n}{n}=n\\cdot 2^{n-1}',
-      '\\binom{n}{0}+\\frac{\\binom{n}{1}}{2}+\\cdots=\\frac{2^{n+1}-1}{n+1}',
+      '{}_{n}C_{0}+{}_{n}C_{1}+\\cdots+{}_{n}C_{n}=2^n',
+      '{}_{n}C_{0}-{}_{n}C_{1}+\\cdots+(-1)^n{}_{n}C_{n}=0',
+      '{}_{n}C_{1}+2{}_{n}C_{2}+\\cdots+n{}_{n}C_{n}=n\\cdot 2^{n-1}',
+      '{}_{n}C_{0}+\\frac{{}_{n}C_{1}}{2}+\\cdots=\\frac{2^{n+1}-1}{n+1}',
     ],
     ans: 0,
     ex: 'x=1을 대입하면 (1+1)ⁿ=2ⁿ이 되고, 우변 각 항의 xᵏ=1이 되어 이항계수의 합 = 2ⁿ이 도출됩니다.'
@@ -554,14 +556,14 @@ const QUIZ = [
     ch: ['x = 1 대입', 'x = −1 대입', '양변을 x로 미분한 후 x=1 대입', '양변을 0~1 적분'],
     ans: 2,
     plain: true,
-    ex: '(1+x)ⁿ을 미분하면 n(1+x)ⁿ⁻¹=Σk·C(n,k)·xᵏ⁻¹. x=1 대입 → n·2ⁿ⁻¹=Σk·C(n,k).'
+    ex: '(1+x)ⁿ을 미분하면 n(1+x)ⁿ⁻¹=Σk·ₙCₖ·xᵏ⁻¹. x=1 대입 → n·2ⁿ⁻¹=Σk·ₙCₖ.'
   },
   {
     q: 'ₙC₀ + ₙC₁/2 + ₙC₂/3 + ⋯ + ₙCₙ/(n+1) = (2ⁿ⁺¹−1)/(n+1) 을 유도하는 방법은?',
     ch: ['x = 1 대입', 'x = −1 대입', '양변 미분 후 x=1 대입', '양변을 0에서 1까지 적분'],
     ans: 3,
     plain: true,
-    ex: '(1+x)ⁿ을 0~1에서 적분: [(1+x)ⁿ⁺¹/(n+1)]₀¹=(2ⁿ⁺¹−1)/(n+1). 우변 적분하면 ΣC(n,k)/(k+1).'
+    ex: '(1+x)ⁿ을 0~1에서 적분: [(1+x)ⁿ⁺¹/(n+1)]₀¹=(2ⁿ⁺¹−1)/(n+1). 우변 적분하면 ΣₙCₖ/(k+1).'
   },
   {
     q: '반데몬드 항등식 Σ(ₘCₖ×ₙCᵣ₋ₖ) = ₘ₊ₙCᵣ 는 어떻게 유도하나요?',
@@ -573,7 +575,7 @@ const QUIZ = [
     ],
     ans: 1,
     plain: true,
-    ex: '(1+x)^{m+n}의 x^r 계수는 C(m+n,r). (1+x)^m·(1+x)^n의 x^r 계수는 ΣC(m,k)·C(n,r-k). 양변이 같으므로 성립!'
+    ex: '(1+x)^{m+n}의 x^r 계수는 ₘ₊ₙCᵣ. (1+x)^m·(1+x)^n의 x^r 계수는 ΣₘCₖ·ₙCᵣ₋ₖ. 양변이 같으므로 성립!'
   },
   {
     q: 'n=4 일 때,  ₄C₀ + ₄C₁ + ₄C₂ + ₄C₃ + ₄C₄ 의 값은?',
@@ -599,7 +601,7 @@ const QUIZ = [
     ],
     ans: 1,
     plain: true,
-    ex: '반데몬드 ΣC(n,k)·C(n,n−k)=C(2n,n) 에서 C(n,k)=C(n,n−k)이므로 ΣC(n,k)²=C(2n,n).'
+    ex: '반데몬드 ΣₙCₖ·ₙCₙ₋ₖ=₂ₙCₙ 에서 ₙCₖ=ₙCₙ₋ₖ이므로 Σ(ₙCₖ)²=₂ₙCₙ.'
   },
 ];
 

@@ -5,6 +5,7 @@ META = {
     "title": "미니: 리만 제타함수 탐험",
     "description": "조화급수에서 리만 제타함수까지 — 짝수와 홀수의 비밀, 그리고 리만 가설을 탐험합니다.",
     "order": 13,
+    "hidden": True,
 }
 
 HTML = r"""<!DOCTYPE html>
