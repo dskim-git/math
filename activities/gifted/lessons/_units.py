@@ -47,10 +47,22 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 산술함수와 곱셈함수 탐구",
+                "subject": "gifted",
+                "slug": "multiplicative_functions",
+            },
+            {
                 "type": "canva",
                 "title": "제타함수",
                 "src": "https://www.canva.com/design/DAHDhAAK3IQ/rYmEOCarMu7uZhfSz3fgww/view?embed",
                 "height": 800
+            },
+            {
+                "type": "activity",
+                "title": "미니: 리만 제타함수 탐험",
+                "subject": "gifted",
+                "slug": "zeta_explorer",
             },
             {
                 "type": "canva",
@@ -58,7 +70,6 @@ CURRICULUM = [
                 "src": "https://www.canva.com/design/DAHD5CIkUFI/a35IjIcviQ5ArnAcsemrxQ/view?embed",
                 "height": 800
             },
-            
         ],
     },
     {
