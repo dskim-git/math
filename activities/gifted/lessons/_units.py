@@ -70,6 +70,12 @@ CURRICULUM = [
                 "src": "https://www.canva.com/design/DAHD5CIkUFI/a35IjIcviQ5ArnAcsemrxQ/view?embed",
                 "height": 800
             },
+            {
+                "type": "activity",
+                "title": "미니: 제타함수와 산술함수의 관계",
+                "subject": "gifted",
+                "slug": "zeta_arithmetic",
+            },
         ],
     },
     {
