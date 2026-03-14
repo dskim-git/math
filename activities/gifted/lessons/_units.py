@@ -119,6 +119,12 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 프랙털 — 길이·넓이·부피와 차원 탐구",
+                "subject": "gifted",
+                "slug": "fractal_dimensions",
+            },
+            {
                 "type": "canva",
                 "title": "시에르핀스키 삼각형",
                 "src": "https://www.canva.com/design/DAHD5IG1GG4/XR0RX4RCEMDknSfkDQTuOw/view?embed",

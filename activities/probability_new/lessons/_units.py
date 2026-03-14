@@ -139,6 +139,18 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "갈톤보드 시뮬레이션",
+                    "subject": "probability_new",
+                    "slug": "mini/galton_board",
+                },
+                {
+                    "type": "activity",
+                    "title": "파스칼의 삼각형 성질 탐구",
+                    "subject": "probability_new",
+                    "slug": "mini/pascal_triangle_properties",
+                },
+                {
                     "type": "gsheet",
                     "title": "엑셀로 만든 파스칼의 삼각형",
                     "src": "https://docs.google.com/spreadsheets/d/17F8RhpLp8XNhiOICfUlxnFFjDEQCCjLVAQyUADkUjz8/edit?usp=drivesdk",
