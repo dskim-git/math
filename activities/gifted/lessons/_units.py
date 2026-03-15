@@ -221,6 +221,12 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 대사들 — 숨겨진 해골 찾기",
+                "subject": "gifted",
+                "slug": "ambassadors_skull",
+            },
+            {
                 "type": "canva",
                 "title": "등간격으로 나열된 사물의 화폭에서의 간격",
                 "src": "https://www.canva.com/design/DAHD5EOnQ_w/101r0AgevDf4vJtBt5WBeQ/view?embed",
