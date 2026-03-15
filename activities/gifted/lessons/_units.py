@@ -227,6 +227,12 @@ CURRICULUM = [
                 "slug": "ambassadors_skull",
             },
             {
+                "type": "activity",
+                "title": "미니: 실제 사물과 그림 속 사물의 관계식 탐구",
+                "subject": "gifted",
+                "slug": "perspective_projection",
+            },
+            {
                 "type": "canva",
                 "title": "등간격으로 나열된 사물의 화폭에서의 간격",
                 "src": "https://www.canva.com/design/DAHD5EOnQ_w/101r0AgevDf4vJtBt5WBeQ/view?embed",
