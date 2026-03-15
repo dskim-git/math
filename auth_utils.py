@@ -10,6 +10,7 @@
   일반인  : 이름, 아이디, 사용목적, 해시비밀번호, 그룹, 승인상태, 가입일, 마지막로그인
   학년권한: 학년, 허용과목  (콤마로 구분된 subject key 목록)
   그룹권한: 그룹명, 허용과목
+    그룹수업권한: 그룹명, 교과, 허용수업  (콤마로 구분된 unit key 목록)
 """
 
 import re
@@ -44,6 +45,7 @@ WS_STUDENTS   = "학생"
 WS_GENERAL    = "일반인"
 WS_GRADE_PERM = "학년권한"
 WS_GROUP_PERM = "그룹권한"
+WS_GROUP_LESSON_PERM = "그룹수업권한"
 
 # ── 2026 수강생 명단 (회원가입 검증 및 학급별 현황용) ────────────────────────
 WS_ROSTER = "2026수강생명단"   # 구글 시트 탭 이름
@@ -54,6 +56,7 @@ GENERAL_HEADER    = ["이름", "아이디", "사용목적", "해시비밀번호"
                       "승인상태", "가입일", "마지막로그인"]
 GRADE_PERM_HEADER = ["학년", "허용과목"]
 GROUP_PERM_HEADER = ["그룹명", "허용과목"]
+GROUP_LESSON_PERM_HEADER = ["그룹명", "교과", "허용수업"]
 
 STATUS_PENDING  = "대기"
 STATUS_APPROVED = "승인"
@@ -138,6 +141,72 @@ def _get_or_create_ws(client, sheet_id: str, ws_name: str,
         return None
 
 
+def _is_sheets_rate_limit_error(exc: Exception) -> bool:
+    msg = str(exc)
+    return "429" in msg or "Read requests per minute per user" in msg or "Quota exceeded" in msg
+
+
+def _safe_get_all_records(ws) -> list[dict]:
+    try:
+        return ws.get_all_records(numericise_ignore=['all'])
+    except Exception as e:
+        if _is_sheets_rate_limit_error(e):
+            print(f"[auth_utils] sheets read throttled: {e}")
+            return []
+        raise
+
+
+def _safe_get_all_values(ws) -> list[list[str]]:
+    try:
+        return ws.get_all_values()
+    except Exception as e:
+        if _is_sheets_rate_limit_error(e):
+            print(f"[auth_utils] sheets read throttled: {e}")
+            return []
+        raise
+
+
+def _normalize_group_name(group_name: str) -> str:
+    name = str(group_name or "")
+    name = name.replace("\u200b", "").replace("\ufeff", "").strip()
+    name = name.replace("（", "(").replace("）", ")")
+    return name
+
+
+def _parse_csv_tokens(raw: str) -> set[str]:
+    text = str(raw or "").strip()
+    if not text:
+        return set()
+    text = text.replace("，", ",").replace(";", ",").replace("\n", ",")
+    return {token.strip() for token in text.split(",") if token.strip()}
+
+
+def _clear_auth_caches(*, clear_users: bool = False,
+                       clear_grade_perms: bool = False,
+                       clear_group_perms: bool = False,
+                       clear_group_lesson_perms: bool = False,
+                       clear_lockout: bool = False,
+                       clear_roster: bool = False) -> None:
+    """auth_utils 내부 캐시만 선택적으로 무효화합니다."""
+    try:
+        if clear_users:
+            _cached_students.clear()
+            _cached_general.clear()
+        if clear_grade_perms:
+            _cached_grade_perms.clear()
+        if clear_group_perms:
+            _cached_group_perms.clear()
+        if clear_group_lesson_perms:
+            _cached_group_lesson_perms.clear()
+        if clear_lockout:
+            _cached_lockout.clear()
+        if clear_roster:
+            _cached_roster.clear()
+            get_roster_debug_info.clear()
+    except Exception:
+        pass
+
+
 # ── 캐시된 데이터 로더 ────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -146,7 +215,7 @@ def _cached_students(sheet_id: str) -> list[dict]:
     if not client or not sheet_id:
         return []
     ws = _get_or_create_ws(client, sheet_id, WS_STUDENTS, STUDENTS_HEADER)
-    return ws.get_all_records() if ws else []
+    return _safe_get_all_records(ws) if ws else []
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -155,7 +224,7 @@ def _cached_general(sheet_id: str) -> list[dict]:
     if not client or not sheet_id:
         return []
     ws = _get_or_create_ws(client, sheet_id, WS_GENERAL, GENERAL_HEADER)
-    return ws.get_all_records() if ws else []
+    return _safe_get_all_records(ws) if ws else []
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -169,7 +238,7 @@ def _cached_grade_perms(sheet_id: str) -> dict[str, set]:
     if not ws:
         return {}
     result: dict[str, set] = {}
-    for row in ws.get_all_records():
+    for row in _safe_get_all_records(ws):
         grade = str(row.get("학년", "")).strip()
         subjects_str = str(row.get("허용과목", "")).strip()
         if grade:
@@ -188,11 +257,38 @@ def _cached_group_perms(sheet_id: str) -> dict[str, set]:
     if not ws:
         return {}
     result: dict[str, set] = {}
-    for row in ws.get_all_records():
-        group = str(row.get("그룹명", "")).strip()
-        subjects_str = str(row.get("허용과목", "")).strip()
+    for row in _safe_get_all_records(ws):
+        group = _normalize_group_name(row.get("그룹명", ""))
+        subjects = _parse_csv_tokens(str(row.get("허용과목", "")))
         if group:
-            result[group] = {s.strip() for s in subjects_str.split(",") if s.strip()}
+            if group not in result:
+                result[group] = set()
+            result[group].update(subjects)
+    return result
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _cached_group_lesson_perms(sheet_id: str) -> dict[str, dict[str, set[str]]]:
+    """그룹명 → (교과 key → 허용 unit key 집합)."""
+    client = _get_gspread_client()
+    if not client or not sheet_id:
+        return {}
+    ws = _get_or_create_ws(client, sheet_id, WS_GROUP_LESSON_PERM,
+                           GROUP_LESSON_PERM_HEADER, rows=200)
+    if not ws:
+        return {}
+    result: dict[str, dict[str, set[str]]] = {}
+    for row in _safe_get_all_records(ws):
+        group = _normalize_group_name(row.get("그룹명", ""))
+        subject = str(row.get("교과", "")).strip()
+        unit_set = _parse_csv_tokens(str(row.get("허용수업", "")))
+        if not group or not subject:
+            continue
+        if group not in result:
+            result[group] = {}
+        if subject not in result[group]:
+            result[group][subject] = set()
+        result[group][subject].update(unit_set)
     return result
 
 
@@ -204,7 +300,7 @@ def _cached_lockout(sheet_id: str) -> list[dict]:
     if not client or not sheet_id:
         return []
     ws = _get_or_create_ws(client, sheet_id, WS_LOCKOUT, LOCKOUT_HEADER, rows=200)
-    return ws.get_all_records() if ws else []
+    return _safe_get_all_records(ws) if ws else []
 
 
 def _fill_merged(row: list) -> list:
@@ -323,7 +419,7 @@ def _cached_roster(sheet_id: str) -> list[dict]:
     try:
         sh = client.open_by_key(sheet_id)
         ws = sh.worksheet(WS_ROSTER)
-        all_values = ws.get_all_values()
+        all_values = _safe_get_all_values(ws)
         if not all_values:
             return []
 
@@ -435,11 +531,11 @@ def increment_fail_count(user_id: str) -> int:
                 ws.update_cell(i, cnt_idx,  new_cnt)
                 ws.update_cell(i, ts_idx,   now_str)
                 ws.update_cell(i, lock_idx, new_lock)
-                st.cache_data.clear()
+                _clear_auth_caches(clear_lockout=True)
                 return new_cnt
         # 신규 항목 추가
         ws.append_row([user_id, 1, now_str, "정상"])
-        st.cache_data.clear()
+        _clear_auth_caches(clear_lockout=True)
         return 1
     except Exception:
         return 0
@@ -462,7 +558,7 @@ def reset_lockout(user_id: str) -> bool:
             if str(row.get("아이디", "")).strip() == user_id:
                 ws.update_cell(i, cnt_idx,  0)
                 ws.update_cell(i, lock_idx, "정상")
-                st.cache_data.clear()
+                _clear_auth_caches(clear_lockout=True)
                 return True
         return True  # 기록 없으면 잠금 없음 → 성공으로 처리
     except Exception:
@@ -481,18 +577,29 @@ def _bump_last_login(ws_name: str, id_col: str, id_val: str) -> None:
         sh = client.open_by_key(sheet_id)
         ws = sh.worksheet(ws_name)
         header = ws.row_values(1)
-        if "마지막로그인" not in header:
+        # 운영 중 시트 헤더가 '마지막 로그인'처럼 변경된 경우도 허용
+        login_candidates = ["마지막로그인", "마지막 로그인"]
+        login_col = next((c for c in login_candidates if c in header), None)
+        if login_col is None:
+            normalized = [h.replace(" ", "") for h in header]
+            for c in login_candidates:
+                c_norm = c.replace(" ", "")
+                if c_norm in normalized:
+                    login_col = header[normalized.index(c_norm)]
+                    break
+        if login_col is None:
             return
         id_idx     = header.index(id_col) + 1
-        login_idx  = header.index("마지막로그인") + 1
+        login_idx  = header.index(login_col) + 1
         now_str    = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
         for i, row in enumerate(ws.get_all_records(), start=2):
             if str(row.get(id_col, "")).strip() == id_val:
                 ws.update_cell(i, login_idx, now_str)
                 break
-        st.cache_data.clear()
-    except Exception:
-        pass
+        _clear_auth_caches(clear_users=True)
+    except Exception as e:
+        # 로그인 성공 자체는 유지하되, 서버 로그에는 남겨 원인 추적 가능하게 함
+        print(f"[auth_utils] last login update failed ({ws_name}, {id_col}={id_val}): {e}")
 
 
 # ── 인증 ─────────────────────────────────────────────────────────────────────
@@ -510,7 +617,9 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
 
     반환값:
       성공 → {"type": "admin"|"student"|"general", "id": str, "name": str,
-               "grade": str|None, "group": str|None, "allowed_subjects": set|None}
+                             "grade": str|None, "group": str|None,
+                             "allowed_subjects": set|None,
+                             "allowed_lessons": dict[str, set[str]]|None}
       미승인 → {"type": "pending", "id": str}
       잠금  → {"type": "locked",  "id": str}
       실패  → None
@@ -529,6 +638,7 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
                 "grade": None,
                 "group": None,
                 "allowed_subjects": None,
+                "allowed_lessons": None,
             }
         return None
 
@@ -551,9 +661,9 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
         grade      = str(row.get("학년", "")).strip()
         grade_perms = _cached_grade_perms(sheet_id)
         allowed    = grade_perms.get(grade, None)
-        # 쓰기 작업은 백그라운드에서 처리 (로그인 응답 지연 방지)
+        # 마지막 로그인은 동기 기록으로 처리해 누락 가능성을 줄임
         threading.Thread(target=reset_lockout,     args=(user_id,),                          daemon=True).start()
-        threading.Thread(target=_bump_last_login,  args=(WS_STUDENTS, "아이디", user_id),    daemon=True).start()
+        _bump_last_login(WS_STUDENTS, "아이디", user_id)
         return {
             "type": "student",
             "id": user_id,
@@ -561,6 +671,7 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
             "grade": grade,
             "group": None,
             "allowed_subjects": allowed,
+            "allowed_lessons": None,
         }
 
     # 일반인
@@ -573,12 +684,15 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
         if not verify_password(password, str(row.get("해시비밀번호", ""))):
             increment_fail_count(user_id)
             return None
-        group       = str(row.get("그룹", "")).strip()
+        group       = _normalize_group_name(row.get("그룹", ""))
         group_perms = _cached_group_perms(sheet_id)
-        allowed     = group_perms.get(group, None) if group else None
-        # 쓰기 작업은 백그라운드에서 처리 (로그인 응답 지연 방지)
+        # 일반인은 그룹/권한이 명시되기 전까지 기본 접근 없음
+        allowed     = group_perms.get(group, set()) if group else set()
+        lesson_perms = _cached_group_lesson_perms(sheet_id)
+        allowed_lessons = lesson_perms.get(group, {}) if group else {}
+        # 마지막 로그인은 동기 기록으로 처리해 누락 가능성을 줄임
         threading.Thread(target=reset_lockout,     args=(user_id,),                          daemon=True).start()
-        threading.Thread(target=_bump_last_login,  args=(WS_GENERAL, "아이디", user_id),     daemon=True).start()
+        _bump_last_login(WS_GENERAL, "아이디", user_id)
         return {
             "type": "general",
             "id": user_id,
@@ -586,7 +700,64 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
             "grade": None,
             "group": group,
             "allowed_subjects": allowed,
+            "allowed_lessons": allowed_lessons,
         }
+
+    return None
+
+
+def get_user_permission_snapshot(user_type: str, user_id: str) -> Optional[dict]:
+    """현재 시트 기준으로 사용자의 최신 권한 스냅샷을 반환합니다."""
+    if not user_type or not user_id:
+        return None
+
+    if user_type == "admin":
+        return {
+            "type": "admin",
+            "id": ADMIN_ID,
+            "name": "관리자",
+            "grade": None,
+            "group": None,
+            "allowed_subjects": None,
+            "allowed_lessons": None,
+        }
+
+    sheet_id = _get_users_spreadsheet_id()
+
+    if user_type == "student":
+        for row in _cached_students(sheet_id):
+            if str(row.get("아이디", "")).strip() != user_id:
+                continue
+            grade = str(row.get("학년", "")).strip()
+            grade_perms = _cached_grade_perms(sheet_id)
+            return {
+                "type": "student",
+                "id": user_id,
+                "name": str(row.get("이름", "")),
+                "grade": grade,
+                "group": None,
+                "allowed_subjects": grade_perms.get(grade, None),
+                "allowed_lessons": None,
+            }
+        return None
+
+    if user_type == "general":
+        for row in _cached_general(sheet_id):
+            if str(row.get("아이디", "")).strip() != user_id:
+                continue
+            group = _normalize_group_name(row.get("그룹", ""))
+            group_perms = _cached_group_perms(sheet_id)
+            lesson_perms = _cached_group_lesson_perms(sheet_id)
+            return {
+                "type": "general",
+                "id": user_id,
+                "name": str(row.get("이름", "")),
+                "grade": None,
+                "group": group,
+                "allowed_subjects": group_perms.get(group, set()) if group else set(),
+                "allowed_lessons": lesson_perms.get(group, {}) if group else {},
+            }
+        return None
 
     return None
 
@@ -643,7 +814,7 @@ def register_student(student_num: str, name: str, password: str,
     now_str = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
     ws.append_row([student_num, name, auto_id, hashed,
                    grade, STATUS_PENDING, now_str, ""])
-    st.cache_data.clear()
+    _clear_auth_caches(clear_users=True)
     return True, auto_id
 
 
@@ -671,7 +842,7 @@ def register_general(name: str, user_id: str, password: str,
     now_str = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
     ws.append_row([name, user_id, purpose, hashed,
                    "", STATUS_PENDING, now_str, ""])
-    st.cache_data.clear()
+    _clear_auth_caches(clear_users=True)
     return True, ""
 
 
@@ -693,7 +864,7 @@ def update_user_status(user_type: str, user_id: str, new_status: str) -> bool:
         for i, row in enumerate(ws.get_all_records(), start=2):
             if str(row.get("아이디", "")).strip() == user_id:
                 ws.update_cell(i, status_idx, new_status)
-                st.cache_data.clear()
+                _clear_auth_caches(clear_users=True)
                 return True
     except Exception:
         pass
@@ -718,7 +889,7 @@ def reset_user_password(user_type: str, user_id: str,
         for i, row in enumerate(ws.get_all_records(), start=2):
             if str(row.get("아이디", "")).strip() == user_id:
                 ws.update_cell(i, hash_idx, new_hash)
-                st.cache_data.clear()
+                _clear_auth_caches(clear_users=True)
                 return True
     except Exception:
         pass
@@ -739,8 +910,8 @@ def update_user_group(user_id: str, new_group: str) -> bool:
         group_idx = header.index("그룹")   + 1
         for i, row in enumerate(ws.get_all_records(), start=2):
             if str(row.get("아이디", "")).strip() == user_id:
-                ws.update_cell(i, group_idx, new_group)
-                st.cache_data.clear()
+                ws.update_cell(i, group_idx, _normalize_group_name(new_group))
+                _clear_auth_caches(clear_users=True)
                 return True
     except Exception:
         pass
@@ -765,10 +936,10 @@ def save_grade_permissions(grade: str, subjects: list[str]) -> bool:
         for i, row in enumerate(ws.get_all_records(), start=2):
             if str(row.get("학년", "")).strip() == grade:
                 ws.update_cell(i, subj_idx, subjects_str)
-                st.cache_data.clear()
+                _clear_auth_caches(clear_grade_perms=True)
                 return True
         ws.append_row([grade, subjects_str])
-        st.cache_data.clear()
+        _clear_auth_caches(clear_grade_perms=True)
         return True
     except Exception:
         return False
@@ -780,6 +951,7 @@ def save_group_permissions(group_name: str, subjects: list[str]) -> bool:
     client   = _get_gspread_client()
     if not client or not sheet_id:
         return False
+    normalized_group = _normalize_group_name(group_name)
     try:
         ws = _get_or_create_ws(client, sheet_id, WS_GROUP_PERM,
                                GROUP_PERM_HEADER, rows=50)
@@ -789,13 +961,48 @@ def save_group_permissions(group_name: str, subjects: list[str]) -> bool:
         group_idx    = header.index("그룹명")   + 1
         subj_idx     = header.index("허용과목") + 1
         subjects_str = ",".join(subjects)
+        found = False
         for i, row in enumerate(ws.get_all_records(), start=2):
-            if str(row.get("그룹명", "")).strip() == group_name:
+            if _normalize_group_name(row.get("그룹명", "")) == normalized_group:
                 ws.update_cell(i, subj_idx, subjects_str)
-                st.cache_data.clear()
-                return True
-        ws.append_row([group_name, subjects_str])
-        st.cache_data.clear()
+                found = True
+        if found:
+            _clear_auth_caches(clear_group_perms=True)
+            return True
+        ws.append_row([normalized_group, subjects_str])
+        _clear_auth_caches(clear_group_perms=True)
+        return True
+    except Exception:
+        return False
+
+
+def save_group_lesson_permissions(group_name: str, subject_key: str,
+                                  unit_keys: list[str]) -> bool:
+    """그룹별 교과 내 수업(unit) 접근 권한을 저장/갱신합니다."""
+    sheet_id = _get_users_spreadsheet_id()
+    client   = _get_gspread_client()
+    if not client or not sheet_id:
+        return False
+    normalized_group = _normalize_group_name(group_name)
+    try:
+        ws = _get_or_create_ws(client, sheet_id, WS_GROUP_LESSON_PERM,
+                               GROUP_LESSON_PERM_HEADER, rows=200)
+        if not ws:
+            return False
+        units_str = ",".join(unit_keys)
+        found = False
+        for i, row in enumerate(ws.get_all_records(), start=2):
+            if (
+                _normalize_group_name(row.get("그룹명", "")) == normalized_group
+                and str(row.get("교과", "")).strip() == subject_key
+            ):
+                ws.update_cell(i, 3, units_str)
+                found = True
+        if found:
+            _clear_auth_caches(clear_group_lesson_perms=True)
+            return True
+        ws.append_row([normalized_group, subject_key, units_str])
+        _clear_auth_caches(clear_group_lesson_perms=True)
         return True
     except Exception:
         return False
@@ -807,17 +1014,35 @@ def delete_group(group_name: str) -> bool:
     client   = _get_gspread_client()
     if not client or not sheet_id:
         return False
+    removed_any = False
     try:
         sh = client.open_by_key(sheet_id)
-        ws = sh.worksheet(WS_GROUP_PERM)
+        ws = _get_or_create_ws(client, sheet_id, WS_GROUP_PERM,
+                               GROUP_PERM_HEADER, rows=50)
+        if not ws:
+            return False
         for i, row in enumerate(ws.get_all_records(), start=2):
-            if str(row.get("그룹명", "")).strip() == group_name:
+            if _normalize_group_name(row.get("그룹명", "")) == _normalize_group_name(group_name):
                 ws.delete_rows(i)
-                st.cache_data.clear()
-                return True
+                removed_any = True
+                break
+        ws_lesson = _get_or_create_ws(client, sheet_id, WS_GROUP_LESSON_PERM,
+                                      GROUP_LESSON_PERM_HEADER, rows=200)
+        if ws_lesson:
+            to_delete = []
+            for i, row in enumerate(ws_lesson.get_all_records(), start=2):
+                if _normalize_group_name(row.get("그룹명", "")) == _normalize_group_name(group_name):
+                    to_delete.append(i)
+            for i in reversed(to_delete):
+                ws_lesson.delete_rows(i)
+            if to_delete:
+                removed_any = True
+        if removed_any:
+            _clear_auth_caches(clear_group_perms=True, clear_group_lesson_perms=True)
+            return True
     except Exception:
         pass
-    return False
+    return removed_any
 
 
 def get_all_groups() -> list[str]:

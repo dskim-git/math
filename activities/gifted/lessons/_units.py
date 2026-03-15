@@ -209,6 +209,12 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 거리점과 화가까지의 실제 거리",
+                "subject": "gifted",
+                "slug": "measuring_point_distance",
+            },
+            {
                 "type": "canva",
                 "title": "그림 속 실제 사물과 그림 사이의 거리",
                 "src": "https://www.canva.com/design/DAHD5DczdKk/R77ntzzhXDc18cht19ns7A/view?embed",

@@ -12,6 +12,8 @@
 """
 import sys
 from pathlib import Path
+import ast
+import re
 
 # pages/ 에서 root 디렉터리를 sys.path에 추가
 _root = str(Path(__file__).parent.parent)
@@ -59,17 +61,88 @@ from auth_utils import (
     WS_STUDENTS, WS_GENERAL, WS_LOCKOUT,
     STATUS_PENDING, STATUS_APPROVED, STATUS_REJECTED,
     _cached_students, _cached_general,
-    _cached_grade_perms, _cached_group_perms, _cached_lockout,
+    _cached_grade_perms, _cached_group_perms, _cached_group_lesson_perms, _cached_lockout,
     _cached_roster, get_roster_student_counts, verify_roster_student,
     get_roster_debug_info,
     _get_users_spreadsheet_id,
     update_user_status, reset_user_password,
     update_user_group, save_grade_permissions,
-    save_group_permissions, delete_group,
+    save_group_permissions, save_group_lesson_permissions, delete_group,
     get_all_groups, batch_register_students,
     check_password_policy,
+    _clear_auth_caches,
     is_account_locked, reset_lockout,
 )
+def _gifted_lesson_labels() -> dict[str, str]:
+    """영재 lessons/_units.py에서 단원 key→표시 라벨을 읽어옵니다."""
+    units_py = Path(_root) / "activities" / "gifted" / "lessons" / "_units.py"
+    if not units_py.exists():
+        return {}
+    try:
+        labels: dict[str, str] = {}
+        source = units_py.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(units_py))
+
+        curriculum = None
+        units = None
+        for node in tree.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            for target in node.targets:
+                if not isinstance(target, ast.Name):
+                    continue
+                if target.id == "CURRICULUM":
+                    curriculum = ast.literal_eval(node.value)
+                elif target.id == "UNITS":
+                    units = ast.literal_eval(node.value)
+
+        if isinstance(curriculum, list) and curriculum:
+            def walk(nodes: list, prefix: list[str]):
+                for node in nodes:
+                    if not isinstance(node, dict):
+                        continue
+                    key = str(node.get("key", "")).strip()
+                    label = str(node.get("label", "")).strip()
+                    if not key:
+                        continue
+                    path = prefix + ([label] if label else [key])
+                    labels[key] = " > ".join(path)
+                    children = node.get("children", [])
+                    if isinstance(children, list) and children:
+                        walk(children, path)
+
+            walk(curriculum, [])
+            if labels:
+                return labels
+
+        if isinstance(units, dict):
+            for k, v in units.items():
+                key = str(k).strip()
+                if not key:
+                    continue
+                if isinstance(v, dict):
+                    labels[key] = str(v.get("label", key))
+                else:
+                    labels[key] = key
+        return labels
+    except Exception:
+        return {}
+
+
+def _is_gifted_group_name(group_name: str) -> bool:
+    """영재 수업 단원 권한을 부여할 수 있는 그룹명 형식인지 검사합니다."""
+    name = str(group_name)
+    # 시트에서 복사된 보이지 않는 공백/전각 괄호를 허용
+    name = name.replace("\u200b", "").replace("\ufeff", "").strip()
+    name = name.replace("（", "(").replace("）", ")")
+    return bool(re.fullmatch(r"영재\s*\(\s*\d{6}\s*\)", name))
+
+
+def _normalize_group_name(group_name: str) -> str:
+    name = str(group_name or "")
+    name = name.replace("\u200b", "").replace("\ufeff", "").strip()
+    name = name.replace("（", "(").replace("）", ")")
+    return name
 
 # ─────────────────────────────────────────────────────────────────────────────
 st.title("👥 회원 관리")
@@ -78,7 +151,14 @@ st.divider()
 
 # 새로고침
 if st.button("🔄 데이터 새로고침", key="mgmt_refresh"):
-    st.cache_data.clear()
+    _clear_auth_caches(
+        clear_users=True,
+        clear_grade_perms=True,
+        clear_group_perms=True,
+        clear_group_lesson_perms=True,
+        clear_lockout=True,
+        clear_roster=True,
+    )
     st.rerun()
 
 sheet_id = _get_users_spreadsheet_id()
@@ -148,14 +228,12 @@ with tab_approve:
                                  use_container_width=True, type="primary"):
                         if update_user_status("student", uid, STATUS_APPROVED):
                             st.success(f"{name} 승인 완료")
-                            st.cache_data.clear()
                             st.rerun()
                 with c2:
                     if st.button("❌ 거부", key=f"rej_s_{uid}",
                                  use_container_width=True):
                         if update_user_status("student", uid, STATUS_REJECTED):
                             st.warning(f"{name} 거부됨")
-                            st.cache_data.clear()
                             st.rerun()
 
     # 일반인 대기
@@ -177,14 +255,12 @@ with tab_approve:
                                  use_container_width=True, type="primary"):
                         if update_user_status("general", uid, STATUS_APPROVED):
                             st.success(f"{name} 승인 완료")
-                            st.cache_data.clear()
                             st.rerun()
                 with c2:
                     if st.button("❌ 거부", key=f"rej_g_{uid}",
                                  use_container_width=True):
                         if update_user_status("general", uid, STATUS_REJECTED):
                             st.warning(f"{name} 거부됨")
-                            st.cache_data.clear()
                             st.rerun()
 
 
@@ -226,19 +302,19 @@ with tab_students:
                          use_container_width=True):
                 if update_user_status("student", sel_uid, STATUS_APPROVED):
                     st.success("승인 완료")
-                    st.cache_data.clear(); st.rerun()
+                    st.rerun()
         with c2:
             if st.button("⏸ 대기로 변경", key="mgmt_s_pending",
                          use_container_width=True):
                 if update_user_status("student", sel_uid, STATUS_PENDING):
                     st.info("대기 상태로 변경됨")
-                    st.cache_data.clear(); st.rerun()
+                    st.rerun()
         with c3:
             if st.button("❌ 거부로 변경", key="mgmt_s_reject",
                          use_container_width=True):
                 if update_user_status("student", sel_uid, STATUS_REJECTED):
                     st.warning("거부 상태로 변경됨")
-                    st.cache_data.clear(); st.rerun()
+                    st.rerun()
 
         st.divider()
         with st.expander("🔑 비밀번호 재설정"):
@@ -427,17 +503,17 @@ with tab_general:
                 grp = "" if new_group == "(없음)" else new_group
                 if update_user_group(sel_gid, grp):
                     st.success("그룹 저장 완료")
-                    st.cache_data.clear(); st.rerun()
+                    st.rerun()
         with col_st2:
             if st.button("✅ 승인", key="mgmt_g_approve",
                          use_container_width=True):
                 if update_user_status("general", sel_gid, STATUS_APPROVED):
-                    st.success("승인 완료"); st.cache_data.clear(); st.rerun()
+                    st.success("승인 완료"); st.rerun()
         with col_st3:
             if st.button("❌ 거부", key="mgmt_g_reject",
                          use_container_width=True):
                 if update_user_status("general", sel_gid, STATUS_REJECTED):
-                    st.warning("거부됨"); st.cache_data.clear(); st.rerun()
+                    st.warning("거부됨"); st.rerun()
 
         with st.expander("🔑 비밀번호 재설정"):
             new_pw_g = st.text_input("새 비밀번호", type="password",
@@ -481,7 +557,7 @@ with tab_perms:
                              type="primary"):
                     if save_grade_permissions(grade_label, selected):
                         st.success(f"{grade_label}학년 권한 저장 완료")
-                        st.cache_data.clear(); st.rerun()
+                        st.rerun()
                     else:
                         st.error("저장에 실패했습니다.")
 
@@ -490,6 +566,7 @@ with tab_perms:
         st.subheader("그룹별 허용 과목 설정")
         st.caption("그룹에 속한 일반인은 체크된 과목만 볼 수 있습니다.")
         group_perms = _cached_group_perms(sheet_id)
+        group_lesson_perms = _cached_group_lesson_perms(sheet_id)
         all_groups  = get_all_groups()
 
         if not all_groups:
@@ -497,21 +574,61 @@ with tab_perms:
         else:
             sel_grp_p = st.selectbox("그룹 선택", all_groups,
                                      key="perm_grp_sel")
-            current_g = group_perms.get(sel_grp_p, set())
+            norm_sel_grp = _normalize_group_name(sel_grp_p)
+            current_g = group_perms.get(norm_sel_grp, set())
+            group_sync_sig = (norm_sel_grp, tuple(sorted(current_g)))
+            if st.session_state.get("_grpp_sync_sig") != group_sync_sig:
+                for key in ALL_SUBJECTS.keys():
+                    st.session_state[f"grpp_{sel_grp_p}_{key}"] = (key in current_g)
+                st.session_state["_grpp_sync_sig"] = group_sync_sig
+
             selected_g = []
             cols_g = st.columns(3)
             for i, (key, label) in enumerate(ALL_SUBJECTS.items()):
                 with cols_g[i % 3]:
-                    if st.checkbox(label, value=(key in current_g),
-                                   key=f"grpp_{sel_grp_p}_{key}"):
+                    if st.checkbox(label, key=f"grpp_{sel_grp_p}_{key}"):
                         selected_g.append(key)
             if st.button("그룹 권한 저장", key="save_group_perm",
                          type="primary"):
                 if save_group_permissions(sel_grp_p, selected_g):
                     st.success(f"'{sel_grp_p}' 그룹 권한 저장 완료")
-                    st.cache_data.clear(); st.rerun()
+                    st.rerun()
                 else:
                     st.error("저장에 실패했습니다.")
+
+            st.divider()
+            st.markdown("#### 🌟 영재 수업(단원) 접근 권한")
+            st.caption("그룹명이 영재(yymmdd) 형식인 그룹에 한해, 접근 가능한 영재 수업 단원을 세부 설정합니다.")
+
+            current_lesson = group_lesson_perms.get(norm_sel_grp, {}).get("gifted", set())
+
+            if not _is_gifted_group_name(sel_grp_p):
+                st.info("이 기능은 그룹명이 영재(yymmdd) 형식인 그룹에서만 사용할 수 있습니다. 예: 영재(260315)")
+            elif "gifted" not in current_g:
+                st.info("현재 이 그룹은 '영재' 교과가 허용되지 않았습니다. 먼저 위에서 영재 교과를 체크하세요.")
+            else:
+                lesson_labels = _gifted_lesson_labels()
+                if not lesson_labels:
+                    st.warning("영재 수업 목록을 불러오지 못했습니다. activities/gifted/lessons/_units.py를 확인하세요.")
+                else:
+                    lesson_sync_sig = (sel_grp_p, tuple(sorted(current_lesson)))
+                    if st.session_state.get("_glp_sync_sig") != lesson_sync_sig:
+                        for unit_key in lesson_labels.keys():
+                            st.session_state[f"glp_{sel_grp_p}_{unit_key}"] = (unit_key in current_lesson)
+                        st.session_state["_glp_sync_sig"] = lesson_sync_sig
+
+                    selected_units = []
+                    for unit_key in lesson_labels.keys():
+                        label = lesson_labels[unit_key]
+                        if st.checkbox(label, key=f"glp_{sel_grp_p}_{unit_key}"):
+                            selected_units.append(unit_key)
+
+                    if st.button("영재 수업 권한 저장", key="save_group_gifted_lessons", type="primary"):
+                        if save_group_lesson_permissions(sel_grp_p, "gifted", selected_units):
+                            st.success(f"'{sel_grp_p}' 그룹 영재 수업 권한 저장 완료")
+                            st.rerun()
+                        else:
+                            st.error("저장에 실패했습니다.")
 
 
 # ─── 5. 그룹 관리 ─────────────────────────────────────────────────────────────
@@ -520,6 +637,7 @@ with tab_groups:
     st.caption("일반인 사용자를 그룹으로 묶어 과목 권한을 일괄 적용합니다.")
 
     all_groups = get_all_groups()
+    group_lesson_perms = _cached_group_lesson_perms(sheet_id)
     if all_groups:
         st.markdown("**현재 그룹 목록**")
         for g in all_groups:
@@ -527,13 +645,17 @@ with tab_groups:
             with c1:
                 perms = _cached_group_perms(sheet_id).get(g, set())
                 label_list = [ALL_SUBJECTS.get(k, k) for k in perms]
-                st.write(f"**{g}** — {', '.join(sorted(label_list)) or '(과목 없음)'}")
+                extra = ""
+                if _is_gifted_group_name(g):
+                    gifted_units = group_lesson_perms.get(g, {}).get("gifted", set())
+                    extra = f" | 영재 단원 {len(gifted_units)}개 허용"
+                st.write(f"**{g}** — {', '.join(sorted(label_list)) or '(과목 없음)'}{extra}")
             with c2:
                 if st.button("삭제", key=f"del_grp_{g}",
                              use_container_width=True):
                     if delete_group(g):
                         st.warning(f"'{g}' 그룹 삭제됨")
-                        st.cache_data.clear(); st.rerun()
+                        st.rerun()
     else:
         st.info("등록된 그룹이 없습니다.")
 
@@ -550,7 +672,7 @@ with tab_groups:
             # 빈 허용과목으로 그룹 생성
             if save_group_permissions(new_group_name.strip(), []):
                 st.success(f"'{new_group_name.strip()}' 그룹 생성 완료")
-                st.cache_data.clear(); st.rerun()
+                st.rerun()
             else:
                 st.error("그룹 생성에 실패했습니다.")
 
@@ -596,7 +718,7 @@ with tab_bulk:
                             for e in errors:
                                 st.warning(e)
                     if ok > 0:
-                        st.cache_data.clear()
+                        _clear_auth_caches(clear_users=True)
         except Exception as e:
             st.error(f"파일 파싱 오류: {e}")
 
@@ -610,7 +732,7 @@ with tab_lockout:
     )
 
     if st.button("🔄 새로고침", key="lockout_refresh"):
-        st.cache_data.clear()
+        _clear_auth_caches(clear_lockout=True)
         st.rerun()
 
     lockout_rows = _cached_lockout(sheet_id)
@@ -645,7 +767,6 @@ with tab_lockout:
                                      use_container_width=True, type="primary"):
                             if reset_lockout(uid):
                                 st.success(f"`{uid}` 잠금 해제 완료")
-                                st.cache_data.clear()
                                 st.rerun()
                             else:
                                 st.error("잠금 해제에 실패했습니다.")
@@ -679,7 +800,6 @@ with tab_lockout:
                          key="lockout_manual_reset", type="primary"):
                 if reset_lockout(sel_lock_uid):
                     st.success(f"`{sel_lock_uid}` 초기화 완료")
-                    st.cache_data.clear()
                     st.rerun()
                 else:
                     st.error("초기화에 실패했습니다.")

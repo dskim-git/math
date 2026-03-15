@@ -21,6 +21,7 @@ _KST = timezone(timedelta(hours=9))  # 한국 표준시 (UTC+9)
 from auth_utils import (
     authenticate, register_student, register_general,
     check_password_policy, is_id_taken, is_student_num_taken,
+    get_user_permission_snapshot,
     ALL_SUBJECTS as _AUTH_SUBJECTS,
 )
 
@@ -340,7 +341,82 @@ def _get_login_allowed_subjects() -> Optional[set]:
     None = 제한 없음(관리자 또는 미설정), set = 허용 key 목록."""
     if _is_dev_mode():
         return None
+    if st.session_state.get("_user_type") == "general":
+        raw = st.session_state.get("_login_allowed_subjects", set())
+        if raw is None:
+            return set()
+        if isinstance(raw, set):
+            return raw
+        if isinstance(raw, (list, tuple)):
+            return {str(v).strip() for v in raw if str(v).strip()}
+        return set()
     return st.session_state.get("_login_allowed_subjects", None)
+
+
+def _get_login_allowed_units(subject_key: str) -> Optional[set[str]]:
+    """로그인 기반 수업(unit) 허용 키 집합을 반환합니다.
+    None = 제한 없음, set = 허용 unit key 목록.
+
+    현재 정책상 일반인 + 영재 교과에만 적용합니다.
+    """
+    if _is_dev_mode():
+        return None
+    if st.session_state.get("_user_type") != "general":
+        return None
+    if subject_key != "gifted":
+        return None
+
+    raw = st.session_state.get("_login_allowed_lessons", {})
+    if not isinstance(raw, dict):
+        return set()
+    units = raw.get(subject_key, set())
+    if isinstance(units, set):
+        return units
+    if isinstance(units, (list, tuple)):
+        return {str(u).strip() for u in units if str(u).strip()}
+    return set()
+
+
+def _refresh_current_user_permissions() -> None:
+    """현재 로그인 사용자의 최신 권한을 시트 기준으로 세션에 반영합니다."""
+    user_type = st.session_state.get("_user_type", "")
+    user_id = st.session_state.get("_user_id", "")
+    if not user_type or not user_id:
+        return
+
+    snap = get_user_permission_snapshot(user_type, user_id)
+    if not snap:
+        return
+
+    st.session_state["_user_name"] = snap.get("name", st.session_state.get("_user_name", ""))
+    st.session_state["_login_allowed_subjects"] = snap.get("allowed_subjects")
+    st.session_state["_login_allowed_lessons"] = snap.get("allowed_lessons")
+
+
+def _filter_curriculum_by_allowed_units(curriculum: List[Dict[str, Any]],
+                                        allowed_units: set[str]) -> List[Dict[str, Any]]:
+    """허용 unit key에 맞춰 CURRICULUM 트리를 필터링합니다."""
+    def _walk(nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        out: List[Dict[str, Any]] = []
+        for node in nodes:
+            children = node.get("children", []) if isinstance(node, dict) else []
+            filtered_children = _walk(children) if children else []
+            key = str(node.get("key", "")).strip() if isinstance(node, dict) else ""
+            include = (key in allowed_units) or bool(filtered_children)
+            if include and isinstance(node, dict):
+                new_node = dict(node)
+                if "children" in new_node:
+                    new_node["children"] = filtered_children
+                out.append(new_node)
+        return out
+
+    return _walk(curriculum)
+
+
+def _filter_units_by_allowed(units_dict: Dict[str, Any],
+                             allowed_units: set[str]) -> Dict[str, Any]:
+    """허용 unit key에 맞춰 평면형 UNITS를 필터링합니다."""
+    return {k: v for k, v in units_dict.items() if k in allowed_units}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -751,6 +827,7 @@ def login_view():
                         st.session_state["_user_id"]             = result["id"]
                         st.session_state["_user_name"]           = result["name"]
                         st.session_state["_login_allowed_subjects"] = result["allowed_subjects"]
+                        st.session_state["_login_allowed_lessons"] = result.get("allowed_lessons")
                         if result["type"] == "admin":
                             st.session_state["_dev_mode"] = True
                         st.session_state.pop(ATTEMPT_KEY, None)
@@ -886,20 +963,24 @@ def login_view():
             _DEBUG_ROLES = {
                 "🔧 관리자":     {"_authenticated": True, "_user_type": "admin",
                                 "_user_id": "admin", "_user_name": "관리자",
-                                "_dev_mode": True, "_login_allowed_subjects": None},
+                                "_dev_mode": True, "_login_allowed_subjects": None,
+                                "_login_allowed_lessons": None},
                 "🎓 학생":       {"_authenticated": True, "_user_type": "student",
                                 "_user_id": "202601001", "_user_name": "테스트학생",
-                                "_dev_mode": False, "_login_allowed_subjects": None},
+                                "_dev_mode": False, "_login_allowed_subjects": None,
+                                "_login_allowed_lessons": None},
                 "👤 일반인":     {"_authenticated": True, "_user_type": "general",
                                 "_user_id": "test_general", "_user_name": "테스트일반인",
-                                "_dev_mode": False, "_login_allowed_subjects": None},
+                                "_dev_mode": False, "_login_allowed_subjects": set(),
+                                "_login_allowed_lessons": {"gifted": set()}},
             }
             with st.container():
                 st.markdown('<div class="debug-panel-header">🐛 LOCAL DEBUG — 빠른 접속</div>',
                             unsafe_allow_html=True)
                 _dc = st.columns(len(_DEBUG_ROLES))
                 _CLEAR = ["_authenticated", "_user_type", "_user_id", "_user_name",
-                          "_dev_mode", "_login_allowed_subjects", "_visit_logged"]
+                          "_dev_mode", "_login_allowed_subjects",
+                          "_login_allowed_lessons", "_visit_logged"]
                 for _col, (_label, _data) in zip(_dc, _DEBUG_ROLES.items()):
                     with _col:
                         if st.button(_label, use_container_width=True, key=f"_dbg_{_label}"):
@@ -1093,6 +1174,7 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
     if st.sidebar.button("🚪 로그아웃", use_container_width=True, key="_logout_btn"):
         for k in ["_authenticated", "_user_type", "_user_id", "_user_name",
                   "_login_allowed_subjects", "_dev_mode",
+                  "_login_allowed_lessons",
                   "_show_pw_input", "_pw_error", "_visit_logged",
                   "_ot_mode", "_subject_filter"]:
             st.session_state.pop(k, None)
@@ -1115,14 +1197,20 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
         if login_allowed is not None and key not in login_allowed:
             continue
         with st.sidebar.expander(f"{label}", expanded=False):
+            allowed_units = _get_login_allowed_units(key)
             if st.button("교과 메인 열기", key=f"open_{key}_index", use_container_width=True):
                 set_route("subject", subject=key)
                 _do_rerun()
             if (ACTIVITIES_ROOT / key / "lessons" / "_units.py").exists():
-                if st.button("수업 열기 (단원별 자료)", key=f"open_{key}_lessons", use_container_width=True):
-                    set_route("lessons", subject=key)
-                    _do_rerun()
+                if allowed_units is not None and not allowed_units:
+                    st.caption("수업 권한 없음")
+                else:
+                    if st.button("수업 열기 (단원별 자료)", key=f"open_{key}_lessons", use_container_width=True):
+                        set_route("lessons", subject=key)
+                        _do_rerun()
             acts = [a for a in registry.get(key, []) if not a.hidden]
+            if key == "gifted" and allowed_units is not None:
+                acts = []
             if not acts:
                 st.caption("아직 활동이 없습니다.")
             else:
@@ -1594,6 +1682,16 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
             from typing import Any
             curriculum = load_curriculum(subject_key)
             units_dict = load_units(subject_key)
+            lesson_allowed = _get_login_allowed_units(subject_key)
+            if lesson_allowed is not None:
+                if curriculum:
+                    curriculum = _filter_curriculum_by_allowed_units(curriculum, lesson_allowed)
+                if units_dict:
+                    units_dict = _filter_units_by_allowed(units_dict, lesson_allowed)
+
+            if lesson_allowed is not None and not curriculum and not units_dict:
+                st.info("이 그룹에는 현재 허용된 영재 수업이 없습니다. 관리자에게 수업 권한을 요청하세요.")
+                return
 
             if curriculum:
                 def ch(node: dict[str, Any]):  # 안전한 children 접근
@@ -1707,6 +1805,8 @@ def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
     # ▼ 활동 카드들
     acts_all = registry.get(subject_key, [])
     acts = [a for a in acts_all if not a.hidden]    # ← 추가
+    if subject_key == "gifted" and _get_login_allowed_units("gifted") is not None:
+        acts = []
     if not acts:
         st.info(f"아직 등록된 활동이 없습니다. `activities/{subject_key}/` 폴더에 .py 파일을 추가하세요.")
         return
@@ -1738,6 +1838,13 @@ def gifted_subject_view():
     if not curriculum:
         st.info("`activities/gifted/lessons/_units.py`의 CURRICULUM에 수업 주제를 추가하세요.")
         return
+
+    allowed_units = _get_login_allowed_units("gifted")
+    if allowed_units is not None:
+        curriculum = _filter_curriculum_by_allowed_units(curriculum, allowed_units)
+        if not curriculum:
+            st.warning("현재 계정에는 접근 가능한 영재 수업이 없습니다. 관리자에게 수업 권한을 요청하세요.")
+            return
 
     for topic in curriculum:
         with st.container(border=True):
@@ -1781,6 +1888,16 @@ def lessons_view(subject_key: str):
     curriculum = load_curriculum(subject_key)
     units = load_units(subject_key)
     _, _, _, unit_qp = get_route()
+
+    allowed_units = _get_login_allowed_units(subject_key)
+    if allowed_units is not None:
+        if curriculum:
+            curriculum = _filter_curriculum_by_allowed_units(curriculum, allowed_units)
+        if units:
+            units = _filter_units_by_allowed(units, allowed_units)
+        if not curriculum and not units:
+            st.warning("현재 계정에는 접근 가능한 영재 수업이 없습니다. 관리자에게 수업 권한을 요청하세요.")
+            return
 
     if curriculum:
         def children(node): return node.get("children", []) if isinstance(node, dict) else []
@@ -2034,6 +2151,26 @@ def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity
             origin_subject = vals[0]
     except Exception:
         origin_subject = None
+
+    # 영재 수업 단원 경유 액티비티는 단원 접근권한을 검사
+    if unit and (subject_key == "gifted" or origin_subject == "gifted"):
+        allowed_units = _get_login_allowed_units("gifted")
+        if allowed_units is not None and unit not in allowed_units:
+            st.error("해당 영재 수업 단원에 대한 접근 권한이 없습니다.")
+            if st.button("🏠 홈으로", key="forbidden_unit_home", use_container_width=True):
+                set_route("home")
+                _do_rerun()
+            return
+
+    # 일반인은 영재 교과를 단원 권한 기반(lessons 경유)으로만 접근 가능
+    if subject_key == "gifted" and unit is None:
+        allowed_units = _get_login_allowed_units("gifted")
+        if allowed_units is not None:
+            st.error("영재 활동은 허용된 수업 단원을 통해서만 접근할 수 있습니다.")
+            if st.button("🌟 영재 수업으로 이동", key="forbidden_gifted_go_lessons", use_container_width=True):
+                set_route("lessons", subject="gifted")
+                _do_rerun()
+            return
 
     cols = st.columns([1, 1, 1])
     with cols[0]:
@@ -3086,16 +3223,19 @@ def _render_debug_sidebar():
             "_authenticated": True, "_user_type": "admin",
             "_user_id": "admin",    "_user_name": "관리자",
             "_dev_mode": True,       "_login_allowed_subjects": None,
+            "_login_allowed_lessons": None,
         },
         "🎓 학생 (테스트)": {
             "_authenticated": True, "_user_type": "student",
             "_user_id": "202601001", "_user_name": "테스트학생",
             "_dev_mode": False,      "_login_allowed_subjects": None,
+            "_login_allowed_lessons": None,
         },
         "👤 일반인 (테스트)": {
             "_authenticated": True, "_user_type": "general",
             "_user_id": "test_general", "_user_name": "테스트일반인",
-            "_dev_mode": False,          "_login_allowed_subjects": None,
+            "_dev_mode": False,          "_login_allowed_subjects": set(),
+            "_login_allowed_lessons": {"gifted": set()},
         },
     }
 
@@ -3125,7 +3265,8 @@ def _render_debug_sidebar():
             if st.button("적용", key="_dbg_apply", use_container_width=True):
                 _clear_keys = [
                     "_authenticated", "_user_type", "_user_id", "_user_name",
-                    "_dev_mode", "_login_allowed_subjects", "_visit_logged",
+                    "_dev_mode", "_login_allowed_subjects",
+                    "_login_allowed_lessons", "_visit_logged",
                 ]
                 for k in _clear_keys:
                     st.session_state.pop(k, None)
@@ -3155,6 +3296,7 @@ def main():
         st.stop()
     # ──────────────────────────────────────────────────────────────────────────
 
+    _refresh_current_user_permissions()
     _log_visit()   # 세션 최초 1회 방문 기록
     _inject_app_theme()  # 전체 앱 다크 테마 적용
     registry = discover_activities()
