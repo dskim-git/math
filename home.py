@@ -18,10 +18,11 @@ import threading
 _KST = timezone(timedelta(hours=9))  # 한국 표준시 (UTC+9)
 
 # 인증 모듈
+import auth_utils as _auth_utils
+
 from auth_utils import (
     authenticate, register_student, register_general,
     check_password_policy, is_id_taken, is_student_num_taken,
-    get_user_permission_snapshot,
     ALL_SUBJECTS as _AUTH_SUBJECTS,
 )
 
@@ -384,7 +385,11 @@ def _refresh_current_user_permissions() -> None:
     if not user_type or not user_id:
         return
 
-    snap = get_user_permission_snapshot(user_type, user_id)
+    get_snapshot = getattr(_auth_utils, "get_user_permission_snapshot", None)
+    if not callable(get_snapshot):
+        return
+
+    snap = get_snapshot(user_type, user_id)
     if not snap:
         return
 

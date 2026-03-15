@@ -23,6 +23,7 @@ if _root not in sys.path:
 import streamlit as st
 import pandas as pd
 from io import StringIO
+import auth_utils as _auth_utils
 
 st.set_page_config(page_title="회원 관리", layout="wide")
 
@@ -70,9 +71,16 @@ from auth_utils import (
     save_group_permissions, save_group_lesson_permissions, delete_group,
     get_all_groups, batch_register_students,
     check_password_policy,
-    _clear_auth_caches,
     is_account_locked, reset_lockout,
 )
+
+
+def _clear_auth_caches_safe(**kwargs):
+    clear_fn = getattr(_auth_utils, "_clear_auth_caches", None)
+    if callable(clear_fn):
+        clear_fn(**kwargs)
+    else:
+        st.cache_data.clear()
 def _gifted_lesson_labels() -> dict[str, str]:
     """영재 lessons/_units.py에서 단원 key→표시 라벨을 읽어옵니다."""
     units_py = Path(_root) / "activities" / "gifted" / "lessons" / "_units.py"
@@ -151,7 +159,7 @@ st.divider()
 
 # 새로고침
 if st.button("🔄 데이터 새로고침", key="mgmt_refresh"):
-    _clear_auth_caches(
+    _clear_auth_caches_safe(
         clear_users=True,
         clear_grade_perms=True,
         clear_group_perms=True,
@@ -718,7 +726,7 @@ with tab_bulk:
                             for e in errors:
                                 st.warning(e)
                     if ok > 0:
-                        _clear_auth_caches(clear_users=True)
+                        _clear_auth_caches_safe(clear_users=True)
         except Exception as e:
             st.error(f"파일 파싱 오류: {e}")
 
@@ -732,7 +740,7 @@ with tab_lockout:
     )
 
     if st.button("🔄 새로고침", key="lockout_refresh"):
-        _clear_auth_caches(clear_lockout=True)
+        _clear_auth_caches_safe(clear_lockout=True)
         st.rerun()
 
     lockout_rows = _cached_lockout(sheet_id)
