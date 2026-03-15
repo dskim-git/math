@@ -650,6 +650,21 @@ const bPolys = [null, null, null, null];  // B1~B4 계수 [x³,x²,x,1]
 let bConfirmed = [false,false,false,false];
 let currentPhase = 1;
 
+function safeRenderMath(root, delimiters) {
+  if (!root) return;
+  if (typeof renderMathInElement !== 'function') return;
+  renderMathInElement(root, {
+    delimiters: delimiters || [{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]
+  });
+}
+
+function toKatexHtml(latex, displayMode) {
+  if (window.katex && typeof katex.renderToString === 'function') {
+    return katex.renderToString(latex, { throwOnError: false, displayMode: !!displayMode });
+  }
+  return displayMode ? `$$${latex}$$` : `$${latex}$`;
+}
+
 // ═══════════════════ 초기화 ═══════════════════
 function init() {
   renderCards();
@@ -684,9 +699,7 @@ function renderCards() {
   // Re-render KaTeX
   if (window._katexReady || typeof renderMathInElement !== 'undefined') {
     setTimeout(() => {
-      renderMathInElement(grid, {
-        delimiters:[{left:'$',right:'$',display:false}]
-      });
+      safeRenderMath(grid, [{left:'$',right:'$',display:false}]);
     }, 700);
   }
 }
@@ -710,11 +723,7 @@ function flipCard(i) {
     document.getElementById('selectedName').textContent = card.label;
     document.getElementById('selectedFormula').textContent = card.str;
     // Render KaTeX in info
-    if (typeof renderMathInElement !== 'undefined') {
-      renderMathInElement(info, {
-        delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]
-      });
-    }
+    safeRenderMath(info);
   }, 650);
 }
 
@@ -787,7 +796,7 @@ function renderDivStep() {
         ${s.title}
       </div>
       <div class="math-block">
-        $$${s.equation}$$
+        ${toKatexHtml(s.equation, true)}
       </div>
       <div style="font-size:15px;color:#fbbf24;margin-top:12px">
         💡 ${s.memo}
@@ -805,9 +814,7 @@ function renderDivStep() {
   `;
 
   document.getElementById('divStepsDisplay').innerHTML = html;
-  renderMathInElement(document.getElementById('divStepsDisplay'), {
-    delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]
-  });
+  safeRenderMath(document.getElementById('divStepsDisplay'));
 
   // Buttons
   document.getElementById('btnDivPrev').disabled = (currentDivStep === 0);
@@ -819,9 +826,7 @@ function renderDivStep() {
     document.getElementById('r1Value').textContent = '';
     document.getElementById('r1Value').innerHTML = `$${CARDS[selectedCard].r1Latex}$`;
     r1Div.classList.add('fade-in');
-    renderMathInElement(r1Div, {
-      delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]
-    });
+    safeRenderMath(r1Div);
   }
 }
 
@@ -849,9 +854,7 @@ function initPhase3() {
       B는 <strong>$B = (ax^2 + bx + c)(x^2+1) + R_1$</strong> 형태로 만듭니다.
     </div>
   `;
-  renderMathInElement(r1Info, {
-    delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]
-  });
+  safeRenderMath(r1Info);
 
   const container = document.getElementById('bBuilders');
   container.innerHTML = '';
@@ -967,9 +970,7 @@ function updateBDisplay(k) {
   const disp = document.getElementById(`bDisplay${k}`);
   if (!disp) return;
   disp.innerHTML = `B${k+1} = $${latex}$`;
-  renderMathInElement(disp, {
-    delimiters:[{left:'$',right:'$',display:false}]
-  });
+  safeRenderMath(disp, [{left:'$',right:'$',display:false}]);
 }
 
 function confirmB(k) {
@@ -999,9 +1000,7 @@ function confirmB(k) {
       이 다항식을 $x^2+1$로 나누면 나머지 = <strong>$${card.r1Latex}$</strong> (= R₁과 같음!)
     </div>
   `;
-  renderMathInElement(infoDiv, {
-    delimiters:[{left:'$',right:'$',display:false}]
-  });
+  safeRenderMath(infoDiv, [{left:'$',right:'$',display:false}]);
 
   if (bConfirmed.every(v => v)) {
     document.getElementById('bComplete').style.display = 'block';
@@ -1049,9 +1048,7 @@ function initPhase4() {
     tbody.appendChild(tr);
   }
 
-  renderMathInElement(tbody, {
-    delimiters:[{left:'$',right:'$',display:false}]
-  });
+  safeRenderMath(tbody, [{left:'$',right:'$',display:false}]);
 }
 
 function revealPattern() {
@@ -1082,9 +1079,7 @@ function revealPattern() {
       두 다항식의 나머지가 같다 ⟺ 두 다항식의 차가 나누는 식의 <strong>배수</strong>이다!
     </div>
   `;
-  renderMathInElement(document.getElementById('whyBox'), {
-    delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]
-  });
+  safeRenderMath(document.getElementById('whyBox'));
 }
 
 // ═══════════════════ 시작 ═══════════════════
