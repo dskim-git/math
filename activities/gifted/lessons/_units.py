@@ -197,6 +197,12 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 소실점 찾기 — 직선 그리기 활동",
+                "subject": "gifted",
+                "slug": "vanishing_point_draw",
+            },
+            {
                 "type": "canva",
                 "title": "투시원근법에서의 거리 측정",
                 "src": "https://www.canva.com/design/DAHD5JryAbM/SFA8M6MMJV7vUa4n0B0VhQ/view?embed",
