@@ -262,7 +262,24 @@ CURRICULUM = [
         "key": "4",
         "label": "작도 게임",
         "items": [
-            # 수업 자료를 여기에 추가하세요.
+            {
+                "type": "canva",
+                "title": "고대 그리스 시대의 융합적 작도",
+                "src": "https://www.canva.com/design/DAGQmNF4JhQ/jSdOmRB4lUUHJWTtVH4_ng/view?embed",
+                "height": 800
+            },
+            {
+                "type": "canva",
+                "title": "작도게임 : 게임의 규칙",
+                "src": "https://www.canva.com/design/DAGQmmbCAyo/pcdLldQXxebYTTi3RBZH3w/view?embed",
+                "height": 800
+            },
+            {
+                "type": "activity",
+                "title": "🎯 빙고 게임 시작하기",
+                "subject": "gifted",
+                "slug": "euclidea_bingo",
+            },
         ],
     },
 ]
