@@ -239,6 +239,12 @@ CURRICULUM = [
                 "height": 800
             },
             {
+                "type": "activity",
+                "title": "미니: 등간격 사물 → 화폭에서 조화수열",
+                "subject": "gifted",
+                "slug": "harmonic_perspective",
+            },
+            {
                 "type": "canva",
                 "title": "성 삼위일체(마사초) 분석",
                 "src": "https://www.canva.com/design/DAHD490esgo/XIZ5XR5G1LnzInU9ysyhqw/view?embed",
