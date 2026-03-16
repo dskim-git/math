@@ -316,8 +316,12 @@ table.tool-tbl td:first-child{text-align:left;font-weight:700;color:#e2e8f0;}
         </div>
       </div>
 
-      <!-- Student: current scores only -->
+      <!-- Student: condition status + current scores -->
       <div id="student-score-box" style="display:none;">
+        <div class="sec-box">
+          <div class="sec-title">✅ 조건 달성 현황</div>
+          <div id="student-cond-status"></div>
+        </div>
         <div class="sec-box">
           <div class="sec-title">📊 현재 점수</div>
           <div id="student-team-scores"></div>
@@ -338,7 +342,7 @@ const IS_TEACHER  = __IS_TEACHER__;
 const FB_URL      = '__FIREBASE_DB_URL__';
 const FB_ENABLED  = FB_URL !== '' && FB_URL.startsWith('http');
 const GGB_URLS    = __GEOGEBRA_URLS__;
-const FB_PATH     = FB_URL + '/euclidea_bingo';
+const FB_PATH     = FB_URL.replace(/\/$/, '') + '/euclidea_bingo';
 
 // ═══════════════ DATA ═══════════════
 const GRID = [
@@ -505,7 +509,7 @@ function showBingo(pushNav=true) {
   document.getElementById('pg-bingo').style.display   = 'block';
   document.getElementById('pg-problem').style.display = 'none';
   buildGrid(); buildTeamCards(); updateBingoTags();
-  if (IS_TEACHER && FB_ENABLED && pushNav) fbPushNav(null);
+  if (IS_TEACHER && FB_ENABLED && pushNav) fbPushNav(0);
 }
 
 function showProblem(num, pushNav=true) {
@@ -554,6 +558,28 @@ function loadGeoGebra(num) {
 }
 
 function updateStudentScores() {
+  // Condition status for current problem
+  const cs = document.getElementById('student-cond-status');
+  if (cs && curProb) {
+    const p = state.probs[curProb] || {L:null,E:null,V:null};
+    const condInfo = [
+      {k:'L', label:'L 조건', color:'#38bdf8'},
+      {k:'E', label:'E 조건', color:'#c4b5fd'},
+      {k:'V', label:'🌟 V 조건', color:'#fde68a'},
+    ];
+    cs.innerHTML = condInfo.map(({k,label,color})=>{
+      const tid = p[k];
+      const t   = tid ? TEAMS[tid] : null;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #1e3a5f;">
+        <span style="font-weight:700;color:${color}">${label}</span>
+        ${t
+          ? `<span style="font-weight:800;color:${t.color}">${t.name} ✓</span>`
+          : `<span style="color:#334155">미달성</span>`}
+      </div>`;
+    }).join('');
+  }
+
+  // Team scores
   const box = document.getElementById('student-team-scores');
   box.innerHTML = '';
   Object.entries(TEAMS).forEach(([id,t])=>{
@@ -657,7 +683,7 @@ async function fbPushAll() {
 }
 
 // Student ← Firebase (polling every 2s)
-let _lastNav = '__INIT__';
+let _lastNav = -1;  // -1 = uninitialized, 0 = bingo, 1~25 = problem
 async function fbPoll() {
   if(!FB_ENABLED||IS_TEACHER) return;
   try {
@@ -671,16 +697,18 @@ async function fbPoll() {
       state.probs = data.probs;
       if (currentPage === 'bingo') {
         buildGrid(); buildTeamCards(); updateBingoTags();
+      } else if (currentPage === 'problem') {
+        updateStudentScores();
       }
     }
 
     // Auto-navigate based on teacher's nav
-    const nav = data.nav ?? null;  // null = bingo, number = problem
+    const nav = data.nav ?? 0;  // 0 = bingo board, 1~25 = problem num
     if (nav !== _lastNav) {
       _lastNav = nav;
-      if (nav === null) {
+      if (nav === 0) {
         showBingo(false);
-      } else if (typeof nav === 'number') {
+      } else if (typeof nav === 'number' && nav > 0) {
         showProblem(nav, false);
       }
     }
