@@ -31,7 +31,7 @@ def render():
         "집합 A = {a₁, …, aₘ}, B = {b₁, …, bₙ}에서 함수 f : A → B의 종류별 개수를 "
         "중복순열·순열·조합·중복조합으로 탐구합니다."
     )
-    components.html(_build_html(), height=1600, scrolling=True)
+    components.html(_build_html(), height=2000, scrolling=True)
 
     # ── 성찰 기록 폼 ────────────────────────────────────────────────────────
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
