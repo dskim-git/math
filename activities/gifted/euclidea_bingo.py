@@ -23,10 +23,33 @@ FIREBASE_DB_URL = "https://mathlab-bingo-default-rtdb.asia-southeast1.firebaseda
 #  예: GEOGEBRA_URLS = {1: "https://www.geogebra.org/m/xxxxx", ...}
 #  비어 있으면 GeoGebra Classic 기본 화면 표시
 # ─────────────────────────────────────────────────────────────────
-GEOGEBRA_URLS = {}
+GEOGEBRA_URLS = {
+    1:  "https://www.geogebra.org/material/iframe/id/ga8pkmee/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    2:  "https://www.geogebra.org/material/iframe/id/ep7wjv4f/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    3:  "https://www.geogebra.org/material/iframe/id/segp6e92/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    4:  "https://www.geogebra.org/material/iframe/id/x7xmayph/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    5:  "https://www.geogebra.org/material/iframe/id/cacmctnz/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    6:  "https://www.geogebra.org/material/iframe/id/byu9dcq3/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    7:  "https://www.geogebra.org/material/iframe/id/kbb4musk/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    8:  "https://www.geogebra.org/material/iframe/id/zn7ygwrr/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    9:  "https://www.geogebra.org/material/iframe/id/xgycthvh/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+    10: "https://www.geogebra.org/material/iframe/id/ckbdj36s/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
+}
 
 import streamlit.components.v1 as components
 import json as _json
+import importlib.util as _ilu, os as _os
+
+# ── 커스텀 작도 캔버스 모듈 로드 ──────────────────────────────
+_canvas_spec = _ilu.spec_from_file_location(
+    "_geo_canvas",
+    _os.path.join(_os.path.dirname(__file__), "_geo_canvas.py"))
+_canvas_mod = _ilu.module_from_spec(_canvas_spec)
+_canvas_spec.loader.exec_module(_canvas_mod)
+_GEO_CSS          = _canvas_mod.GEO_CSS
+_GEO_HTML         = _canvas_mod.GEO_HTML
+_GEO_JS_TEMPLATE  = _canvas_mod.GEO_JS_TEMPLATE
+_CANVAS_PROBLEMS  = _canvas_mod.PROBLEMS_CONFIG
 
 _TEMPLATE = r"""<!doctype html>
 <html lang="ko">
@@ -144,10 +167,8 @@ table.tool-tbl td:first-child{text-align:left;font-weight:700;color:#e2e8f0;}
 .owner-box{border-radius:8px;border:1.5px solid #334155;padding:10px 12px;font-size:0.84rem;margin-top:2px;}
 .score-guide{font-size:0.76rem;color:#64748b;line-height:1.9;}
 
-/* ── GeoGebra embed (student) ── */
-.ggb-wrap{background:#0f1f38;border-radius:10px;border:1px solid #1e3a5f;overflow:hidden;margin-top:8px;}
-.ggb-wrap iframe{display:block;width:100%;height:480px;border:none;}
-.ggb-placeholder{padding:60px 20px;text-align:center;color:#334155;font-size:0.85rem;}
+/* ── Geometry canvas (injected) ── */
+__GEO_CSS__
 
 /* waiting overlay for student bingo board */
 .student-hint{
@@ -252,20 +273,6 @@ table.tool-tbl td:first-child{text-align:left;font-weight:700;color:#e2e8f0;}
         </table>
       </div>
 
-      <!-- Student GeoGebra (shown instead of teacher hint) -->
-      <div id="student-ggb-wrap" style="display:none;">
-        <div class="sec-box" style="padding:0;overflow:hidden;">
-          <div style="padding:8px 12px;border-bottom:1px solid #1e3a5f;">
-            <span class="sec-title" style="margin:0">✏️ GeoGebra 작도</span>
-          </div>
-          <div class="ggb-wrap" id="ggb-wrap">
-            <div class="ggb-placeholder" id="ggb-placeholder">
-              이 문제의 GeoGebra 작도 링크가 설정되지 않았습니다.<br>
-              <span style="font-size:0.75rem;color:#283448">교사 설정 파일의 GEOGEBRA_URLS 딕셔너리를 채워주세요.</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- RIGHT: condition assignment (teacher only) or score info (student) -->
@@ -330,6 +337,10 @@ table.tool-tbl td:first-child{text-align:left;font-weight:700;color:#e2e8f0;}
 
     </div>
   </div>
+
+  <!-- 커스텀 작도 캔버스 (injected) -->
+  __GEO_HTML__
+
 </div>
 
 </div><!-- #app -->
@@ -341,7 +352,6 @@ table.tool-tbl td:first-child{text-align:left;font-weight:700;color:#e2e8f0;}
 const IS_TEACHER  = __IS_TEACHER__;
 const FB_URL      = '__FIREBASE_DB_URL__';
 const FB_ENABLED  = FB_URL !== '' && FB_URL.startsWith('http');
-const GGB_URLS    = __GEOGEBRA_URLS__;
 const FB_PATH     = FB_URL.replace(/\/$/, '') + '/euclidea_bingo';
 
 // ═══════════════ DATA ═══════════════
@@ -528,34 +538,13 @@ function showProblem(num, pushNav=true) {
     refreshOwnerBox();
   } else {
     updateStudentScores();
-    loadGeoGebra(num);
   }
+  initCanvas(num);
 
   if (IS_TEACHER && FB_ENABLED && pushNav) fbPushNav(num);
   window.scrollTo(0, 0);
 }
 
-// ═══════════════ GeoGebra (student) ═══════════════
-function loadGeoGebra(num) {
-  const wrap = document.getElementById('ggb-wrap');
-  const ph   = document.getElementById('ggb-placeholder');
-  const url  = GGB_URLS[num] || GGB_URLS[String(num)];
-
-  wrap.innerHTML = '';
-  if (url) {
-    const fr = document.createElement('iframe');
-    fr.src = url;
-    fr.style.cssText = 'display:block;width:100%;height:480px;border:none;';
-    fr.allowFullscreen = true;
-    wrap.appendChild(fr);
-  } else {
-    const d = document.createElement('div');
-    d.className = 'ggb-placeholder';
-    d.innerHTML = `문제 <b>#${num}</b>의 GeoGebra 링크가 아직 설정되지 않았습니다.<br>
-      <a href="https://www.geogebra.org/geometry" target="_blank" style="color:#38bdf8">GeoGebra Geometry 열기 ↗</a>`;
-    wrap.appendChild(d);
-  }
-}
 
 function updateStudentScores() {
   // Condition status for current problem
@@ -734,7 +723,6 @@ function applyRole() {
     document.getElementById('teacher-hint-box').style.display = 'block';
     document.getElementById('teacher-cond-box').style.display = 'block';
     document.getElementById('student-hint').style.display  = 'none';
-    document.getElementById('student-ggb-wrap').style.display  = 'none';
     document.getElementById('student-score-box').style.display = 'none';
 
   } else {
@@ -750,7 +738,6 @@ function applyRole() {
     document.getElementById('teacher-hint-box').style.display = 'none';
     document.getElementById('teacher-cond-box').style.display = 'none';
     document.getElementById('student-hint').style.display  = 'block';
-    document.getElementById('student-ggb-wrap').style.display  = 'block';
     document.getElementById('student-score-box').style.display = 'block';
 
     // Start polling
@@ -764,6 +751,9 @@ function applyRole() {
 // ═══════════════ INIT ═══════════════
 applyRole();
 showBingo(false);  // don't push nav on initial load
+
+// ═══════════════ GEOMETRY CANVAS (injected) ═══════════════
+__GEO_JS__
 </script>
 </body>
 </html>
@@ -777,10 +767,16 @@ def render():
     dev_mode  = st.session_state.get("_dev_mode", False)
     is_teacher = (user_type == "admin") or dev_mode
 
+    _geo_js = _GEO_JS_TEMPLATE.replace(
+        "__CANVAS_PROBLEMS__", _json.dumps(_CANVAS_PROBLEMS))
+
     html = (_TEMPLATE
         .replace("__IS_TEACHER__",    "true" if is_teacher else "false")
         .replace("__FIREBASE_DB_URL__", FIREBASE_DB_URL)
-        .replace("__GEOGEBRA_URLS__", _json.dumps(GEOGEBRA_URLS)))
+        .replace("__GEOGEBRA_URLS__", _json.dumps(GEOGEBRA_URLS))
+        .replace("__GEO_CSS__",  _GEO_CSS)
+        .replace("__GEO_HTML__", _GEO_HTML)
+        .replace("__GEO_JS__",   _geo_js))
 
     st.header("🎯 유클리디아 빙고 게임")
     if not is_teacher:
@@ -788,4 +784,4 @@ def render():
     else:
         st.caption("문제 칸 클릭 → 조건 기록 → 빙고판으로 돌아가기")
 
-    components.html(html, height=960, scrolling=True)
+    components.html(html, height=1200, scrolling=True)
