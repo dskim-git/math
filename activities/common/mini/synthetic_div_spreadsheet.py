@@ -767,5 +767,5 @@ def render():
         "엑셀/구글 시트에서 **셀 수식**을 이용해 조립제법을 구현하는 방법을 익히고, "
         "직접 스프레드시트 표를 완성해 보세요."
     )
-    components.html(_HTML, height=1150, scrolling=True)
+    components.html(_HTML, height=1400, scrolling=True)
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)

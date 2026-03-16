@@ -778,10 +778,10 @@ def render():
         .replace("__GEO_HTML__", _GEO_HTML)
         .replace("__GEO_JS__",   _geo_js))
 
-    st.header("🎯 유클리디아 빙고 게임")
+    st.header("🎯 작도 게임(빙고)")
     if not is_teacher:
         st.caption("📡 선생님이 문제를 선택하면 자동으로 이동합니다.")
     else:
         st.caption("문제 칸 클릭 → 조건 기록 → 빙고판으로 돌아가기")
 
-    components.html(html, height=1200, scrolling=True)
+    components.html(html, height=2000, scrolling=True)

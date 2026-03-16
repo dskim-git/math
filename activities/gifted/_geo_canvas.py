@@ -33,6 +33,35 @@ PROBLEMS_CONFIG = {
             {"type": "point", "rx": 0.82, "ry": 0.82, "fixed": True, "label": "C"},
         ],
     },
+    3: {
+        "title": "해시",
+        "desc": "두 쌍의 평행선에 의해 선분이 동일한 길이로 절단되도록 주어진 점을 지나는 직선을 작도하세요.",
+        "setup": [
+            # Pair 1: parallel lines (upper-left → lower-right)
+            {"type": "given_segment", "rx1": 0.20, "ry1": 0.10, "rx2": 0.80, "ry2": 0.52},
+            {"type": "given_segment", "rx1": 0.35, "ry1": 0.28, "rx2": 0.95, "ry2": 0.70},
+            # Pair 2: parallel lines (upper-right → lower-left)
+            {"type": "given_segment", "rx1": 0.20, "ry1": 0.52, "rx2": 0.80, "ry2": 0.10},
+            {"type": "given_segment", "rx1": 0.35, "ry1": 0.70, "rx2": 0.95, "ry2": 0.28},
+            # Given point P
+            {"type": "point", "rx": 0.60, "ry": 0.88, "fixed": True, "label": "P"},
+        ],
+    },
+    2: {
+        "title": "정사각형에 내접하는 원",
+        "desc": "정사각형에 내접하는 원을 작도하세요.",
+        # 캔버스 700×500 기준: 가로 0.429×700=300px, 세로 0.6×500=300px → 정사각형
+        "setup": [
+            {"type": "point", "rx": 0.286, "ry": 0.20, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.714, "ry": 0.20, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.714, "ry": 0.80, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.286, "ry": 0.80, "fixed": True, "label": "D"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+            {"type": "segment", "p1": "C", "p2": "D"},
+            {"type": "segment", "p1": "D", "p2": "A"},
+        ],
+    },
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -264,13 +293,14 @@ const CP = __CANVAS_PROBLEMS__;
  *  pts[]     : {id, x, y, fixed, label, helper}
  *  lines[]   : {id, p1, p2, lc, ec}   — p1/p2 are point IDs
  *  circles[] : {id, cid, rid, lc, ec} — cid=center ID, rid=radius-point ID
- *  segs[]    : {id, p1, p2}            — display-only segments (given geometry)
+ *  segs[]     : {id, p1, p2}                     — display-only segments via point IDs
+ *  gsegs[]    : {x1, y1, x2, y2}                 — display-only segments via absolute coords (no points shown)
  *  lc, ec    : running L / E totals
  *  history[] : JSON snapshots for undo
  *  nid       : next unique ID
  */
 let GS = {
-  pts: [], lines: [], circles: [], segs: [],
+  pts: [], lines: [], circles: [], segs: [], gsegs: [],
   lc: 0, ec: 0, history: [], nid: 1,
 };
 
@@ -330,7 +360,7 @@ function initCanvas(num) {
   const prob = CP[num];
 
   // Reset geometry state
-  GS = { pts: [], lines: [], circles: [], segs: [], lc: 0, ec: 0, history: [], nid: 1 };
+  GS = { pts: [], lines: [], circles: [], segs: [], gsegs: [], lc: 0, ec: 0, history: [], nid: 1 };
   gZoom = { scale: 1, tx: 0, ty: 0 };
   gTS = { step: 0, picks: [] };
   gCurProb = num;
@@ -340,7 +370,13 @@ function initCanvas(num) {
 
   // Update problem header
   document.getElementById('geo-prob-num').textContent   = '문제 #' + num;
-  document.getElementById('geo-prob-title').textContent = prob ? (prob.title || '') : '';
+  const pLE = (typeof PROBLEMS !== 'undefined' && PROBLEMS[num]) ? PROBLEMS[num] : null;
+  const leHtml = pLE
+    ? ' <span style="font-size:0.78rem;font-weight:800;color:#38bdf8">' + pLE.L + 'L</span>'
+      + ' <span style="color:#334155;font-weight:400">·</span>'
+      + ' <span style="font-size:0.78rem;font-weight:800;color:#c4b5fd">' + pLE.E + 'E</span>'
+    : '';
+  document.getElementById('geo-prob-title').innerHTML = (prob ? (prob.title || '') : '') + leHtml;
   document.getElementById('geo-prob-desc').textContent  = prob ? (prob.desc  || '') : '';
 
   // Resize canvas to container
@@ -366,6 +402,12 @@ function initCanvas(num) {
         if (p1 && p2) {
           GS.segs.push({ id: GS.nid++, p1: p1.id, p2: p2.id });
         }
+      }
+      if (item.type === 'given_segment') {
+        GS.gsegs.push({
+          x1: item.rx1 * GW, y1: item.ry1 * GH,
+          x2: item.rx2 * GW, y2: item.ry2 * GH,
+        });
       }
     });
   }
@@ -729,7 +771,7 @@ function drawAll() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(GW, y); ctx.stroke();
   }
 
-  // Display-only segments (given geometry)
+  // Display-only segments via point IDs (given geometry)
   ctx.strokeStyle = '#94a3b8';
   ctx.lineWidth   = 1.5 / gZoom.scale;
   ctx.setLineDash([5, 4]);
@@ -737,6 +779,10 @@ function drawAll() {
     const a = getPt(s.p1), b = getPt(s.p2);
     if (!a || !b) return;
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  });
+  // Display-only segments via absolute coords (no endpoint dots)
+  GS.gsegs.forEach(function(s) {
+    ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
   });
   ctx.setLineDash([]);
 
@@ -1238,37 +1284,59 @@ function toolAngleBisector(mx, my) {
   }
 }
 
-// ── 평행선 (Parallel Line) — click line → click pt → +1L +4E ────
+// ── 평행선 (Parallel Line) — point↔line either order → +1L +4E ──
 function toolParallel(mx, my) {
   if (gTS.step === 0) {
-    const obj = pickObj(mx, my);
-    if (!obj || obj.type !== 'line') return;
-    saveHistory();
-    gTS.picks = [{ type: 'line', id: obj.id }];
-    gTS.step  = 1;
+    // Point takes priority over line (same pattern as toolPerp)
+    const snap    = findSnap(mx, my);
+    const ptHit   = (snap && snap.ptId !== undefined) ? getPt(snap.ptId) : null;
+    const lineHit = pickObj(mx, my);
+
+    if (ptHit) {
+      // Point first: wait for line
+      saveHistory();
+      gTS.picks = [{ type: 'point', id: ptHit.id }];
+      gTS.step  = 1;
+      const msg = document.getElementById('geo-status-msg');
+      if (msg) msg.textContent = '평행하게 만들 직선을 클릭하세요.';
+    } else if (lineHit && lineHit.type === 'line') {
+      // Line first: wait for point
+      saveHistory();
+      gTS.picks = [{ type: 'line', id: lineHit.id }];
+      gTS.step  = 1;
+      const msg = document.getElementById('geo-status-msg');
+      if (msg) msg.textContent = '평행선이 지나갈 점을 클릭하세요.';
+    }
   } else {
-    const snap = findSnap(mx, my);
-    let pt;
-    if (snap && snap.ptId !== undefined) {
-      pt = getPt(snap.ptId);
-    } else if (snap) {
-      pt = addPoint(snap.x, snap.y, false, '');
+    const firstPick = gTS.picks[0];
+    let l, pt;
+
+    if (firstPick.type === 'point') {
+      // First was point → now pick a line
+      const lineHit = pickObj(mx, my);
+      if (!lineHit || lineHit.type !== 'line') return;
+      l  = getLine(lineHit.id);
+      pt = getPt(firstPick.id);
     } else {
-      pt = addPoint(mx, my, false, '');
+      // First was line → now pick a point
+      const snap = findSnap(mx, my);
+      if (snap && snap.ptId !== undefined) pt = getPt(snap.ptId);
+      else if (snap) pt = addPoint(snap.x, snap.y, false, '');
+      else pt = addPoint(mx, my, false, '');
+      l = getLine(firstPick.id);
     }
 
-    const l = getLine(gTS.picks[0].id);
-    if (!l || !pt) { gTS = { step:0, picks:[] }; return; }
+    if (!l || !pt) { gTS = { step: 0, picks: [] }; return; }
 
     const a = getPt(l.p1), b = getPt(l.p2);
-    if (!a || !b) { gTS = { step:0, picks:[] }; return; }
+    if (!a || !b) { gTS = { step: 0, picks: [] }; return; }
 
     // Direction vector of original line
     const dx = b.x - a.x, dy = b.y - a.y;
     const len = Math.hypot(dx, dy);
-    if (len < 1e-10) { gTS = { step:0, picks:[] }; return; }
+    if (len < 1e-10) { gTS = { step: 0, picks: [] }; return; }
 
-    // Second defining point of the parallel line (helper)
+    // Second defining point of the parallel line (hidden helper)
     const helper = addPoint(pt.x + dx, pt.y + dy, true, '');
 
     const id = GS.nid++;

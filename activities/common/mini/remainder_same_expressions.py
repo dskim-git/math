@@ -1096,5 +1096,5 @@ def render():
         "6장의 다항식 카드 중 하나를 골라 $x^2+1$로 나눈 나머지를 구하고, "
         "같은 나머지를 가지는 다항식을 직접 만들어 패턴을 탐구해 보세요."
     )
-    components.html(_HTML, height=1050, scrolling=True)
+    components.html(_HTML, height=1700, scrolling=True)
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
