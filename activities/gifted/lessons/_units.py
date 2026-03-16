@@ -250,6 +250,12 @@ CURRICULUM = [
                 "src": "https://www.canva.com/design/DAHD490esgo/XIZ5XR5G1LnzInU9ysyhqw/view?embed",
                 "height": 800
             },
+            {
+                "type": "activity",
+                "title": "미니: 성삼위일체 — 인물 사이의 실제 거리 추정",
+                "subject": "gifted",
+                "slug": "trinity_distance",
+            },
         ],
     },
     {
