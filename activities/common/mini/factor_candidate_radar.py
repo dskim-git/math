@@ -576,6 +576,19 @@ function mathHTML(latex){
   return latex;
 }
 
+function waitForKatexAndRerender(){
+  if(window.katex) return;
+  let attempts = 0;
+  const timer = setInterval(()=>{
+    attempts += 1;
+    if(window.katex){
+      clearInterval(timer);
+      renderProblem();
+    }
+    if(attempts >= 60) clearInterval(timer);
+  },120);
+}
+
 function setChoiceGroup(targetId, options, selectedSet, group, locked){
   const container = document.getElementById(targetId);
   container.innerHTML = '';
@@ -792,6 +805,7 @@ function nextProblem(){
 
 resetProblemState();
 renderProblem();
+waitForKatexAndRerender();
 </script>
 </body>
 </html>

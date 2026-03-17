@@ -211,6 +211,18 @@ CURRICULUM = [
                                 "title": "인수정리를 이용한 인수분해",
                                 "src": "https://www.canva.com/design/DAHDIxwQ-UE/sevPmqArsV_F-L-PS-mEpA/view?embed",
                                 "height": 800
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔐 소수·합성수 잠금 해제",
+                                "subject": "common",
+                                "slug": "mini/prime_composite_lock"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🧭 인수분해 패스파인더 아케이드",
+                                "subject": "common",
+                                "slug": "mini/factor_pathfinder_arcade"
                             }
                         ],
                     },
