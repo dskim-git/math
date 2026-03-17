@@ -23,6 +23,34 @@ FIREBASE_DB_URL = "https://mathlab-bingo-default-rtdb.asia-southeast1.firebaseda
 #  예: GEOGEBRA_URLS = {1: "https://www.geogebra.org/m/xxxxx", ...}
 #  비어 있으면 GeoGebra Classic 기본 화면 표시
 # ─────────────────────────────────────────────────────────────────
+GEOGEBRA_CALC_URLS = {
+    1:  "https://www.geogebra.org/calculator/ga8pkmee",
+    2:  "https://www.geogebra.org/calculator/ep7wjv4f",
+    3:  "https://www.geogebra.org/calculator/segp6e92",
+    4:  "https://www.geogebra.org/calculator/x7xmayph",
+    5:  "https://www.geogebra.org/calculator/cacmctnz",
+    6:  "https://www.geogebra.org/calculator/byu9dcq3",
+    7:  "https://www.geogebra.org/calculator/kbb4musk",
+    8:  "https://www.geogebra.org/calculator/zn7ygwrr",
+    9:  "https://www.geogebra.org/calculator/xgycthvh",
+    10: "https://www.geogebra.org/calculator/ckbdj36s",
+    11: "https://www.geogebra.org/calculator/wvzvn7cp",
+    12: "https://www.geogebra.org/calculator/ytgu62dp",
+    13: "https://www.geogebra.org/calculator/hrjv42r8",
+    14: "https://www.geogebra.org/calculator/eszrzhgu",
+    15: "https://www.geogebra.org/calculator/eqgakujy",
+    16: "https://www.geogebra.org/calculator/vhnahfmd",
+    17: "https://www.geogebra.org/calculator/msrr3zvu",
+    18: "https://www.geogebra.org/calculator/h99jdexn",
+    19: "https://www.geogebra.org/calculator/uzrvbykv",
+    20: "https://www.geogebra.org/calculator/rca2tyje",
+    21: "https://www.geogebra.org/calculator/zdepjgnt",
+    22: "https://www.geogebra.org/calculator/mahcyjng",
+    23: "https://www.geogebra.org/calculator/aaccjjxn",
+    24: "https://www.geogebra.org/calculator/zt9ekaw9",
+    25: "https://www.geogebra.org/calculator/gfjjqazq",
+}
+
 GEOGEBRA_URLS = {
     1:  "https://www.geogebra.org/material/iframe/id/ga8pkmee/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
     2:  "https://www.geogebra.org/material/iframe/id/ep7wjv4f/width/1912/height/858/border/888888/sfsb/true/smb/false/stb/false/stbh/false/ai/false/asb/false/sri/false/rc/false/ld/false/sdz/false/ctl/false",
@@ -134,6 +162,9 @@ body{background:#0a1628;color:#e2e8f0;font-family:'Segoe UI','Noto Sans KR',syst
 .prob-meta-line .ml{color:#38bdf8;}
 .prob-meta-line .me{color:#c4b5fd;}
 
+.gg-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;border:1.5px solid #166534;background:#14532d;color:#4ade80;cursor:pointer;font-size:0.78rem;font-weight:800;text-decoration:none;transition:all .15s;margin-left:auto;}
+.gg-btn:hover{background:#15803d;border-color:#4ade80;color:#f0fdf4;}
+
 .back-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:1.5px solid #334155;background:#1e293b;color:#94a3b8;cursor:pointer;font-size:0.82rem;font-weight:700;margin-bottom:14px;transition:all .15s;}
 .back-btn:hover{border-color:#64748b;color:#f8fafc;}
 
@@ -233,6 +264,9 @@ __GEO_CSS__
     <span>목표&nbsp;<span class="ml" id="p-tgt-L">?L</span></span>
     <span style="color:#334155">·</span>
     <span><span class="me" id="p-tgt-E">?E</span></span>
+    <a class="gg-btn" id="gg-link" href="#" target="_blank" rel="noopener">
+      🔗 GeoGebra에서 풀기
+    </a>
   </div>
 
   <!-- Teacher: back button -->
@@ -353,6 +387,7 @@ const IS_TEACHER  = __IS_TEACHER__;
 const FB_URL      = '__FIREBASE_DB_URL__';
 const FB_ENABLED  = FB_URL !== '' && FB_URL.startsWith('http');
 const FB_PATH     = FB_URL.replace(/\/$/, '') + '/euclidea_bingo';
+const GG_URLS     = __GEOGEBRA_CALC_URLS__;
 
 // ═══════════════ DATA ═══════════════
 const GRID = [
@@ -532,6 +567,8 @@ function showProblem(num, pushNav=true) {
   document.getElementById('p-num').textContent   = `문제 #${num}`;
   document.getElementById('p-tgt-L').textContent = `${p.L}L`;
   document.getElementById('p-tgt-E').textContent = `${p.E}E`;
+  const ggLink = document.getElementById('gg-link');
+  if (ggLink) ggLink.href = GG_URLS[num] || '#';
 
   if (IS_TEACHER) {
     refreshCondButtons();
@@ -773,6 +810,7 @@ def render():
     html = (_TEMPLATE
         .replace("__IS_TEACHER__",    "true" if is_teacher else "false")
         .replace("__FIREBASE_DB_URL__", FIREBASE_DB_URL)
+        .replace("__GEOGEBRA_CALC_URLS__", _json.dumps(GEOGEBRA_CALC_URLS))
         .replace("__GEOGEBRA_URLS__", _json.dumps(GEOGEBRA_URLS))
         .replace("__GEO_CSS__",  _GEO_CSS)
         .replace("__GEO_HTML__", _GEO_HTML)
