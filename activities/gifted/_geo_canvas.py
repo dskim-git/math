@@ -47,6 +47,253 @@ PROBLEMS_CONFIG = {
             {"type": "point", "rx": 0.60, "ry": 0.88, "fixed": True, "label": "P"},
         ],
     },
+    25: {
+        "title": "정육각형",
+        "desc": "주어진 변을 포함하는 정육각형을 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.28, "ry": 0.62, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.72, "ry": 0.62, "fixed": True, "label": "B"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+        ],
+    },
+    24: {
+        "title": "2배각",
+        "desc": "주어진 각과 동일하고 한 변을 공유하는 각을 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.32, "ry": 0.80, "fixed": True, "label": "V"},
+            {"type": "given_segment", "rx1": 0.32, "ry1": 0.80, "rx2": 0.97, "ry2": 0.22},
+            {"type": "given_segment", "rx1": 0.32, "ry1": 0.80, "rx2": 0.97, "ry2": 0.80},
+        ],
+    },
+    23: {
+        "title": "3개의 합동 선분",
+        "desc": "각 ABC와 내부의 점 M이 주어져 있을 때, BA 위의 점 D와 BC 위의 점 E를 확인하여 BD=DM=ME가 되도록 선분 DM과 ME를 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.12, "ry": 0.82, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.68, "ry": 0.25, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.95, "ry": 0.82, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.55, "ry": 0.52, "fixed": True, "label": "M"},
+            {"type": "segment", "p1": "B", "p2": "A"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+        ],
+    },
+    22: {
+        "title": "두 점에서 등거리에 있는 직선",
+        "desc": "점 A와 점 B 사이에 있고 두 점에서 등거리인 직선이 점 C를 지나도록 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.52, "ry": 0.30, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.90, "ry": 0.47, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.65, "ry": 0.65, "fixed": True, "label": "B"},
+        ],
+    },
+    21: {
+        "title": "인접한 중점을 통한 정사각형",
+        "desc": "주어진 점이 인접한 변의 두 중점이 되는 정사각형을 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.32, "ry": 0.58, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.75, "ry": 0.58, "fixed": True, "label": "B"},
+        ],
+    },
+    20: {
+        "title": "사각형 내 마름모",
+        "desc": "사각형에 내접하며 공통 대각선을 공유하는 마름모를 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.36, "ry": 0.32, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.92, "ry": 0.32, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.92, "ry": 0.88, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.36, "ry": 0.88, "fixed": True, "label": "D"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+            {"type": "segment", "p1": "C", "p2": "D"},
+            {"type": "segment", "p1": "D", "p2": "A"},
+        ],
+    },
+    19: {
+        "title": "각과 수심을 통한 삼각형",
+        "desc": "점 O가 수심인 삼각형을 얻을 수 있도록 각의 양변을 연결하는 선분을 작도하세요.",
+        "setup": [
+            # Vertex of the angle (lower-left)
+            {"type": "point", "rx": 0.12, "ry": 0.88, "fixed": True, "label": "V"},
+            # Two rays forming a sharp angle
+            {"type": "given_segment", "rx1": 0.12, "ry1": 0.88, "rx2": 0.95, "ry2": 0.18},
+            {"type": "given_segment", "rx1": 0.12, "ry1": 0.88, "rx2": 0.97, "ry2": 0.88},
+            # Orthocenter O (inside the angle)
+            {"type": "point", "rx": 0.65, "ry": 0.62, "fixed": True, "label": "O"},
+        ],
+    },
+    18: {
+        "title": "원에 외접하는 정삼각형",
+        "desc": "원에 외접하고 주어진 점을 포함하는 정삼각형을 작도하세요.",
+        "setup": [
+            {"type": "given_circle", "cx": 0.58, "cy": 0.52, "px": 0.83, "py": 0.75},
+            {"type": "point", "rx": 0.58, "ry": 0.52, "fixed": True, "label": "O"},
+            {"type": "point", "rx": 0.83, "ry": 0.75, "fixed": True, "label": "A"},
+        ],
+    },
+    17: {
+        "title": "원 위의 점을 지나는 직선",
+        "desc": "주어진 점에서 원에 접하는 접선을 작도하세요.",
+        "setup": [
+            {"type": "given_circle", "cx": 0.58, "cy": 0.60, "px": 0.82, "py": 0.34},
+            {"type": "point", "rx": 0.58, "ry": 0.60, "fixed": True, "label": "O"},
+            {"type": "point", "rx": 0.82, "ry": 0.34, "fixed": True, "label": "A"},
+        ],
+    },
+    16: {
+        "title": "사다리꼴 윗변, 아랫변의 중점",
+        "desc": "사다리꼴 윗변, 아랫변의 중점을 지나는 직선을 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.38, "ry": 0.35, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.72, "ry": 0.35, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.92, "ry": 0.82, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.08, "ry": 0.82, "fixed": True, "label": "D"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+            {"type": "segment", "p1": "C", "p2": "D"},
+            {"type": "segment", "p1": "D", "p2": "A"},
+        ],
+    },
+    15: {
+        "title": "대변의 중점을 통한 정사각형",
+        "desc": "두 점이 마주보는 대변의 두 중점이 되도록 정사각형을 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.85, "ry": 0.35, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.55, "ry": 0.70, "fixed": True, "label": "B"},
+        ],
+    },
+    14: {
+        "title": "30°",
+        "desc": "주어진 변에서 30° 각도를 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.28, "ry": 0.78, "fixed": True, "label": "A"},
+            {"type": "given_segment", "rx1": 0.28, "ry1": 0.78, "rx2": 0.97, "ry2": 0.78},
+        ],
+    },
+    13: {
+        "title": "정사각형의 한 변에 접하는 원",
+        "desc": "정사각형의 한 변의 양 끝점을 지나고 그 변을 마주보는 변에 접하는 원을 작도하세요.",
+        # 700×500 기준 정사각형: rx 0.43×700=301px, ry 0.6×500=300px
+        "setup": [
+            {"type": "point", "rx": 0.286, "ry": 0.28, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.714, "ry": 0.28, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.714, "ry": 0.88, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.286, "ry": 0.88, "fixed": True, "label": "D"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+            {"type": "segment", "p1": "C", "p2": "D"},
+            {"type": "segment", "p1": "D", "p2": "A"},
+        ],
+    },
+    12: {
+        "title": "삼각형의 내심",
+        "desc": "주어진 삼각형의 내심을 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.50, "ry": 0.28, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.18, "ry": 0.82, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.88, "ry": 0.82, "fixed": True, "label": "C"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+            {"type": "segment", "p1": "C", "p2": "A"},
+        ],
+    },
+    11: {
+        "title": "정사각형에 내접하는 정사각형",
+        "desc": "정사각형의 한 변 위의 점을 꼭짓점으로 하는 정사각형에 내접하는 정사각형을 작도하세요.",
+        # 700×500 기준 정사각형: rx 0.428×700=300px, ry 0.6×500=300px
+        "setup": [
+            {"type": "point", "rx": 0.286, "ry": 0.28, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.714, "ry": 0.28, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.714, "ry": 0.88, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.286, "ry": 0.88, "fixed": True, "label": "D"},
+            # P on top edge, ~40% from left
+            {"type": "point", "rx": 0.46, "ry": 0.28, "fixed": True, "label": "P"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+            {"type": "segment", "p1": "C", "p2": "D"},
+            {"type": "segment", "p1": "D", "p2": "A"},
+        ],
+    },
+    10: {
+        "title": "외접 정사각형",
+        "desc": "원에 외접하는 정사각형을 작도하세요. 단, 주어진 직선과 두 변은 평행해야 합니다.",
+        "setup": [
+            # Circle: center O, radius defined by top point (not shown as dot)
+            {"type": "given_circle", "cx": 0.68, "cy": 0.38, "px": 0.68, "py": 0.12},
+            {"type": "point", "rx": 0.68, "ry": 0.38, "fixed": True, "label": "O"},
+            # Reference line at bottom
+            {"type": "given_segment", "rx1": 0.40, "ry1": 0.88, "rx2": 0.97, "ry2": 0.88},
+        ],
+    },
+    9: {
+        "title": "45°",
+        "desc": "주어진 변에서 45° 각도를 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.28, "ry": 0.78, "fixed": True, "label": "A"},
+            {"type": "given_segment", "rx1": 0.28, "ry1": 0.78, "rx2": 0.97, "ry2": 0.78},
+        ],
+    },
+    8: {
+        "title": "점을 지나 직선에 접하는 원",
+        "desc": "직선 밖의 한 점을 지나고 주어진 직선 위의 한 점에서 접하는 원을 작도하세요.",
+        "setup": [
+            # Horizontal line
+            {"type": "given_segment", "rx1": 0.10, "ry1": 0.72, "rx2": 0.95, "ry2": 0.72},
+            # Tangent point A (on the line)
+            {"type": "point", "rx": 0.65, "ry": 0.72, "fixed": True, "label": "A"},
+            # External point P (above the line)
+            {"type": "point", "rx": 0.35, "ry": 0.42, "fixed": True, "label": "P"},
+        ],
+    },
+    7: {
+        "title": "사각형의 중심",
+        "desc": "사각형의 두 대각선의 중점들을 연결한 선분의 중점을 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.33, "ry": 0.30, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.73, "ry": 0.35, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.90, "ry": 0.82, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.10, "ry": 0.82, "fixed": True, "label": "D"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+            {"type": "segment", "p1": "C", "p2": "D"},
+            {"type": "segment", "p1": "D", "p2": "A"},
+        ],
+    },
+    6: {
+        "title": "원에 내접하는 정사각형",
+        "desc": "원 위의 점이 정사각형의 한 꼭짓점이 되도록 원에 내접하는 정사각형을 작도하세요.",
+        "setup": [
+            # Given circle: center O, point A on circle at top
+            {"type": "given_circle", "cx": 0.60, "cy": 0.63, "px": 0.68, "py": 0.33},
+            {"type": "point", "rx": 0.60, "ry": 0.63, "fixed": True, "label": "O"},
+            {"type": "point", "rx": 0.68, "ry": 0.33, "fixed": True, "label": "A"},
+        ],
+    },
+    5: {
+        "title": "마름모",
+        "desc": "주어진 변과 45°를 이루는 직선 위의 점과 주어진 두 점을 지나는 마름모를 작도하세요.",
+        "setup": [
+            {"type": "point", "rx": 0.22, "ry": 0.75, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.78, "ry": 0.75, "fixed": True, "label": "B"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+        ],
+    },
+    4: {
+        "title": "사각형 절단",
+        "desc": "주어진 점을 지나고 사각형을 같은 면적으로 분할하는 직선을 작도하세요.",
+        # 캔버스 700×500 기준 정사각형: rx 0.429×700=300px, ry 0.6×500=300px
+        "setup": [
+            {"type": "point", "rx": 0.286, "ry": 0.35, "fixed": True, "label": "A"},
+            {"type": "point", "rx": 0.714, "ry": 0.35, "fixed": True, "label": "B"},
+            {"type": "point", "rx": 0.714, "ry": 0.95, "fixed": True, "label": "C"},
+            {"type": "point", "rx": 0.286, "ry": 0.95, "fixed": True, "label": "D"},
+            {"type": "segment", "p1": "A", "p2": "B"},
+            {"type": "segment", "p1": "B", "p2": "C"},
+            {"type": "segment", "p1": "C", "p2": "D"},
+            {"type": "segment", "p1": "D", "p2": "A"},
+            # Given point P (outside the square, upper-right)
+            {"type": "point", "rx": 0.78, "ry": 0.18, "fixed": True, "label": "P"},
+        ],
+    },
     2: {
         "title": "정사각형에 내접하는 원",
         "desc": "정사각형에 내접하는 원을 작도하세요.",
@@ -295,12 +542,13 @@ const CP = __CANVAS_PROBLEMS__;
  *  circles[] : {id, cid, rid, lc, ec} — cid=center ID, rid=radius-point ID
  *  segs[]     : {id, p1, p2}                     — display-only segments via point IDs
  *  gsegs[]    : {x1, y1, x2, y2}                 — display-only segments via absolute coords (no points shown)
+ *  gcircles[] : {cx, cy, r}                       — display-only circles via absolute coords
  *  lc, ec    : running L / E totals
  *  history[] : JSON snapshots for undo
  *  nid       : next unique ID
  */
 let GS = {
-  pts: [], lines: [], circles: [], segs: [], gsegs: [],
+  pts: [], lines: [], circles: [], segs: [], gsegs: [], gcircles: [],
   lc: 0, ec: 0, history: [], nid: 1,
 };
 
@@ -360,7 +608,7 @@ function initCanvas(num) {
   const prob = CP[num];
 
   // Reset geometry state
-  GS = { pts: [], lines: [], circles: [], segs: [], gsegs: [], lc: 0, ec: 0, history: [], nid: 1 };
+  GS = { pts: [], lines: [], circles: [], segs: [], gsegs: [], gcircles: [], lc: 0, ec: 0, history: [], nid: 1 };
   gZoom = { scale: 1, tx: 0, ty: 0 };
   gTS = { step: 0, picks: [] };
   gCurProb = num;
@@ -400,14 +648,18 @@ function initCanvas(num) {
         const p1 = GS.pts.find(function(p) { return p.label === item.p1; });
         const p2 = GS.pts.find(function(p) { return p.label === item.p2; });
         if (p1 && p2) {
-          GS.segs.push({ id: GS.nid++, p1: p1.id, p2: p2.id });
+          GS.lines.push({ id: GS.nid++, p1: p1.id, p2: p2.id, lc: 0, ec: 0, given: true });
         }
       }
       if (item.type === 'given_segment') {
-        GS.gsegs.push({
-          x1: item.rx1 * GW, y1: item.ry1 * GH,
-          x2: item.rx2 * GW, y2: item.ry2 * GH,
-        });
+        const hp1 = addPoint(item.rx1 * GW, item.ry1 * GH, true, '');
+        const hp2 = addPoint(item.rx2 * GW, item.ry2 * GH, true, '');
+        GS.lines.push({ id: GS.nid++, p1: hp1.id, p2: hp2.id, lc: 0, ec: 0, given: true });
+      }
+      if (item.type === 'given_circle') {
+        const cx = item.cx * GW, cy = item.cy * GH;
+        const px = item.px * GW, py = item.py * GH;
+        GS.gcircles.push({ cx: cx, cy: cy, r: Math.hypot(px - cx, py - cy) });
       }
     });
   }
@@ -771,38 +1023,40 @@ function drawAll() {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(GW, y); ctx.stroke();
   }
 
-  // Display-only segments via point IDs (given geometry)
-  ctx.strokeStyle = '#94a3b8';
-  ctx.lineWidth   = 1.5 / gZoom.scale;
-  ctx.setLineDash([5, 4]);
-  GS.segs.forEach(function(s) {
-    const a = getPt(s.p1), b = getPt(s.p2);
-    if (!a || !b) return;
-    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  // Display-only circles via absolute coords
+  ctx.strokeStyle = '#374151';
+  ctx.lineWidth   = 1.8 / gZoom.scale;
+  GS.gcircles.forEach(function(c) {
+    ctx.beginPath(); ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); ctx.stroke();
   });
-  // Display-only segments via absolute coords (no endpoint dots)
-  GS.gsegs.forEach(function(s) {
-    ctx.beginPath(); ctx.moveTo(s.x1, s.y1); ctx.lineTo(s.x2, s.y2); ctx.stroke();
-  });
-  ctx.setLineDash([]);
 
-  // Infinite lines
+  // Lines: given (finite segment, solid dark) vs student-drawn (infinite, lighter)
   GS.lines.forEach(function(l) {
     const a = getPt(l.p1), b = getPt(l.p2);
     if (!a || !b) return;
     const isHovered = gHover && gHover.type === 'line' && gHover.id === l.id;
-    ctx.strokeStyle = isHovered ? '#f97316' : '#64748b';
-    ctx.lineWidth   = (isHovered ? 2.5 : 1.5) / gZoom.scale;
-    // Extend the line far beyond the canvas; clipping does the rest
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const len = Math.hypot(dx, dy);
-    if (len < 1e-10) return;
-    const ux = dx / len, uy = dy / len;
-    const FAR = 10000;
-    ctx.beginPath();
-    ctx.moveTo(a.x - ux * FAR, a.y - uy * FAR);
-    ctx.lineTo(a.x + ux * FAR, a.y + uy * FAR);
-    ctx.stroke();
+    ctx.lineWidth = (isHovered ? 2.5 : 1.8) / gZoom.scale;
+
+    if (l.given) {
+      // Given geometry: draw as finite segment in solid dark gray
+      ctx.strokeStyle = isHovered ? '#f97316' : '#374151';
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    } else {
+      // Student-drawn: extend infinitely
+      ctx.strokeStyle = isHovered ? '#f97316' : '#64748b';
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const len = Math.hypot(dx, dy);
+      if (len < 1e-10) return;
+      const ux = dx / len, uy = dy / len;
+      const FAR = 10000;
+      ctx.beginPath();
+      ctx.moveTo(a.x - ux * FAR, a.y - uy * FAR);
+      ctx.lineTo(a.x + ux * FAR, a.y + uy * FAR);
+      ctx.stroke();
+    }
   });
 
   // Circles
@@ -1389,6 +1643,11 @@ function toolIntersect(mx, my) {
 function toolDelete(mx, my) {
   const obj = pickObj(mx, my);
   if (!obj) return;
+  // Prevent deletion of given (setup) geometry
+  if (obj.type === 'line') {
+    const l = getLine(obj.id);
+    if (l && l.given) return;
+  }
   saveHistory();
 
   if (obj.type === 'line') {
