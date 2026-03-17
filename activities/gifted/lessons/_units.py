@@ -276,6 +276,18 @@ CURRICULUM = [
             },
             {
                 "type": "activity",
+                "title": "미니: 작도 도구 — E값의 이유",
+                "subject": "gifted",
+                "slug": "euclidea_tool_steps",
+            },
+            {
+                "type": "activity",
+                "title": "🎯 웜업: 몸풀기 게임",
+                "subject": "gifted",
+                "slug": "euclidea_warmup",
+            },
+            {
+                "type": "activity",
                 "title": "🎯 빙고 게임 시작하기",
                 "subject": "gifted",
                 "slug": "euclidea_bingo",

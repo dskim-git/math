@@ -153,10 +153,22 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🔍 항등식 탐정 게임",
+                                "subject": "common",
+                                "slug": "mini/identity_game"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "미정계수법",
                                 "src": "https://www.canva.com/design/DAHDI3-7ioc/s3qyHF1rQDw-tpdE71lt5Q/view?embed",
                                 "height": 800
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔑 미정계수법 탐정 게임",
+                                "subject": "common",
+                                "slug": "mini/undefined_coefficients"
                             },
                             {
                                 "type": "canva",
@@ -169,6 +181,18 @@ CURRICULUM = [
                                 "title": "인수정리",
                                 "src": "https://www.canva.com/design/DAHDI5T663c/gICWu0Vt7S-nB_ooShr16w/view?embed",
                                 "height": 800
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🚀 거듭제곱 나머지 부스터",
+                                "subject": "common",
+                                "slug": "mini/power_remainder_booster"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🎯 인수 후보 레이더",
+                                "subject": "common",
+                                "slug": "mini/factor_candidate_radar"
                             }
                         ],
                     },
