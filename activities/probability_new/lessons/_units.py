@@ -151,6 +151,12 @@ CURRICULUM = [
                     "slug": "mini/pascal_triangle_properties",
                 },
                 {
+                    "type": "activity",
+                    "title": "🔵 원 위의 점으로 만든 도형으로 파스칼의 삼각형 발견",
+                    "subject": "probability_new",
+                    "slug": "mini/polygon_count_circles",
+                },
+                {
                     "type": "gsheet",
                     "title": "엑셀로 만든 파스칼의 삼각형",
                     "src": "https://docs.google.com/spreadsheets/d/17F8RhpLp8XNhiOICfUlxnFFjDEQCCjLVAQyUADkUjz8/edit?usp=drivesdk",
