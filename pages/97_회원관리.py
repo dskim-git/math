@@ -520,15 +520,24 @@ with tab_students:
             all_classes_in_roster = sorted(_teacher_classes)
 
         else:
+            # 반 컬럼이 있으면 그 값으로, 없으면 학번에서 파생
+            _roster_has_class = any(
+                str(r.get("반", "") or r.get("학급", "")).strip()
+                for r in _ref_roster
+            )
             all_classes_in_roster = []
             seen = set()
             for r in _ref_roster:
-                cls = str(r.get("반", "") or r.get("학급", "")).strip()
+                if _roster_has_class:
+                    cls = str(r.get("반", "") or r.get("학급", "")).strip()
+                else:
+                    cls = _class_from_num(str(r.get("학번", "")).strip())
                 if cls and cls not in seen:
                     if _is_teacher and cls not in _teacher_classes:
                         continue
                     all_classes_in_roster.append(cls)
                     seen.add(cls)
+            all_classes_in_roster = sorted(all_classes_in_roster)
 
         if not all_classes_in_roster:
             st.info("표시할 학급이 없습니다.")
@@ -541,23 +550,30 @@ with tab_students:
 
             # 해당 학급 학생 목록 구성
             if _is_teacher and _teacher_roster_all and not _teacher_roster_has_class:
-                # 명단은 있지만 반 컬럼 없음 → 학번에서 학급 파생
+                # 교사 명단 있지만 반 컬럼 없음 → 학번에서 파생
                 cls_students = [
                     r for r in _teacher_roster_all
                     if _class_from_num(str(r.get("학번", "")).strip()) == sel_cls
                 ]
             elif _is_teacher and not _teacher_roster_all:
-                # 명단 없음 → 등록된 학생 중 학번 기반 필터
+                # 교사 명단 없음 → 등록된 학생 중 학번 기반 필터
                 cls_students = [
                     {"학번": str(r.get("학번", "")).strip(),
                      "이름": str(r.get("이름", "")).strip()}
                     for r in students_all
                     if _class_from_num(str(r.get("학번", "")).strip()) == sel_cls
                 ]
-            else:
+            elif _roster_has_class:
+                # 반 컬럼 있음 → 컬럼 값으로 필터
                 cls_students = [
                     r for r in _ref_roster
                     if str(r.get("반", "") or r.get("학급", "")).strip() == sel_cls
+                ]
+            else:
+                # 반 컬럼 없음(관리자 포함) → 학번에서 파생하여 필터
+                cls_students = [
+                    r for r in _ref_roster
+                    if _class_from_num(str(r.get("학번", "")).strip()) == sel_cls
                 ]
             total_cnt  = len(cls_students)
             joined_cnt = sum(1 for r in cls_students
