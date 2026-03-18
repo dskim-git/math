@@ -219,14 +219,13 @@ def _route_reflection_to_teachers(
                 if not roster_id:
                     continue
 
-                key = (t_id, t_sheet)
-                if key in already_written:
+                if t_sheet in already_written:
                     continue
 
                 for r in _cached_teacher_roster(roster_id):
                     if str(r.get("학번", "")).strip() == num:
                         _write_reflection_to_teacher_sheet(t_sheet, sheet_name, payload)
-                        already_written.add(key)
+                        already_written.add(t_sheet)
                         break
             return
 
@@ -251,12 +250,11 @@ def _route_reflection_to_teachers(
             if not managed:
                 continue
 
-            key = (t_id, t_sheet)
-            if key in already_written:
+            if t_sheet in already_written:
                 continue
 
             _write_reflection_to_teacher_sheet(t_sheet, sheet_name, payload)
-            already_written.add(key)
+            already_written.add(t_sheet)
 
     except Exception as e:
         print(f"[reflection_utils] teacher routing error: {e}")
