@@ -590,16 +590,18 @@ function renderCalc(n) {
   let sS='';
   if(n===1) sS='<div class="step">σ(1) = 1 (정의)</div>';
   else {
-    const parts=entries.map(([p,e])=>{const pn=+p,num=Math.pow(pn,+e+1)-1,den=pn-1;return `(${pn}<sup>${+e+1}</sup>−1)/(${pn}−1)=${Math.round(num/den)}`;}).join('×');
-    sS=`<div class="step">σ(n) = ${parts} = <span class="hval sigma-color">${sigV}</span></div>
+    const symPartsS=entries.map(([p,e])=>{const pn=+p;return `(${pn}<sup>${+e+1}</sup>−1)/(${pn}−1)`;}).join(' × ');
+    const numPartsS=entries.map(([p,e])=>{const pn=+p,num=Math.pow(pn,+e+1)-1,den=pn-1;return Math.round(num/den);}).join(' × ');
+    sS=`<div class="step">σ(n) = ${symPartsS} = ${numPartsS} = <span class="hval sigma-color">${sigV}</span></div>
       <div class="step" style="font-size:.72rem;color:#64748b;">확인: ${divs.join('+')} = ${sigV}</div>`;
   }
   // φ steps
   let pS='';
   if(n===1) pS='<div class="step">φ(1) = 1 (정의)</div>';
   else {
-    const parts=entries.map(([p,e])=>{const pn=+p,pa=Math.pow(pn,+e);return `${pa}·(1−1/${pn})=${Math.round(pa*(1-1/pn))}`}).join('×');
-    pS=`<div class="step">φ(n) = ${parts} = <span class="hval phi-color">${phiV}</span></div>`;
+    const symPartsP=entries.map(([p,e])=>{const pn=+p,pa=Math.pow(pn,+e);return `${pa}·(1−1/${pn})`;}).join(' × ');
+    const numPartsP=entries.map(([p,e])=>{const pn=+p,pa=Math.pow(pn,+e);return Math.round(pa*(1-1/pn));}).join(' × ');
+    pS=`<div class="step">φ(n) = ${symPartsP} = ${numPartsP} = <span class="hval phi-color">${phiV}</span></div>`;
     if(n<=30){const cps=[];for(let k=1;k<=n;k++)if(gcd(k,n)===1)cps.push(k);pS+=`<div class="step" style="font-size:.72rem;color:#64748b;">서로 소: ${cps.join(', ')}</div>`;}
   }
   // μ steps
@@ -712,11 +714,11 @@ function renderProp3() {
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
     <div style="background:#fdf4ff;border-radius:12px;padding:12px;border:1px solid #d8b4fe;">
       <div style="font-weight:700;color:#7c3aed;margin-bottom:6px;">f(d)=φ(d) → Σφ(d)=n</div>
-      <div style="font-size:.81rem;line-height:1.9;">${divs.map(d=>`φ(${d})=${phi(d)}`).join('+')} = <strong class="phi-color">${sumPhi}</strong> = ${n} ${sumPhi===n?'✓':'✗'}</div>
+      <div style="font-size:.81rem;line-height:1.9;">${divs.map(d=>`φ(${d})`).join('+')} = ${divs.map(d=>phi(d)).join('+')} = <strong class="phi-color">${sumPhi}</strong> = ${n} ${sumPhi===n?'✓':'✗'}</div>
     </div>
     <div style="background:#fff7ed;border-radius:12px;padding:12px;border:1px solid #fcd34d;">
       <div style="font-weight:700;color:#d97706;margin-bottom:6px;">f(d)=μ(d) → Σμ(d)=ε(n)</div>
-      <div style="font-size:.81rem;line-height:1.9;">${divs.map((d,i)=>`μ(${d})=${muVals[i]}`).join('+')} = <strong class="mu-color">${muSum}</strong> = ε(${n}) = ${epsilon} ${muSum===epsilon?'✓':'✗'}</div>
+      <div style="font-size:.81rem;line-height:1.9;">${divs.map(d=>`μ(${d})`).join('+')} = ${muVals.map(v=>v<0?`(−${-v})`:String(v)).join('+')} = <strong class="mu-color">${muSum}</strong> = ε(${n}) = ${epsilon} ${muSum===epsilon?'✓':'✗'}</div>
       <div style="font-size:.72rem;color:#d97706;margin-top:4px;">ε(n): n=1이면 1, 나머지는 0</div>
     </div>
   </div>`;

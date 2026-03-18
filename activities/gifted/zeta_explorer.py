@@ -1027,4 +1027,4 @@ def render():
     [data-testid="stAppViewContainer"] > .main { padding-top: 0.5rem; }
     </style>
     """, unsafe_allow_html=True)
-    components.html(HTML, height=1050, scrolling=True)
+    components.html(HTML, height=1450, scrolling=True)
