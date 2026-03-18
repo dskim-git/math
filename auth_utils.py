@@ -48,7 +48,7 @@ WS_GROUP_PERM = "그룹권한"
 WS_GROUP_LESSON_PERM = "그룹수업권한"
 
 # ── 2026 수강생 명단 (회원가입 검증 및 학급별 현황용) ────────────────────────
-WS_ROSTER = "2026수강생명단"   # 구글 시트 탭 이름
+WS_ROSTER = "수강생명단"   # 구글 시트 탭 이름 (관리자·교사 공통)
 
 STUDENTS_HEADER   = ["학번", "이름", "아이디", "해시비밀번호", "학년",
                       "승인상태", "가입일", "마지막로그인"]
@@ -66,6 +66,17 @@ STATUS_REJECTED = "거부"
 WS_LOCKOUT     = "계정잠금"
 LOCKOUT_HEADER = ["아이디", "실패횟수", "최근실패시각", "잠금상태"]
 MAX_FAIL       = 5
+
+# ── 선생님 설정 (휘문고 수학과) ────────────────────────────────────────────────
+MATH_TEACHER_GROUP      = "휘문고 수학과"
+WS_TEACHER_SETTINGS     = "교사설정"
+# 1교사 N과목 구조: 교사 1명 × 담당과목 수만큼 행을 생성.
+# 이메일·명단시트ID는 교사 레벨(모든 행에 동일).
+# 성찰시트ID는 과목 레벨(각 행에 개별 저장).
+TEACHER_SETTINGS_HEADER = ["아이디", "이메일", "명단시트ID", "과목", "학년목록", "반목록", "성찰시트ID"]
+
+# 교사 명단 시트 탭 이름 (고정)
+TEACHER_ROSTER_WS = "수강생명단"
 
 # ── 비밀번호 유틸 ─────────────────────────────────────────────────────────────
 
@@ -186,7 +197,8 @@ def _clear_auth_caches(*, clear_users: bool = False,
                        clear_group_perms: bool = False,
                        clear_group_lesson_perms: bool = False,
                        clear_lockout: bool = False,
-                       clear_roster: bool = False) -> None:
+                       clear_roster: bool = False,
+                       clear_teacher_settings: bool = False) -> None:
     """auth_utils 내부 캐시만 선택적으로 무효화합니다."""
     try:
         if clear_users:
@@ -203,6 +215,9 @@ def _clear_auth_caches(*, clear_users: bool = False,
         if clear_roster:
             _cached_roster.clear()
             get_roster_debug_info.clear()
+        if clear_teacher_settings:
+            _cached_teacher_settings.clear()
+            _cached_teacher_roster.clear()
     except Exception:
         pass
 
@@ -563,6 +578,190 @@ def reset_lockout(user_id: str) -> bool:
         return True  # 기록 없으면 잠금 없음 → 성공으로 처리
     except Exception:
         return False
+
+
+# ── 교사 설정 ─────────────────────────────────────────────────────────────────
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _cached_teacher_settings(sheet_id: str) -> list[dict]:
+    """교사설정 시트에서 모든 교사 설정을 불러옵니다."""
+    client = _get_gspread_client()
+    if not client or not sheet_id:
+        return []
+    ws = _get_or_create_ws(client, sheet_id, WS_TEACHER_SETTINGS,
+                           TEACHER_SETTINGS_HEADER, rows=100)
+    return _safe_get_all_records(ws) if ws else []
+
+
+def get_teacher_settings(user_id: str) -> Optional[dict]:
+    """특정 교사의 설정을 반환합니다. 없으면 None.
+
+    반환 형식::
+
+        {
+            "아이디":    "...",
+            "이메일":    "...",
+            "명단시트ID": "...",   # 교사 전체 학생 명단 스프레드시트 ID
+            "과목설정": {
+                "common": {
+                    "grades":   ["1"],
+                    "classes":  ["9", "10"],
+                    "sheet_id": "스프레드시트ID_공통수학",
+                },
+                "probability_new": {
+                    "grades":   ["2"],
+                    "classes":  ["1", "2", "3"],
+                    "sheet_id": "스프레드시트ID_확률과통계",
+                },
+            },
+        }
+    """
+    sheet_id = _get_users_spreadsheet_id()
+    rows = [r for r in _cached_teacher_settings(sheet_id)
+            if str(r.get("아이디", "")).strip() == user_id]
+    if not rows:
+        return None
+
+    email          = str(rows[0].get("이메일",    "")).strip()
+    roster_id      = str(rows[0].get("명단시트ID", "")).strip()
+
+    subject_settings: dict[str, dict] = {}
+    for row in rows:
+        subj = str(row.get("과목", "")).strip()
+        if not subj:
+            continue
+        grades        = [g.strip() for g in str(row.get("학년목록", "")).split(",") if g.strip()]
+        classes       = [c.strip() for c in str(row.get("반목록",   "")).split(",") if c.strip()]
+        sheet_id_subj = str(row.get("성찰시트ID", "")).strip()
+        subject_settings[subj] = {
+            "grades":   grades,
+            "classes":  classes,
+            "sheet_id": sheet_id_subj,
+        }
+
+    return {
+        "아이디":    user_id,
+        "이메일":    email,
+        "명단시트ID": roster_id,
+        "과목설정":  subject_settings,
+    }
+
+
+def is_math_teacher(user_id: str) -> bool:
+    """해당 사용자가 '휘문고 수학과' 그룹에 속하는지 확인합니다."""
+    sheet_id = _get_users_spreadsheet_id()
+    for row in _cached_general(sheet_id):
+        if str(row.get("아이디", "")).strip() == user_id:
+            return _normalize_group_name(row.get("그룹", "")) == MATH_TEACHER_GROUP
+    return False
+
+
+def get_teacher_managed_classes(user_id: str) -> list[str]:
+    """교사가 담당하는 반 이름 목록(전 과목 합산)을 반환합니다.
+
+    예) ['1학년 9반', '1학년 10반', '2학년 1반']
+    반 이름 형식은 수강생명단의 '반' 컬럼과 동일합니다.
+    """
+    settings = get_teacher_settings(user_id)
+    if not settings:
+        return []
+    managed: set[str] = set()
+    for cfg in settings["과목설정"].values():
+        for grade in cfg.get("grades", []):
+            for cls in cfg.get("classes", []):
+                managed.add(f"{grade}학년 {cls}반")
+    return sorted(managed)
+
+
+def save_teacher_settings(
+    user_id: str,
+    email: str,
+    roster_sheet_id: str,
+    subject_settings: dict,
+    # {subject_key: {"grades": [...], "classes": [...], "sheet_id": "..."}}
+) -> bool:
+    """교사 설정을 저장/갱신합니다.
+
+    기존 이 교사의 행을 모두 삭제한 뒤 과목별 새 행을 추가합니다.
+    과목이 없더라도 이메일·명단시트ID를 보존하기 위해 빈 과목 행을 1개 씁니다.
+    헤더: 아이디, 이메일, 명단시트ID, 과목, 학년목록, 반목록, 성찰시트ID
+    """
+    users_sheet_id = _get_users_spreadsheet_id()
+    client = _get_gspread_client()
+    if not client or not users_sheet_id:
+        return False
+    try:
+        ws = _get_or_create_ws(client, users_sheet_id, WS_TEACHER_SETTINGS,
+                               TEACHER_SETTINGS_HEADER, rows=200)
+        if not ws:
+            return False
+
+        # 기존 이 교사 행 삭제 (역순 — 행 번호 밀림 방지)
+        existing = ws.get_all_records()
+        to_delete = [
+            i + 2
+            for i, row in enumerate(existing)
+            if str(row.get("아이디", "")).strip() == user_id
+        ]
+        for row_idx in reversed(to_delete):
+            ws.delete_rows(row_idx)
+
+        # 새 행 추가 (과목별 1행)
+        if subject_settings:
+            for subj_key, cfg in subject_settings.items():
+                grades_str    = ",".join(sorted(cfg.get("grades", [])))
+                classes_str   = ",".join(
+                    sorted(cfg.get("classes", []),
+                           key=lambda x: int(x) if x.isdigit() else 999)
+                )
+                sheet_id_subj = cfg.get("sheet_id", "")
+                ws.append_row([user_id, email, roster_sheet_id,
+                               subj_key, grades_str, classes_str, sheet_id_subj])
+        else:
+            # 과목 없어도 이메일·명단시트ID 보존
+            ws.append_row([user_id, email, roster_sheet_id, "", "", "", ""])
+
+        _cached_teacher_settings.clear()
+        return True
+    except Exception as e:
+        print(f"[auth_utils] save_teacher_settings error: {e}")
+        return False
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _cached_teacher_roster(roster_sheet_id: str) -> list[dict]:
+    """교사 명단 스프레드시트의 '수강생명단' 탭에서 학생 목록을 읽어옵니다.
+
+    형식: 헤더행(학번|이름[|반]) + 데이터 행 (세로 목록)
+    반환: [{"학번": "...", "이름": "...", "반": "..."}, ...]
+    """
+    client = _get_gspread_client()
+    if not client or not roster_sheet_id:
+        return []
+    try:
+        sh = client.open_by_key(roster_sheet_id)
+        ws = sh.worksheet(TEACHER_ROSTER_WS)
+        all_values = _safe_get_all_values(ws)
+        if not all_values:
+            return []
+        first_row = [str(c).strip() for c in all_values[0]]
+        if "학번" in first_row and "이름" in first_row:
+            return _parse_roster_flat(all_values)
+        return []
+    except Exception:
+        return []
+
+
+def verify_teacher_roster_student(roster_sheet_id: str,
+                                  student_num: str, name: str) -> bool:
+    """교사 명단에 해당 학번+이름 조합이 있는지 확인합니다."""
+    num  = student_num.strip()
+    name = name.strip()
+    for r in _cached_teacher_roster(roster_sheet_id):
+        if (str(r.get("학번", "")).strip() == num
+                and str(r.get("이름", "")).strip() == name):
+            return True
+    return False
 
 
 # ── 마지막 로그인 기록 ────────────────────────────────────────────────────────

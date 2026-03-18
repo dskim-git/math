@@ -25,17 +25,18 @@ inject_hide_nav()
 # ── 사이드바 ─────────────────────────────────────────────────────────────────
 st.sidebar.page_link("home.py", label="🏠 홈으로 돌아가기", use_container_width=True)
 
-# 관리자 기능 바로가기
-st.sidebar.divider()
-st.sidebar.caption("🔧 관리자 기능")
-if st.sidebar.button("👥 회원관리", use_container_width=True, key="_98_nav_member"):
-    st.switch_page("pages/97_회원관리.py")
-if st.sidebar.button("📥 피드백 게시판", use_container_width=True, key="_98_nav_feedback"):
-    st.session_state["_nav_to"] = "feedback_board"
-    st.switch_page("home.py")
-if st.sidebar.button("📊 방문자 통계", use_container_width=True, key="_98_nav_stats"):
-    st.session_state["_nav_to"] = "visit_stats"
-    st.switch_page("home.py")
+# 관리자 기능 바로가기 (관리자 모드일 때만 표시)
+if st.session_state.get("_dev_mode", False):
+    st.sidebar.divider()
+    st.sidebar.caption("🔧 관리자 기능")
+    if st.sidebar.button("👥 회원관리", use_container_width=True, key="_98_nav_member"):
+        st.switch_page("pages/97_회원관리.py")
+    if st.sidebar.button("📥 피드백 게시판", use_container_width=True, key="_98_nav_feedback"):
+        st.session_state["_nav_to"] = "feedback_board"
+        st.switch_page("home.py")
+    if st.sidebar.button("📊 방문자 통계", use_container_width=True, key="_98_nav_stats"):
+        st.session_state["_nav_to"] = "visit_stats"
+        st.switch_page("home.py")
 
 # ── 관리자 모드 체크 ──────────────────────────────────────────────────────────
 if not st.session_state.get("_dev_mode", False):

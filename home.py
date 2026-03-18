@@ -426,9 +426,70 @@ def _filter_units_by_allowed(units_dict: Dict[str, Any],
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 로그인 알림 이메일
+def _find_teacher_emails_for_student(student_num: str) -> list[str]:
+    """학번으로 담당 교사의 이메일 목록을 반환합니다.
+
+    1. 수강생명단에서 학번 → 반 조회
+    2. 교사설정에서 해당 반을 담당하는 교사 이메일 수집
+    """
+    try:
+        from auth_utils import (
+            _get_users_spreadsheet_id,
+            _cached_roster,
+            _cached_teacher_settings,
+            _cached_teacher_roster,
+            TEACHER_ROSTER_WS,
+        )
+        users_sheet_id = _get_users_spreadsheet_id()
+        num = student_num.strip()
+
+        # 학번→반: 수강생명단 우선, 없으면 교사별 명단 검색
+        student_class = ""
+        for r in _cached_roster(users_sheet_id):
+            if str(r.get("학번", "")).strip() == num:
+                student_class = str(r.get("반", "") or r.get("학급", "")).strip()
+                break
+
+        teacher_rows = _cached_teacher_settings(users_sheet_id)
+
+        # 반 정보가 없으면 교사별 수강생명단에서 직접 학번 검색
+        if not student_class:
+            emails: list[str] = []
+            seen_emails: set[str] = set()
+            for row in teacher_rows:
+                roster_id = str(row.get("명단시트ID", "")).strip()
+                email     = str(row.get("이메일", "")).strip()
+                if not roster_id or not email or email in seen_emails:
+                    continue
+                for r in _cached_teacher_roster(roster_id):
+                    if str(r.get("학번", "")).strip() == num:
+                        emails.append(email)
+                        seen_emails.add(email)
+                        break
+            return emails
+
+        # 반 정보가 있으면 교사설정의 담당 학급과 비교
+        emails = []
+        seen_emails: set[str] = set()
+        for row in teacher_rows:
+            email = str(row.get("이메일", "")).strip()
+            if not email or email in seen_emails:
+                continue
+            grades  = [g.strip() for g in str(row.get("학년목록", "")).split(",") if g.strip()]
+            classes = [c.strip() for c in str(row.get("반목록",   "")).split(",") if c.strip()]
+            managed = {f"{g}학년 {c}반" for g in grades for c in classes}
+            if student_class in managed:
+                emails.append(email)
+                seen_emails.add(email)
+        return emails
+    except Exception:
+        return []
+
+
 def _send_register_notify_email(user_type: str, name: str, user_id: str,
-                                extra: str = "") -> None:
-    """신규 가입 신청 시 관리자에게 이메일로 알립니다."""
+                                extra: str = "",
+                                student_num: str = "") -> None:
+    """신규 가입 신청 시 관리자 및 담당 교사에게 이메일로 알립니다."""
     try:
         email_secrets = st.secrets.get("email", {})
         sender   = str(email_secrets.get("sender", ""))
@@ -445,15 +506,23 @@ def _send_register_notify_email(user_type: str, name: str, user_id: str,
             f"신청 일시: {now_str}</p>"
             f"<p><a href='https://mathematicslab.streamlit.app/'>관리자 페이지</a>에서 승인하세요.</p>"
         )
-        receiver = _FEEDBACK_RECEIVER  # daesobi1@gmail.com
+
+        # 수신자: 관리자 + 담당 교사(학생 가입 시)
+        receivers: list[str] = [_FEEDBACK_RECEIVER]
+        if user_type == "student" and student_num:
+            teacher_emails = _find_teacher_emails_for_student(student_num)
+            for e in teacher_emails:
+                if e and e not in receivers:
+                    receivers.append(e)
+
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject_line
         msg["From"]    = sender
-        msg["To"]      = receiver
+        msg["To"]      = ", ".join(receivers)
         msg.attach(MIMEText(body, "html", "utf-8"))
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as srv:
             srv.login(sender, password)
-            srv.sendmail(sender, receiver, msg.as_string())
+            srv.sendmail(sender, receivers, msg.as_string())
     except Exception:
         pass
 
@@ -894,10 +963,11 @@ def login_view():
                                 s_num.strip(), s_name.strip(), s_pw1, grade
                             )
                         if ok:
-                            # 관리자 알림 이메일
+                            # 관리자 + 담당 교사 알림 이메일
                             _send_register_notify_email(
                                 "student", s_name.strip(),
-                                msg, f"학번: {s_num.strip()}"
+                                msg, f"학번: {s_num.strip()}",
+                                student_num=s_num.strip(),
                             )
                             st.success(
                                 f"✅ 가입 신청이 완료되었습니다!\n\n"
@@ -1236,7 +1306,22 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
         if st.sidebar.button("🔑 비밀번호 변경", use_container_width=True, key="_sidebar_chpw_btn"):
             set_route("change_password"); _do_rerun()
 
-    # ── 4. 관리자 도구 ────────────────────────────────────────
+    # ── 4. 교사 도구 (휘문고 수학과 그룹) ─────────────────────
+    if user_type in ("student", "general"):
+        _uid = st.session_state.get("_user_id", "")
+        if _uid:
+            try:
+                from auth_utils import is_math_teacher
+                if is_math_teacher(_uid):
+                    st.sidebar.divider()
+                    st.sidebar.caption("🏫 담당 교사 기능")
+                    if st.sidebar.button("👥 회원 관리", use_container_width=True,
+                                         key="_teacher_member_btn"):
+                        st.switch_page("pages/97_회원관리.py")
+            except Exception:
+                pass
+
+    # ── 5. 관리자 도구 ────────────────────────────────────────
     if user_type == "admin":
         st.sidebar.divider()
         if dev:

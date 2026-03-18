@@ -37,10 +37,16 @@ _KST = timezone(timedelta(hours=9))
 _REFLECTION_LOG_SHEET  = "성찰기록"
 _REFLECTION_LOG_HEADER = ["제출시각", "과목", "활동시트명", "학번", "이름"]
 
-# secrets 키 이름으로 과목 자동 판별
+# secrets 키 이름으로 과목 자동 판별 (표시용 이름)
 _GAS_SUBJECT_MAP = {
     "gas_url_common":          "공통수학",
     "gas_url_probability_new": "확률과통계",
+}
+
+# secrets 키 이름 → 과목 key (auth_utils.ALL_SUBJECTS 키와 동일)
+_GAS_SUBJECT_KEY_MAP = {
+    "gas_url_common":          "common",
+    "gas_url_probability_new": "probability_new",
 }
 
 # 활동 파일에서 _QUESTIONS=[] 로 비워두면 자동으로 사용되는 과목별 기본 질문
@@ -64,6 +70,196 @@ _DEFAULT_QUESTIONS: dict = {
         {"key": "느낀점",        "label": "💬 느낀 점",          "type": "text_area", "height": 90},
     ],
 }
+
+
+def _get_subject_key_from_gas_url(gas_url: str) -> str:
+    """GAS URL로 과목 key(auth_utils.ALL_SUBJECTS 키)를 반환합니다."""
+    for secret_key, subj_key in _GAS_SUBJECT_KEY_MAP.items():
+        try:
+            if st.secrets.get(secret_key, "") == gas_url:
+                return subj_key
+        except Exception:
+            pass
+    return ""
+
+
+def _write_reflection_to_teacher_sheet(
+    teacher_sheet_id: str,
+    sheet_name: str,
+    payload: dict,
+) -> bool:
+    """교사의 구글 스프레드시트에 성찰 기록을 추가합니다.
+
+    - 시트(탭)가 없으면 자동 생성하고 헤더를 씁니다.
+    - 기존 헤더를 따르므로 열 순서가 유지됩니다.
+    """
+    try:
+        import gspread
+        from google.oauth2.service_account import Credentials
+
+        scopes = [
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive",
+        ]
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        creds  = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        client = gspread.authorize(creds)
+
+        sh = client.open_by_key(teacher_sheet_id)
+
+        # 데이터 열 순서: 제출시각, 학번, 이름, 나머지 질문 key
+        question_keys = [
+            k for k in payload
+            if k not in ("sheet", "timestamp", "학번", "이름")
+        ]
+        expected_header = ["제출시각", "학번", "이름"] + question_keys
+
+        try:
+            ws = sh.worksheet(sheet_name)
+            existing_header = ws.row_values(1)
+            if not existing_header:
+                ws.append_row(expected_header)
+                existing_header = expected_header
+        except Exception:
+            # 시트가 없으면 새로 만들고 헤더 추가
+            ws = sh.add_worksheet(title=sheet_name, rows=5000,
+                                  cols=len(expected_header) + 2)
+            ws.append_row(expected_header)
+            existing_header = expected_header
+
+        # 헤더 순서에 맞게 행 구성
+        row = []
+        for col in existing_header:
+            if col == "제출시각":
+                row.append(payload.get("timestamp", ""))
+            elif col == "학번":
+                row.append(payload.get("학번", ""))
+            elif col == "이름":
+                row.append(payload.get("이름", ""))
+            else:
+                row.append(payload.get(col, ""))
+        ws.append_row(row)
+        return True
+
+    except Exception as e:
+        print(f"[reflection_utils] teacher sheet write error: {e}")
+        return False
+
+
+def _class_from_num(num: str) -> str:
+    """학번 앞자리에서 학급명을 파생합니다.
+
+    형식: 첫째 자리=학년, 둘째~셋째 자리=반 (예: '207XXXX' → '2학년 7반')
+    """
+    num = num.strip()
+    if len(num) < 3:
+        return ""
+    try:
+        grade = num[0]
+        cls   = str(int(num[1:3]))  # 앞의 0 제거: '07' → '7'
+        return f"{grade}학년 {cls}반"
+    except Exception:
+        return ""
+
+
+def _route_reflection_to_teachers(
+    sheet_name: str,
+    gas_url: str,
+    payload: dict,
+    student_num: str,
+) -> None:
+    """학생의 담당 교사 시트에 성찰 기록을 라우팅합니다 (실패해도 무시).
+
+    - student_num: 단축 학번 (연도 접두어 제거된 형태, 예: "01234")
+    - gas_url: 활동의 GAS URL (과목 판별에 사용)
+    """
+    try:
+        from auth_utils import (
+            _get_users_spreadsheet_id,
+            _cached_roster,
+            _cached_teacher_settings,
+            _cached_teacher_roster,
+        )
+
+        users_sheet_id = _get_users_spreadsheet_id()
+        subject_key    = _get_subject_key_from_gas_url(gas_url)
+        num            = student_num.strip()
+
+        # ── 학생 학급 조회 (3단계 폴백) ──────────────────────────────────────
+        student_class = ""
+
+        # 1단계: 수강생명단의 반 컬럼
+        for r in _cached_roster(users_sheet_id):
+            if str(r.get("학번", "")).strip() == num:
+                student_class = str(r.get("반", "") or r.get("학급", "")).strip()
+                break
+
+        # 2단계: 학번 형식에서 파생 (첫째자리=학년, 2~3째자리=반)
+        if not student_class:
+            student_class = _class_from_num(num)
+
+        # 3단계: 각 교사의 수강생명단에서 학번 직접 검색 → 담당 학급 매칭
+        # (student_class가 있어도 교사설정 순회에서 처리하므로, 없을 때만 사용)
+        teacher_rows = _cached_teacher_settings(users_sheet_id)
+
+        already_written: set[tuple] = set()
+
+        if not student_class:
+            # 학급을 끝내 알 수 없으면 교사별 명단에서 학번 직접 검색
+            for row in teacher_rows:
+                t_id      = str(row.get("아이디",     "")).strip()
+                t_subj    = str(row.get("과목",       "")).strip()
+                t_sheet   = str(row.get("성찰시트ID", "")).strip()
+                roster_id = str(row.get("명단시트ID", "")).strip()
+
+                if not t_sheet:
+                    continue
+                if subject_key and t_subj and subject_key != t_subj:
+                    continue
+                if not roster_id:
+                    continue
+
+                key = (t_id, t_sheet)
+                if key in already_written:
+                    continue
+
+                for r in _cached_teacher_roster(roster_id):
+                    if str(r.get("학번", "")).strip() == num:
+                        _write_reflection_to_teacher_sheet(t_sheet, sheet_name, payload)
+                        already_written.add(key)
+                        break
+            return
+
+        # ── 학급 기반 교사설정 매칭 ───────────────────────────────────────────
+        for row in teacher_rows:
+            t_id    = str(row.get("아이디",     "")).strip()
+            t_subj  = str(row.get("과목",       "")).strip()
+            t_sheet = str(row.get("성찰시트ID", "")).strip()
+
+            if not t_sheet:
+                continue
+            if subject_key and t_subj and subject_key != t_subj:
+                continue
+
+            t_grades  = [g.strip() for g in str(row.get("학년목록", "")).split(",") if g.strip()]
+            t_classes = [c.strip() for c in str(row.get("반목록",   "")).split(",") if c.strip()]
+
+            managed = any(
+                f"{g}학년 {c}반" == student_class
+                for g in t_grades for c in t_classes
+            )
+            if not managed:
+                continue
+
+            key = (t_id, t_sheet)
+            if key in already_written:
+                continue
+
+            _write_reflection_to_teacher_sheet(t_sheet, sheet_name, payload)
+            already_written.add(key)
+
+    except Exception as e:
+        print(f"[reflection_utils] teacher routing error: {e}")
 
 
 def _get_or_create_reflection_log_ws():
@@ -195,6 +391,13 @@ def render_reflection_form(
                 st.success(f"✅ {student_name}님의 기록이 제출되었습니다!")
                 st.balloons()
                 _log_reflection_submission(sheet_name, _subject, _short_id, student_name)
+                # 담당 교사의 구글 시트에도 기록 (실패해도 학생에게는 알리지 않음)
+                import threading
+                threading.Thread(
+                    target=_route_reflection_to_teachers,
+                    args=(sheet_name, gas_url, payload, _short_id),
+                    daemon=True,
+                ).start()
             else:
                 st.error(f"제출 중 오류가 발생했습니다. (상태코드: {resp.status_code})")
         except Exception as exc:
