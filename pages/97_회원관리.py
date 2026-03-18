@@ -252,27 +252,27 @@ _teacher_nums: set[str] = {
 
 
 def _teacher_filter(student_num: str) -> bool:
-    """교사 모드에서 이 학번이 담당 학생인지 확인합니다.
+    """교사 모드에서 이 학번이 담당 학급 학생인지 확인합니다.
 
-    우선순위:
-    1. 교사 명단(수강생명단)의 '반' 컬럼이 있으면 → 반 이름으로 매칭
-    2. 명단에 학번이 있으면 → 담당 학생으로 간주
-    3. 명단이 없으면 → 학번 형식(첫째자리=학년, 둘째~셋째자리=반)으로 파생
+    학급 판별 우선순위:
+    1. 교사 명단(수강생명단)의 '반' 컬럼이 있으면 → 반 컬럼 값으로 판별
+    2. 그 외 → 학번 형식(첫째자리=학년, 둘째~셋째자리=반)으로 파생
+
+    명단 포함 여부는 학급 판별에 사용하지 않습니다.
+    (명단에 있어도 담당 학급이 아니면 제외)
     """
     num = student_num.strip()
     if not num:
         return False
-    if _teacher_roster_all:
-        if _teacher_roster_has_class:
-            cls = next(
-                (str(r.get("반", "")).strip()
-                 for r in _teacher_roster_all if str(r.get("학번", "")).strip() == num),
-                "",
-            )
-            return cls in _teacher_classes
-        else:
-            return num in _teacher_nums
-    # 폴백: 학번 앞자리에서 학급 파생
+    if _teacher_roster_all and _teacher_roster_has_class:
+        # 반 컬럼이 있는 경우에만 명단에서 반 조회
+        cls = next(
+            (str(r.get("반", "")).strip()
+             for r in _teacher_roster_all if str(r.get("학번", "")).strip() == num),
+            "",
+        )
+        return cls in _teacher_classes
+    # 학번 앞자리에서 학급 파생 (반 컬럼 없거나 명단 없는 경우 모두)
     return _class_from_num(num) in _teacher_classes
 
 
@@ -408,80 +408,77 @@ with tab_students:
     students_all = _cached_students(sheet_id)
     roster_all   = _cached_roster(sheet_id)
 
-    # 교사 모드: 담당 학급 학생만 필터
-    if _is_teacher:
-        st.subheader(f"학생 목록 (담당 학급: {', '.join(_teacher_classes) or '없음'})")
-        students_view = [
-            r for r in students_all
-            if _teacher_filter(str(r.get("학번", "")).strip())
-        ]
-    else:
+    # 관리자만 학생 목록·상태 변경·비밀번호 재설정 표시
+    if _is_admin:
         st.subheader("학생 목록")
         students_view = students_all
 
-    if not students_view:
-        st.info("해당 조건에 맞는 학생이 없습니다.")
-    else:
-        df_s = pd.DataFrame(students_view)
-        display_cols = [c for c in df_s.columns if c != "해시비밀번호"]
-        st.dataframe(df_s[display_cols], use_container_width=True, hide_index=True)
+        if not students_view:
+            st.info("해당 조건에 맞는 학생이 없습니다.")
+        else:
+            df_s = pd.DataFrame(students_view)
+            display_cols = [c for c in df_s.columns if c != "해시비밀번호"]
+            st.dataframe(df_s[display_cols], use_container_width=True, hide_index=True)
 
-        st.divider()
-        st.markdown("#### 상태 변경 / 비밀번호 재설정")
+            st.divider()
+            st.markdown("#### 상태 변경 / 비밀번호 재설정")
 
-        def _s_label(r):
-            return f"{r.get('이름', '')}({r.get('아이디', '')})"
-        student_options = {_s_label(r): str(r.get("아이디", "")) for r in students_view}
-        sel_label_s = st.selectbox("학생 선택", list(student_options.keys()),
-                                   key="mgmt_sel_student")
-        sel_uid = student_options[sel_label_s]
-        sel_row = next((r for r in students_view
-                        if str(r.get("아이디", "")) == sel_uid), {})
-        st.caption(
-            f"이름: {sel_row.get('이름', '')}  |  "
-            f"학번: {sel_row.get('학번', '')}  |  "
-            f"학년: {sel_row.get('학년', '')}  |  "
-            f"현재 상태: {sel_row.get('승인상태', '')}"
-        )
+            def _s_label(r):
+                return f"{r.get('이름', '')}({r.get('아이디', '')})"
+            student_options = {_s_label(r): str(r.get("아이디", "")) for r in students_view}
+            sel_label_s = st.selectbox("학생 선택", list(student_options.keys()),
+                                       key="mgmt_sel_student")
+            sel_uid = student_options[sel_label_s]
+            sel_row = next((r for r in students_view
+                            if str(r.get("아이디", "")) == sel_uid), {})
+            st.caption(
+                f"이름: {sel_row.get('이름', '')}  |  "
+                f"학번: {sel_row.get('학번', '')}  |  "
+                f"학년: {sel_row.get('학년', '')}  |  "
+                f"현재 상태: {sel_row.get('승인상태', '')}"
+            )
 
-        c1, c2, c3 = st.columns(3)
-        with c1:
-            if st.button("✅ 승인으로 변경", key="mgmt_s_approve",
-                         use_container_width=True):
-                if update_user_status("student", sel_uid, STATUS_APPROVED):
-                    st.success("승인 완료")
-                    st.rerun()
-        with c2:
-            if st.button("⏸ 대기로 변경", key="mgmt_s_pending",
-                         use_container_width=True):
-                if update_user_status("student", sel_uid, STATUS_PENDING):
-                    st.info("대기 상태로 변경됨")
-                    st.rerun()
-        with c3:
-            if st.button("❌ 거부로 변경", key="mgmt_s_reject",
-                         use_container_width=True):
-                if update_user_status("student", sel_uid, STATUS_REJECTED):
-                    st.warning("거부 상태로 변경됨")
-                    st.rerun()
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                if st.button("✅ 승인으로 변경", key="mgmt_s_approve",
+                             use_container_width=True):
+                    if update_user_status("student", sel_uid, STATUS_APPROVED):
+                        st.success("승인 완료")
+                        st.rerun()
+            with c2:
+                if st.button("⏸ 대기로 변경", key="mgmt_s_pending",
+                             use_container_width=True):
+                    if update_user_status("student", sel_uid, STATUS_PENDING):
+                        st.info("대기 상태로 변경됨")
+                        st.rerun()
+            with c3:
+                if st.button("❌ 거부로 변경", key="mgmt_s_reject",
+                             use_container_width=True):
+                    if update_user_status("student", sel_uid, STATUS_REJECTED):
+                        st.warning("거부 상태로 변경됨")
+                        st.rerun()
 
-        st.divider()
-        with st.expander("🔑 비밀번호 재설정"):
-            new_pw = st.text_input("새 비밀번호", type="password",
-                                   key="mgmt_s_new_pw",
-                                   help="8자 이상, 숫자 포함")
-            if st.button("비밀번호 변경", key="mgmt_s_pw_btn"):
-                errs = check_password_policy(new_pw)
-                if errs:
-                    for e in errs:
-                        st.error(e)
-                elif reset_user_password("student", sel_uid, new_pw):
-                    st.success(f"{sel_uid} 비밀번호 재설정 완료")
-                else:
-                    st.error("비밀번호 재설정에 실패했습니다.")
+            st.divider()
+            with st.expander("🔑 비밀번호 재설정"):
+                new_pw = st.text_input("새 비밀번호", type="password",
+                                       key="mgmt_s_new_pw",
+                                       help="8자 이상, 숫자 포함")
+                if st.button("비밀번호 변경", key="mgmt_s_pw_btn"):
+                    errs = check_password_policy(new_pw)
+                    if errs:
+                        for e in errs:
+                            st.error(e)
+                    elif reset_user_password("student", sel_uid, new_pw):
+                        st.success(f"{sel_uid} 비밀번호 재설정 완료")
+                    else:
+                        st.error("비밀번호 재설정에 실패했습니다.")
 
     # ── 학급별 가입 현황 ──────────────────────────────────────────────────────
-    st.divider()
-    st.subheader("📊 학급별 가입 현황")
+    if _is_teacher:
+        st.subheader(f"📊 학급별 가입 현황 (담당 학급: {', '.join(_teacher_classes) or '없음'})")
+    else:
+        st.divider()
+        st.subheader("📊 학급별 가입 현황")
 
     # 교사 모드: 교사 전용 명단(수강생명단)을 우선 사용
     _ref_roster = _teacher_roster_all if (_is_teacher and _teacher_roster_all) else roster_all
