@@ -342,10 +342,18 @@ def render_reflection_form(
         else student_id
     )
 
-    # 일반인: 제출 불필요
+    # 일반인: 제출 불필요 (단, 수학 교사는 폼 표시)
     if user_type == "general":
-        st.info("💡 일반인 사용자는 성찰 기록 제출이 필요하지 않습니다.")
-        return
+        _is_teacher = False
+        if student_id:
+            try:
+                from auth_utils import is_math_teacher
+                _is_teacher = is_math_teacher(student_id)
+            except Exception:
+                pass
+        if not _is_teacher:
+            st.info("💡 일반인 사용자는 성찰 기록 제출이 필요하지 않습니다.")
+            return
 
     # 미로그인 방어 처리 (정상 흐름에서는 발생하지 않아야 함)
     if not student_id:

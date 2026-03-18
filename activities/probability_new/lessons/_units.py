@@ -168,6 +168,12 @@ CURRICULUM = [
                     "subject": "probability_new",
                     "slug": "mini/pascal_fractal",
                 },
+                {
+                    "type": "activity",
+                    "title": "미니: 손가락 게임 '모라'와 같은 것이 있는 순열",
+                    "subject": "probability_new",
+                    "slug": "mini/morra_game",
+                },
                 # 필요하면 여기에 추가 자료를 이어서 넣으면 됩니다.
                 # {"type":"activity","title":"활동 예시","subject":"probability","slug":"binomial_simulator"},
                 # {"type":"url","title":"보충 설명","src":"https://..."},
