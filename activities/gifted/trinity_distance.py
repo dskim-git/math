@@ -294,6 +294,15 @@ function dSeg(px,py,ax,ay,bx,by){
   const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/l2));
   return d2(px,py,ax+t*dx,ay+t*dy);
 }
+function hitStroke(st,x,y){
+  const r=Math.max(8,st.thick/2+5);
+  if(!st.pts||st.pts.length<2) return false;
+  if(st.type==='line'){const p=st.pts,last=p[p.length-1];return dSeg(x,y,p[0].x,p[0].y,last.x,last.y)<=r;}
+  if(st.type==='text') return d2(x,y,st.x,st.y)<=Math.max(20,r);
+  for(let i=1;i<st.pts.length;i++) if(dSeg(x,y,st.pts[i-1].x,st.pts[i-1].y,st.pts[i].x,st.pts[i].y)<=r) return true;
+  return false;
+}
+function findHitStroke(arr,x,y){for(let i=arr.length-1;i>=0;i--) if(hitStroke(arr[i],x,y)) return i; return -1;}
 
 function drawStroke(c,st){
   if(st.type==='text'){
@@ -480,7 +489,8 @@ function makeCanvas(cvsId,outerId,lmId,floatId,side){
         const hit=hitR(x,y);
         if(hit){S.rulers.splice(hit.idx,1);if(S.selectedRuler>=hit.idx)S.selectedRuler--;S.drawing=false;redraw();return;}
       }
-      if(S.strokes.length){S.strokes.pop();redraw();}
+      const si=findHitStroke(S.strokes,x,y);
+      if(si!==-1){S.strokes.splice(si,1);redraw();}
       S.drawing=false;return;
     }
     if(S.tool==='free'){S.freeStroke={type:'free',color:S.color,thick:S.thick,pts:[{x,y}]};S.strokes.push(S.freeStroke);}

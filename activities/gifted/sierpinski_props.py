@@ -793,4 +793,4 @@ setStep(0);
 def render():
     st.header("🔺 시에르핀스키 삼각형 — 단계별 분석")
     st.caption("단계별 삼각형 개수·넓이·둘레를 직접 탐구하며 수열 공식과 프랙털 차원을 발견합니다.")
-    components.html(HTML, height=1150, scrolling=True)
+    components.html(HTML, height=2300, scrolling=False)

@@ -138,7 +138,7 @@ canvas#board { border-radius: 12px; background: #0f172a; display: block; }
   <!-- 메인 -->
   <div class="main-area">
     <div id="boardWrap">
-      <canvas id="board" width="520" height="500"></canvas>
+      <canvas id="board" width="520" height="580"></canvas>
     </div>
 
     <div id="right-panel">
@@ -542,7 +542,7 @@ def render():
     st.header("🎰 갈톤보드 (Galton Board) 시뮬레이션")
     st.caption("구슬이 각 못에서 좌(L) 또는 우(R)로 떨어지며, 최종 위치의 분포는 이항분포를 따릅니다.")
 
-    components.html(HTML, height=660, scrolling=False)
+    components.html(HTML, height=800, scrolling=False)
 
     with st.expander("💡 활동 안내", expanded=False):
         st.markdown(

@@ -249,6 +249,31 @@ const S = {
 const cvs = document.getElementById('cvs');
 const ctx = cvs.getContext('2d');
 
+// ── Hit-test helpers ──────────────────────────────────────────────────────────
+function distToSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx*dx + dy*dy;
+  if (len2 === 0) return Math.hypot(px-ax, py-ay);
+  const t = Math.max(0, Math.min(1, ((px-ax)*dx + (py-ay)*dy) / len2));
+  return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
+}
+function hitStroke(st, x, y) {
+  const r = Math.max(8, st.thick / 2 + 5);
+  if (!st.pts || st.pts.length < 2) return false;
+  if (st.type === 'line') {
+    const p = st.pts, last = p[p.length-1];
+    return distToSeg(x, y, p[0].x, p[0].y, last.x, last.y) <= r;
+  }
+  for (let i = 1; i < st.pts.length; i++)
+    if (distToSeg(x, y, st.pts[i-1].x, st.pts[i-1].y, st.pts[i].x, st.pts[i].y) <= r) return true;
+  return false;
+}
+function findHitStroke(arr, x, y) {
+  for (let i = arr.length - 1; i >= 0; i--)
+    if (hitStroke(arr[i], x, y)) return i;
+  return -1;
+}
+
 // ── Coordinate helpers ────────────────────────────────────────────────────────
 function pxCoords(e) {
   const r   = cvs.getBoundingClientRect();
@@ -458,7 +483,8 @@ cvs.addEventListener('pointerdown', e => {
   S.sx = x; S.sy = y;
 
   if (S.tool === 'eraser') {
-    if (S.strokes.length) { S.strokes.pop(); redraw(); }
+    const idx = findHitStroke(S.strokes, x, y);
+    if (idx !== -1) { S.strokes.splice(idx, 1); redraw(); }
     S.drawing = false;
     return;
   }

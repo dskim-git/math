@@ -60,7 +60,7 @@ body {
   width: 100%; overflow: hidden;
   background: #0f172a; border-radius: 10px; padding: 2px 0;
 }
-#triWrap svg { display: block; width: 100%; height: auto; }
+#triWrap svg { display: block; width: 100%; height: auto; max-height: 480px; }
 .tri-cell { cursor: pointer; }
 .tri-cell rect { transition: fill .12s, stroke .12s; }
 .tri-cell:hover rect { filter: brightness(1.25); }
@@ -596,4 +596,4 @@ switchTab(1);
 def render():
     st.header("🔺 파스칼의 삼각형 성질 탐구")
     st.caption("이항계수의 6가지 성질을 직접 셀을 클릭하며 탐구하고, 퀴즈로 확인합니다.")
-    components.html(HTML, height=1000, scrolling=True)
+    components.html(HTML, height=1800, scrolling=False)

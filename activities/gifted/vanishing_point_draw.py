@@ -79,7 +79,7 @@ input[type=range] { width: 76px; accent-color: #14b8a6; }
 
 .canvas-wrap {
   background: #111827; border: 1px solid #334155; border-radius: 10px;
-  overflow: hidden; line-height: 0; position: relative;
+  overflow: auto; line-height: 0; position: relative;
 }
 #cvs { display: block; margin: 0 auto; cursor: crosshair; touch-action: none; }
 .canvas-loading {
@@ -237,12 +237,15 @@ const SETS = {
   ],
 };
 
+const MARGIN = 220;  // 이미지 밖 그리기 영역 (캔버스 좌표)
+
 const S = {
   cat: 'concept', set: 'concept', idx: 0,
   tool: 'line', color: '#ef4444', thick: 3,
   drawing: false, sx: 0, sy: 0, freeStroke: null,
   strokes: {},
   imgCache: {}, bgImg: null,
+  imgX: 0, imgY: 0, imgW: 0, imgH: 0,
 };
 
 // Init per-image stroke storage
@@ -252,6 +255,31 @@ const S = {
 
 const cvs = document.getElementById('cvs');
 const ctx = cvs.getContext('2d');
+
+// ── Hit-test helpers ──────────────────────────────────────────────────────────
+function distToSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx*dx + dy*dy;
+  if (len2 === 0) return Math.hypot(px-ax, py-ay);
+  const t = Math.max(0, Math.min(1, ((px-ax)*dx + (py-ay)*dy) / len2));
+  return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
+}
+function hitStroke(st, x, y) {
+  const r = Math.max(8, st.thick / 2 + 5);
+  if (!st.pts || st.pts.length < 2) return false;
+  if (st.type === 'line') {
+    const p = st.pts, last = p[p.length-1];
+    return distToSeg(x, y, p[0].x, p[0].y, last.x, last.y) <= r;
+  }
+  for (let i = 1; i < st.pts.length; i++)
+    if (distToSeg(x, y, st.pts[i-1].x, st.pts[i-1].y, st.pts[i].x, st.pts[i].y) <= r) return true;
+  return false;
+}
+function findHitStroke(arr, x, y) {
+  for (let i = arr.length - 1; i >= 0; i--)
+    if (hitStroke(arr[i], x, y)) return i;
+  return -1;
+}
 
 function pxCoords(e) {
   const r = cvs.getBoundingClientRect();
@@ -288,13 +316,25 @@ async function showImage(set, idx) {
     const isPortrait = img.naturalHeight > img.naturalWidth;
     const dispW = isPortrait ? 460 : 920;
     const scale = dispW / img.naturalWidth;
-    cvs.width  = dispW;
-    cvs.height = Math.round(img.naturalHeight * scale);
-    cvs.style.width = dispW + 'px';
+    S.imgW  = dispW;
+    S.imgH  = Math.round(img.naturalHeight * scale);
   } else {
-    cvs.width = 920; cvs.height = 518;
-    cvs.style.width = '920px';
+    S.imgW = 920; S.imgH = 518;
   }
+  S.imgX  = MARGIN;
+  S.imgY  = MARGIN;
+  cvs.width  = S.imgW + MARGIN * 2;
+  cvs.height = S.imgH + MARGIN * 2;
+  cvs.style.width  = cvs.width + 'px';
+  cvs.style.height = cvs.height + 'px';
+
+  // 이미지가 뷰포트 중앙에 오도록 스크롤
+  const wrap = document.getElementById('cvsWrap');
+  setTimeout(() => {
+    wrap.scrollLeft = Math.max(0, (cvs.width  - wrap.clientWidth)  / 2);
+    wrap.scrollTop  = Math.max(0, (cvs.height - wrap.clientHeight) / 2);
+  }, 0);
+
   redraw();
   updateInfo();
 }
@@ -320,17 +360,38 @@ function drawStroke(c, st) {
 
 function redraw(previewStroke) {
   ctx.clearRect(0, 0, cvs.width, cvs.height);
+  // 확장 여백 배경
+  ctx.fillStyle = '#070c18';
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
+  // 격자 보조선 (여백 영역)
+  ctx.save();
+  ctx.strokeStyle = 'rgba(51,65,85,0.4)';
+  ctx.lineWidth = 1;
+  const step = 40;
+  for (let x = 0; x < cvs.width; x += step) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, cvs.height); ctx.stroke();
+  }
+  for (let y = 0; y < cvs.height; y += step) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(cvs.width, y); ctx.stroke();
+  }
+  ctx.restore();
+  // 이미지 그리기
   if (S.bgImg) {
-    ctx.drawImage(S.bgImg, 0, 0, cvs.width, cvs.height);
+    ctx.drawImage(S.bgImg, S.imgX, S.imgY, S.imgW, S.imgH);
   } else {
     ctx.fillStyle = '#1e293b';
-    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    ctx.fillRect(S.imgX, S.imgY, S.imgW, S.imgH);
     ctx.fillStyle = '#475569';
     ctx.font = 'bold 20px Segoe UI';
     ctx.textAlign = 'center';
-    ctx.fillText('이미지를 불러올 수 없습니다', cvs.width / 2, cvs.height / 2);
+    ctx.fillText('이미지를 불러올 수 없습니다', S.imgX + S.imgW / 2, S.imgY + S.imgH / 2);
     ctx.textAlign = 'left';
   }
+  // 이미지 경계선
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(S.imgX, S.imgY, S.imgW, S.imgH);
+
   const strokes = S.strokes[curItem().key];
   strokes.forEach(st => drawStroke(ctx, st));
   if (previewStroke) {
@@ -365,7 +426,8 @@ cvs.addEventListener('pointerdown', e => {
 
   if (S.tool === 'eraser') {
     const arr = S.strokes[curItem().key];
-    if (arr.length) { arr.pop(); redraw(); }
+    const idx = findHitStroke(arr, x, y);
+    if (idx !== -1) { arr.splice(idx, 1); redraw(); }
     S.drawing = false;
     return;
   }
@@ -406,7 +468,8 @@ cvs.addEventListener('pointerup', e => {
 });
 
 cvs.addEventListener('pointerleave', e => {
-  if (S.drawing && S.tool === 'line') { S.drawing = false; redraw(); }
+  // 직선 도구는 pointerCapture로 캔버스 밖에서도 계속 그릴 수 있음
+  if (S.drawing && S.tool === 'free') { S.freeStroke = null; S.drawing = false; }
 });
 
 // ── Tool buttons ──────────────────────────────────────────────────────────────

@@ -1940,10 +1940,6 @@ def gifted_subject_view():
         with st.container(border=True):
             st.subheader(topic.get("label", ""))
             items = topic.get("items", [])
-            if items:
-                st.caption(f"자료 {len(items)}개")
-            else:
-                st.caption("아직 자료가 없습니다.")
             c1, _ = st.columns([1, 3])
             with c1:
                 if st.button("열기", key=f"gifted_topic_{topic['key']}", use_container_width=True):

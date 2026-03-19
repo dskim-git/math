@@ -1645,6 +1645,14 @@ function distToSeg(px,py,ax,ay,bx,by){
   const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/len2));
   return dist2(px,py,ax+t*dx,ay+t*dy);
 }
+function hitStroke(st,x,y){
+  const r=Math.max(8,st.thick/2+5);
+  if(!st.pts||st.pts.length<2) return false;
+  if(st.type==='line'){const p=st.pts,last=p[p.length-1];return distToSeg(x,y,p[0].x,p[0].y,last.x,last.y)<=r;}
+  for(let i=1;i<st.pts.length;i++) if(distToSeg(x,y,st.pts[i-1].x,st.pts[i-1].y,st.pts[i].x,st.pts[i].y)<=r) return true;
+  return false;
+}
+function findHitStroke(arr,x,y){for(let i=arr.length-1;i>=0;i--) if(hitStroke(arr[i],x,y)) return i; return -1;}
 
 /* ── Image load ── */
 const ARNO_B64 = 'PLACEHOLDER_ARNOLFINI';
@@ -1871,7 +1879,7 @@ cvs.addEventListener('pointerdown', e=>{
     cvs.setPointerCapture(e.pointerId); redrawArno(); return;
   }
   AS.selectedRuler=-1; AS.drawing=true; AS.sx=x; AS.sy=y;
-  if(AS.tool==='eraser'&&AS.strokes.length){AS.strokes.pop();redrawArno();AS.drawing=false;return;}
+  if(AS.tool==='eraser'){const idx=findHitStroke(AS.strokes,x,y);if(idx!==-1){AS.strokes.splice(idx,1);redrawArno();}AS.drawing=false;return;}
   cvs.setPointerCapture(e.pointerId);
 });
 

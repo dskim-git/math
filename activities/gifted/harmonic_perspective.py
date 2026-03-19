@@ -1478,6 +1478,14 @@ function distToSeg(px,py,ax,ay,bx,by){
   const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/len2));
   return dist2(px,py,ax+t*dx,ay+t*dy);
 }
+function hitStroke(st,x,y){
+  const r=Math.max(8,st.thick/2+5);
+  if(!st.pts||st.pts.length<2) return false;
+  if(st.type==='line'){const p=st.pts,last=p[p.length-1];return distToSeg(x,y,p[0].x,p[0].y,last.x,last.y)<=r;}
+  for(let i=1;i<st.pts.length;i++) if(distToSeg(x,y,st.pts[i-1].x,st.pts[i-1].y,st.pts[i].x,st.pts[i].y)<=r) return true;
+  return false;
+}
+function findHitStroke(arr,x,y){for(let i=arr.length-1;i>=0;i--) if(hitStroke(arr[i],x,y)) return i; return -1;}
 
 async function init(){
   document.getElementById('loadMsg').style.display='block';
@@ -1609,7 +1617,8 @@ cvs.addEventListener('pointerdown',e=>{
   }
   S.selectedRuler=-1; S.drawing=true; S.sx=x; S.sy=y;
   if(S.tool==='eraser'){
-    if(S.strokes.length){S.strokes.pop();redraw();} S.drawing=false; return;
+    const idx=findHitStroke(S.strokes,x,y);
+    if(idx!==-1){S.strokes.splice(idx,1);redraw();} S.drawing=false; return;
   }
   if(S.tool==='free'){
     S.freeStroke={type:'free',color:S.color,thick:S.thick,pts:[{x,y}]};
