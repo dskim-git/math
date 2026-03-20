@@ -1594,6 +1594,7 @@ function goToStep(n) {
   AS.step = n;
   const sec = document.getElementById('arnoSec' + n);
   if (sec) setTimeout(() => sec.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  if (n === 2) { S3D.az = AZ0; S3D.el = EL0; S3D.zoom = ZM0; }  // step 2 진입 시 항상 기본 시점 복원
   if (n >= 2) setTimeout(drawArno3D, 100);
 }
 
@@ -2025,6 +2026,8 @@ function p3(a_cm, b_cm, z_cm, W, H) {
 function drawArno3D() {
   const outer = cvs3D.parentElement;
   if (!outer || !outer.clientWidth) return;
+  // 안전장치: cos(az)≤0 이면 좌우 반전 → 기본 시점으로 복원
+  if (Math.cos(S3D.az) <= 0) S3D.az = AZ0;
   const W = outer.clientWidth;
   const H = Math.max(320, Math.round(W * 0.58));
   const dpr = window.devicePixelRatio || 1;
@@ -2247,7 +2250,7 @@ cvs3D.addEventListener('pointerdown', e => {
 cvs3D.addEventListener('pointermove', e => {
   if (!S3D.drag) return;
   const dx = e.clientX - S3D.lx, dy = e.clientY - S3D.ly;
-  S3D.az += dx * 0.007;
+  S3D.az = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, S3D.az + dx * 0.007));
   S3D.el  = Math.max(-Math.PI/2+0.05, Math.min(Math.PI/2-0.05, S3D.el - dy * 0.007));
   S3D.lx = e.clientX; S3D.ly = e.clientY;
   drawArno3D();
