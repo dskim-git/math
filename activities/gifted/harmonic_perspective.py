@@ -1497,17 +1497,22 @@ async function init(){
   });
   document.getElementById('loadMsg').style.display='none';
   S.bgImg=img;
+  const outer=document.getElementById('cvsOuter');
+  const availW=Math.max(300,(outer.clientWidth||CANVAS_W)-4);
+  const MAX_IMG_H=500;
   if(img){
-    const sc=Math.min(IMG_MAX_W/img.naturalWidth,1);
+    let sc=Math.min(Math.min(IMG_MAX_W,availW)/img.naturalWidth,1);
+    if(img.naturalHeight*sc>MAX_IMG_H) sc=MAX_IMG_H/img.naturalHeight;
     S.imgW=Math.round(img.naturalWidth*sc);
     S.imgH=Math.round(img.naturalHeight*sc);
-    S.imgX=Math.round((CANVAS_W-S.imgW)/2);
   } else {
-    S.imgW=IMG_MAX_W; S.imgH=420; S.imgX=Math.round((CANVAS_W-S.imgW)/2);
+    S.imgW=Math.min(IMG_MAX_W,availW); S.imgH=Math.min(420,MAX_IMG_H);
   }
-  cvs.width=CANVAS_W;
+  const canvasW=Math.max(S.imgW+8,availW);
+  S.imgX=Math.round((canvasW-S.imgW)/2);
+  cvs.width=canvasW;
   cvs.height=S.imgY+S.imgH+IMG_PAD_B;
-  cvs.style.width=CANVAS_W+'px';
+  cvs.style.width=canvasW+'px';
   cvs.style.height=cvs.height+'px';
   redraw();
 }
@@ -1617,6 +1622,13 @@ cvs.addEventListener('pointerdown',e=>{
   }
   S.selectedRuler=-1; S.drawing=true; S.sx=x; S.sy=y;
   if(S.tool==='eraser'){
+    const rulerHit=hitRuler(x,y);
+    if(rulerHit!==null){
+      S.rulers.splice(rulerHit.idx,1);
+      if(S.selectedRuler===rulerHit.idx) S.selectedRuler=-1;
+      else if(S.selectedRuler>rulerHit.idx) S.selectedRuler--;
+      redraw(); S.drawing=false; return;
+    }
     const idx=findHitStroke(S.strokes,x,y);
     if(idx!==-1){S.strokes.splice(idx,1);redraw();} S.drawing=false; return;
   }
@@ -1863,4 +1875,4 @@ def render():
 
     with tab3:
         img_b64 = _b64("christ.png")
-        components.html(_make_painting_html(img_b64), height=1100, scrolling=True)
+        components.html(_make_painting_html(img_b64), height=1000, scrolling=False)

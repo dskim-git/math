@@ -298,7 +298,7 @@ function hitStroke(st,x,y){
   const r=Math.max(8,st.thick/2+5);
   if(!st.pts||st.pts.length<2) return false;
   if(st.type==='line'){const p=st.pts,last=p[p.length-1];return dSeg(x,y,p[0].x,p[0].y,last.x,last.y)<=r;}
-  if(st.type==='text') return d2(x,y,st.x,st.y)<=Math.max(20,r);
+  if(st.type==='text'){const fs=st.fs||22;const w=st._w||(st.text.length*fs*0.58);return x>=st.x-4&&x<=st.x+w+8&&y>=st.y-4&&y<=st.y+fs+6;}
   for(let i=1;i<st.pts.length;i++) if(dSeg(x,y,st.pts[i-1].x,st.pts[i-1].y,st.pts[i].x,st.pts[i].y)<=r) return true;
   return false;
 }
