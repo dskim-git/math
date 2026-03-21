@@ -704,6 +704,9 @@ function toggleSync() {
   if (_classMode) {
     btn.className = 'ctrl-btn class-on';
     btn.textContent = '🎓 수업 모드 ON';
+    // 수업 모드 전환 즉시 현재 admin 위치를 학생들에게 전달
+    const curNav = (currentPage === 'problem' && curProb) ? curProb : 0;
+    fbPushNav(curNav);
   } else {
     btn.className = 'ctrl-btn class-off';
     btn.textContent = '🏠 자유 탐구 모드';
@@ -827,11 +830,13 @@ function startFbStream() {
       if (path === '/') {
         _applyFbData(val);
       } else if (path === '/nav') {
-        const nav = val ?? 0;
-        if (nav !== _lastNav) {
-          _lastNav = nav;
-          if (nav === 0) showBingo(false);
-          else if (typeof nav === 'number' && nav > 0) showProblem(nav, false);
+        if (!_freeMode) {  // 수업 모드일 때만 자동 이동
+          const nav = val ?? 0;
+          if (nav !== _lastNav) {
+            _lastNav = nav;
+            if (nav === 0) showBingo(false);
+            else if (typeof nav === 'number' && nav > 0) showProblem(nav, false);
+          }
         }
       } else if (path === '/probs') {
         state.probs = val || {};
@@ -843,6 +848,7 @@ function startFbStream() {
           _freeMode = newFreeMode;
           _updateStudentSyncUI(!_freeMode);
           buildGrid();
+          if (!_freeMode) _lastNav = -1;  // 수업 모드 복귀 시 강제 재적용
         }
       }
     } catch(err) { console.warn('FB SSE parse error', err); }
