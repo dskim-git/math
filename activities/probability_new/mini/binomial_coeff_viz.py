@@ -457,7 +457,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       <div class="quiz-target" id="qTarget"></div>
     </div>
     <div class="input-row">
-      <input type="number" class="num-inp" id="qInput" placeholder="계수 입력"
+      <input type="text" inputmode="decimal" class="num-inp" id="qInput" placeholder="계수 입력"
              onkeydown="if(event.key==='Enter')checkAns()">
       <button class="btn btn-p" onclick="checkAns()">확인 ✓</button>
       <button class="btn btn-s" onclick="newQ()">새 문제 🔄</button>
@@ -528,7 +528,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;heigh
       </div>
 
       <div class="input-row">
-        <input type="number" class="num-inp" id="cInput" placeholder="계수 입력"
+        <input type="text" inputmode="decimal" class="num-inp" id="cInput" placeholder="계수 입력"
                onkeydown="if(event.key==='Enter')checkChal()">
         <button class="btn btn-p" onclick="checkChal()">확인 ✓</button>
       </div>
