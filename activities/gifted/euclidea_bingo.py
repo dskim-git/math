@@ -103,6 +103,9 @@ body{background:#0a1628;color:#e2e8f0;font-family:'Segoe UI','Noto Sans KR',syst
 .ctrl-btn:hover{border-color:#64748b;color:#f8fafc;}
 .ctrl-btn.danger{border-color:#dc2626;color:#fca5a5;}
 .ctrl-btn.danger:hover{background:#7f1d1d;}
+.ctrl-btn.class-on{border-color:#16a34a;background:#14532d;color:#4ade80;}
+.ctrl-btn.class-on:hover{background:#15803d;border-color:#4ade80;}
+.ctrl-btn.class-off{border-color:#64748b;color:#94a3b8;}
 .confirm-box{background:#1e293b;border:1.5px solid #dc2626;border-radius:9px;padding:10px 14px;display:none;align-items:center;gap:10px;}
 .confirm-box p{color:#fca5a5;font-size:0.82rem;}
 
@@ -224,6 +227,7 @@ __GEO_CSS__
 <div id="pg-bingo">
   <!-- Teacher-only controls -->
   <div class="ctrl-row" id="teacher-ctrl">
+    <button class="ctrl-btn class-on" id="sync-toggle-btn" onclick="toggleSync()">🎓 수업 모드 ON</button>
     <button class="ctrl-btn danger" onclick="confirmReset()">🗑 전체 초기화</button>
     <div class="confirm-box" id="confirm-box">
       <p>정말 모든 진행 상황을 초기화할까요?</p>
@@ -479,7 +483,7 @@ function buildGrid() {
       const ot   = ownr ? TEAMS[ownr] : null;
 
       td.className = 'bingo-cell'
-        + (IS_TEACHER ? ' teacher-only' : ' no-click')
+        + ((IS_TEACHER || _freeMode) ? ' teacher-only' : ' no-click')
         + (ownr?' owned':'') + (perm?' perm':'');
 
       if (ot) {
@@ -507,7 +511,7 @@ function buildGrid() {
         <div class="c-mid"><span class="vL">${PROBLEMS[num].L}L</span><span class="vE">${PROBLEMS[num].E}E</span></div>
         <div class="c-conds">${dot('L')}${dot('E')}${dot('V')}</div>`;
 
-      if (IS_TEACHER) td.onclick = () => showProblem(num);
+      if (IS_TEACHER || _freeMode) td.onclick = () => showProblem(num, false);
       tr.appendChild(td);
     });
     tbl.appendChild(tr);
@@ -680,6 +684,33 @@ function doReset(){
 
 // ═══════════════ FIREBASE SYNC ═══════════════
 // Teacher → Firebase (REST API, no SDK needed)
+
+// 수업 모드 ON/OFF 토글 (admin 전용)
+let _classMode = true;  // true = 수업 모드, false = 자유 탐구
+
+async function fbPushSync(enabled) {
+  if (!FB_ENABLED || !IS_TEACHER) return;
+  try {
+    await fetch(`${FB_PATH}/sync.json`, {
+      method: 'PUT', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(enabled)
+    });
+  } catch(e) { console.warn('FB sync push failed', e); }
+}
+
+function toggleSync() {
+  _classMode = !_classMode;
+  const btn = document.getElementById('sync-toggle-btn');
+  if (_classMode) {
+    btn.className = 'ctrl-btn class-on';
+    btn.textContent = '🎓 수업 모드 ON';
+  } else {
+    btn.className = 'ctrl-btn class-off';
+    btn.textContent = '🏠 자유 탐구 모드';
+  }
+  fbPushSync(_classMode);
+}
+
 async function fbPushNav(num) {
   if(!FB_ENABLED||!IS_TEACHER) return;
   try {
@@ -708,37 +739,128 @@ async function fbPushAll() {
   } catch(e){}
 }
 
-// Student ← Firebase (polling every 2s)
-let _lastNav = -1;  // -1 = uninitialized, 0 = bingo, 1~25 = problem
-async function fbPoll() {
-  if(!FB_ENABLED||IS_TEACHER) return;
-  try {
-    // Poll state + nav together
-    const resp = await fetch(`${FB_PATH}.json`);
-    const data = await resp.json();
-    if (!data) return;
+// Student ← Firebase (Server-Sent Events — persistent connection, auto-reconnect)
+let _lastNav  = -1;   // -1 = uninitialized, 0 = bingo, 1~25 = problem
+let _fbStream = null;
+let _freeMode = false; // true = 자유 탐구 모드 (학생이 독립적으로 탐구)
 
-    // Update probs (bingo state)
-    if (data.probs) {
-      state.probs = data.probs;
-      if (currentPage === 'bingo') {
-        buildGrid(); buildTeamCards(); updateBingoTags();
-      } else if (currentPage === 'problem') {
-        updateStudentScores();
-      }
-    }
+// ── 학생 UI: 수업모드 ↔ 자유탐구 모드 표시 전환 ──
+function _updateStudentSyncUI(classMode) {
+  const text = document.getElementById('role-text');
+  const hint = document.getElementById('student-hint');
+  const back = document.getElementById('teacher-back');
+  if (classMode) {
+    if (text) text.textContent = '학생 모드 — 교사 화면에 자동 연결됨';
+    if (hint) hint.textContent = '📡 선생님이 문제를 선택하면 자동으로 이동합니다.';
+    if (back) back.style.display = 'none';
+  } else {
+    if (text) text.textContent = '🏠 자유 탐구 모드 — 문제 칸을 눌러 자유롭게 탐구하세요';
+    if (hint) hint.textContent = '🏠 자유 탐구 모드 — 문제 칸을 눌러 자유롭게 탐구하세요';
+    if (back) back.style.display = 'block';
+  }
+}
 
-    // Auto-navigate based on teacher's nav
-    const nav = data.nav ?? 0;  // 0 = bingo board, 1~25 = problem num
-    if (nav !== _lastNav) {
-      _lastNav = nav;
-      if (nav === 0) {
-        showBingo(false);
-      } else if (typeof nav === 'number' && nav > 0) {
-        showProblem(nav, false);
-      }
+// ── 공통: Firebase 데이터를 받아서 UI에 반영 ──
+function _applyFbData(data) {
+  if (!data) return;
+
+  // sync 플래그 처리 (학생 전용)
+  if (!IS_TEACHER && data.sync !== undefined) {
+    const newFreeMode = (data.sync === false);
+    if (newFreeMode !== _freeMode) {
+      _freeMode = newFreeMode;
+      _updateStudentSyncUI(!_freeMode);
+      buildGrid(); // 클릭 가능 여부 갱신
     }
-  } catch(e){ /* silent */ }
+  }
+
+  if (data.probs) {
+    state.probs = data.probs;
+    if (currentPage === 'bingo') {
+      buildGrid(); buildTeamCards(); updateBingoTags();
+    } else if (currentPage === 'problem') {
+      updateStudentScores();
+    }
+  }
+
+  // 자유 탐구 모드에서는 auto-navigate 안 함
+  if (_freeMode) return;
+
+  const nav = (data.nav === undefined) ? 0 : (data.nav ?? 0);
+  if (nav !== _lastNav) {
+    _lastNav = nav;
+    if (nav === 0) {
+      showBingo(false);
+    } else if (typeof nav === 'number' && nav > 0) {
+      showProblem(nav, false);
+    }
+  }
+}
+
+// ── 연결 상태 표시 ──
+function _fbSetStatus(connected) {
+  const dot  = document.getElementById('sync-dot');
+  const text = document.getElementById('role-text');
+  if (!dot || !text) return;
+  if (connected) {
+    dot.classList.add('on');
+    dot.style.background = '';
+    text.textContent = '학생 모드 — 교사 화면에 자동 연결됨';
+  } else {
+    dot.classList.remove('on');
+    dot.style.background = '#ef4444';
+    text.textContent = '학생 모드 — 연결 끊김 (자동 재연결 중...)';
+  }
+}
+
+// ── SSE 스트리밍 시작 (타임아웃 없음, 브라우저가 자동 재연결) ──
+function startFbStream() {
+  if (!FB_ENABLED || IS_TEACHER) return;
+  if (_fbStream) { _fbStream.close(); _fbStream = null; }
+
+  _fbStream = new EventSource(`${FB_PATH}.json`);
+
+  _fbStream.addEventListener('put', (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      const path = msg.path, val = msg.data;
+      if (path === '/') {
+        _applyFbData(val);
+      } else if (path === '/nav') {
+        const nav = val ?? 0;
+        if (nav !== _lastNav) {
+          _lastNav = nav;
+          if (nav === 0) showBingo(false);
+          else if (typeof nav === 'number' && nav > 0) showProblem(nav, false);
+        }
+      } else if (path === '/probs') {
+        state.probs = val || {};
+        if (currentPage === 'bingo') { buildGrid(); buildTeamCards(); updateBingoTags(); }
+        else if (currentPage === 'problem') { updateStudentScores(); }
+      } else if (path === '/sync' && !IS_TEACHER) {
+        const newFreeMode = (val === false);
+        if (newFreeMode !== _freeMode) {
+          _freeMode = newFreeMode;
+          _updateStudentSyncUI(!_freeMode);
+          buildGrid();
+        }
+      }
+    } catch(err) { console.warn('FB SSE parse error', err); }
+  });
+
+  _fbStream.addEventListener('patch', (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.path === '/') _applyFbData(msg.data);
+    } catch(err) {}
+  });
+
+  // Firebase가 인증 거부 시 'cancel' 이벤트 전송
+  _fbStream.addEventListener('cancel', () => _fbSetStatus(false));
+
+  _fbStream.onopen  = () => _fbSetStatus(true);
+  _fbStream.onerror = () => _fbSetStatus(false);
+  // EventSource는 끊기면 자동으로 재연결 — 수동 retry 불필요
 }
 
 // ═══════════════ ROLE-BASED UI INIT ═══════════════
@@ -752,7 +874,21 @@ function applyRole() {
     roleText.textContent = FB_ENABLED
       ? '교사 모드 — Firebase 실시간 동기화 활성화'
       : '교사 모드 — 오프라인 (Firebase 미설정)';
-    if (FB_ENABLED) syncDot.classList.add('on');
+    if (FB_ENABLED) {
+      syncDot.classList.add('on');
+      // 현재 Firebase의 sync 상태를 읽어서 버튼 초기화
+      fetch(`${FB_PATH}/sync.json`)
+        .then(r => r.json())
+        .then(val => {
+          _classMode = (val !== false); // null/true → 수업 모드, false → 자유 탐구
+          const btn = document.getElementById('sync-toggle-btn');
+          if (btn) {
+            btn.className = _classMode ? 'ctrl-btn class-on' : 'ctrl-btn class-off';
+            btn.textContent = _classMode ? '🎓 수업 모드 ON' : '🏠 자유 탐구 모드';
+          }
+        })
+        .catch(() => {});
+    }
 
     // teacher-only UI
     document.getElementById('teacher-ctrl').style.display  = 'flex';
@@ -765,9 +901,9 @@ function applyRole() {
   } else {
     banner.className = 'role-banner student';
     roleText.textContent = FB_ENABLED
-      ? '학생 모드 — 교사 화면에 자동 연결됨'
+      ? '학생 모드 — 연결 중...'
       : '학생 모드 — 오프라인 (실시간 연결 없음)';
-    if (FB_ENABLED) syncDot.classList.add('on');
+    // syncDot은 연결 성공(onopen) 시 _fbSetStatus(true)가 켜줌
 
     // student UI
     document.getElementById('teacher-ctrl').style.display  = 'none';
@@ -777,10 +913,16 @@ function applyRole() {
     document.getElementById('student-hint').style.display  = 'block';
     document.getElementById('student-score-box').style.display = 'block';
 
-    // Start polling
+    // SSE 스트리밍 시작 (타임아웃 없음, 자동 재연결)
     if (FB_ENABLED) {
-      fbPoll();
-      setInterval(fbPoll, 2000);
+      startFbStream();
+      // 탭이 숨겨졌다가 다시 보일 때 스트림이 닫혔으면 재시작
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && _fbStream &&
+            _fbStream.readyState === EventSource.CLOSED) {
+          startFbStream();
+        }
+      });
     }
   }
 }
