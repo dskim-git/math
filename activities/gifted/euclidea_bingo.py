@@ -511,7 +511,8 @@ function buildGrid() {
         <div class="c-mid"><span class="vL">${PROBLEMS[num].L}L</span><span class="vE">${PROBLEMS[num].E}E</span></div>
         <div class="c-conds">${dot('L')}${dot('E')}${dot('V')}</div>`;
 
-      if (IS_TEACHER || _freeMode) td.onclick = () => showProblem(num, false);
+      if (IS_TEACHER) td.onclick = () => showProblem(num);        // Firebase에 nav push ✓
+      else if (_freeMode) td.onclick = () => showProblem(num, false); // 학생: push 안 함
       tr.appendChild(td);
     });
     tbl.appendChild(tr);
