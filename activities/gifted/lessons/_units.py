@@ -155,6 +155,12 @@ CURRICULUM = [
                 "slug": "pascal_triangle_props",
             },
             {
+                "type": "activity",
+                "title": "미니: 파스칼 삼각형에서 찾아보는 프랙털",
+                "subject": "gifted",
+                "slug": "pascal_fractal",
+            },
+            {
                 "type": "canva",
                 "title": "카오스 게임",
                 "src": "https://www.canva.com/design/DAHD5CdyCP8/aa1HvPgknv6BW6zdUwQnNw/view?embed",
