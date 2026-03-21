@@ -1875,4 +1875,4 @@ def render():
 
     with tab3:
         img_b64 = _b64("christ.png")
-        components.html(_make_painting_html(img_b64), height=1000, scrolling=False)
+        components.html(_make_painting_html(img_b64), height=1400, scrolling=False)
