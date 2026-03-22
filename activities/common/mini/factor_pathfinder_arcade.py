@@ -486,7 +486,7 @@ function buildOptions(){
     if(state.selected === method.id) btn.classList.add('selected');
     if(state.checked){
       btn.classList.add('locked');
-      if(method.id === CASES[state.index].answer) btn.classList.add('correct');
+      if(method.id === state.cases[state.index].answer) btn.classList.add('correct');
       else if(state.selected === method.id) btn.classList.add('wrong');
     }
     btn.onclick = ()=>selectOption(method.id);
@@ -700,7 +700,7 @@ def render():
         unsafe_allow_html=True,
     )
 
-    components.html(_HTML, height=2400, scrolling=False)
+    components.html(_HTML, height=1200, scrolling=False)
 
     # ── 성찰 기록 폼 ────────────────────────────────────────────────────────
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
