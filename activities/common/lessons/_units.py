@@ -272,34 +272,201 @@ CURRICULUM = [
                 "children": [
                     {
                         "key": "2-1-1",
-                        "label": "복소수",
-                        "items": [],
+                        "label": "복소수와 그 연산",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "복소수",
+                                "src": "https://www.canva.com/design/DAHE7Y54NZc/mHc_ORmkl8Dq8ktg41gGww/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "복소수의 상등",
+                                "src": "https://www.canva.com/design/DAHE7fXzzbA/fR5NLflGzEZj9PxQWD4s0Q/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "복소수의 사칙연산",
+                                "src": "https://www.canva.com/design/DAHE7feMZCQ/RZ7PX17_7b5e0F0jjDOpKA/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "음수의 제곱근",
+                                "src": "https://www.canva.com/design/DAHE7bz4Y8k/hBokecIfrDCrgKjL066XKA/view?embed",
+                                "height": 800
+                            },
+                        ],
                     },
                     {
                         "key": "2-1-2",
-                        "label": "이차방정식",
-                        "items": [],
+                        "label": "이차방정식의 판별식",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "이차방정식의 실근과 허근",
+                                "src": "https://www.canva.com/design/DAHE7ZbcVqk/HOl66xoID5jUtOMoco6zIw/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "이차방정식의 근의 판별",
+                                "src": "https://www.canva.com/design/DAHE7eJoQMA/-k4-Gza3fyNMvL36jXriDg/view?embed",
+                                "height": 800
+                            },
+                        ],
                     },
                     {
                         "key": "2-1-3",
-                        "label": "이차방정식과 이차함수의 관계",
-                        "items": [],
+                        "label": "이차방정식의 근과 계수의 관계",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "이차방정식의 근과 계수의 관계",
+                                "src": "https://www.canva.com/design/DAHE7fwzHpE/CRIktU5PpLGtLQ8cjAh3cw/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "두 수를 근으로 하는 이차방정식",
+                                "src": "https://www.canva.com/design/DAHE7WZLuiM/fO7Mg0KWO-qAWXcCcQJKyw/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "이차식의 인수분해",
+                                "src": "https://www.canva.com/design/DAHE7WwixW4/gSt96iFCzcayYLyluWm-gg/view?embed",
+                                "height": 800
+                            },
+                        ],
+                    },
+                    {
+                        "key": "2-1-4",
+                        "label": "중단원 점검하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "중단원 마무리 문제",
+                                "src": "https://drive.google.com/file/d/1F1fsHZYTIjpXP2KNlEL6HVGtj6satJ_k/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=1F1fsHZYTIjpXP2KNlEL6HVGtj6satJ_k"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
                     },
                 ],
             },
             {
                 "key": "2-2",
-                "label": "(2) 이차방정식과 이차부등식",
+                "label": "(2) 이차방정식과 이차함수",
                 "children": [
                     {
                         "key": "2-2-1",
-                        "label": "이차방정식의 근과 계수의 관계",
-                        "items": [],
+                        "label": "이차함수의 그래프와 이차방정식",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "이차방정식과 이차함수의 관계",
+                                "src": "https://www.canva.com/design/DAHE7ZmrZj4/WsFUKXwn4SK9xuDGectYGA/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "이차방정식의 그래프와 직선의 위치 관계",
+                                "src": "https://www.canva.com/design/DAHE7ZMRi-s/1RnXe5hXXX1eOBJrecMJeg/view?embed",
+                                "height": 800
+                            },
+                        ],
                     },
                     {
                         "key": "2-2-2",
-                        "label": "이차부등식",
+                        "label": "이차함수의 최대, 최소",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "이차함수의 최댓값과 최솟값",
+                                "src": "https://www.canva.com/design/DAHE7ahKu-U/5aeRTEoegGPGYQPrnFjQag/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "제한된 범위에서 이차함수의 최대, 최소",
+                                "src": "https://www.canva.com/design/DAHE7l6rADk/ByrggqhWTQFvOcGijaIaGA/view?embed",
+                                "height": 800
+                            },
+                        ],
+                    },
+                    {
+                        "key": "2-2-3",
+                        "label": "중단원 점검하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "중단원 마무리 문제",
+                                "src": "https://drive.google.com/file/d/15fVSyJmqeznQmz59U1TEYw6bdd_FVyv9/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=15fVSyJmqeznQmz59U1TEYw6bdd_FVyv9"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
+                    },
+                ],
+            },
+            {
+                "key": "2-3",
+                "label": "(3) 여러 가지 방정식과 부등식",
+                "children": [
+                    {
+                        "key": "2-3-1",
+                        "label": "삼차방정식과 사차방정식",
                         "items": [],
+                    },
+                    {
+                        "key": "2-3-2",
+                        "label": "연립이차방정식",
+                        "items": [],
+                    },
+                    {
+                        "key": "2-3-3",
+                        "label": "연립일차부등식",
+                        "items": [],
+                    },
+                    {
+                        "key": "2-3-4",
+                        "label": "이차부등식과 연립이차부등식",
+                        "items": [],
+                    },
+                    {
+                        "key": "2-3-5",
+                        "label": "중단원 점검하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "중단원 마무리 문제",
+                                "src": "https://drive.google.com/file/d/1hgaLWiQJykeYwNGd0fTiBHC7N8PjbFZc/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=1hgaLWiQJykeYwNGd0fTiBHC7N8PjbFZc"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
+                    },
+                ],
+            },
+            {
+                "key": "2-4",
+                "label": "대단원 평가하기",
+                "children": [
+                    {
+                        "key": "2-4-1",
+                        "label": "대단원 평가하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "대단원 평가하기",
+                                "src": "https://drive.google.com/file/d/1timYD43ZracPLnhuWL2XRNpa2EavY0ia/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=1timYD43ZracPLnhuWL2XRNpa2EavY0ia"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
                     },
                 ],
             },

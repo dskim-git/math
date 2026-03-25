@@ -212,25 +212,31 @@ CURRICULUM = [
     "children": [
       {
         "key": "2-1",
-        "label": "(1) 확률의 뜻과 활용",
+        "label": "(1) 확률의 개념과 활용",
         "children": [
-          {"key": "2-1-1", "label": "확률의 뜻", "items": [
+          {"key": "2-1-1", "label": "확률", "items": [
                 {
                     "type": "canva",
                     "title": "시행과 사건",
-                    "src": "https://www.canva.com/design/DAGNl7Kpmdc/qH9Yd9_aa6jpJsh0TcVY2A/view?embed",
+                    "src": "https://www.canva.com/design/DAHE0hTDc-E/DlS4JYShiG-MNQ80eKsleg/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
                     "title": "수학적 확률",
-                    "src": "https://www.canva.com/design/DAGNl1df9hA/vZkiHQlTQrGwOUnAtdxe1Q/view?embed",
+                    "src": "https://www.canva.com/design/DAHE0uTouFM/D7xBQtE_fDy1tiLEYssFMQ/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
                     "title": "통계적 확률",
-                    "src": "https://www.canva.com/design/DAGNl3VnqaM/rJz9C3d1irXdI7fap2Mzjg/view?embed",
+                    "src": "https://www.canva.com/design/DAHE0hrexZA/HyEwTJ5kxX2q-uU2AcqkzA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "확률의 기본 성질",
+                    "src": "https://www.canva.com/design/DAHE0hzig3g/gCebYuXyGrimsNtlwODBkw/view?embed",
                     "height": 800
                 },
                 {
@@ -270,11 +276,17 @@ CURRICULUM = [
                     "slug": "bertrand_paradox_p5"
                 }
           ]},
-          {"key": "2-1-2", "label": "확률의 기본 성질", "items": [
+          {"key": "2-1-2", "label": "확률의 덧셈정리", "items": [
                 {
                     "type": "canva",
-                    "title": "확률의 기본 성질",
-                    "src": "https://www.canva.com/design/DAGNl4QjJQk/In6tmF5d2maLToc3tJkPwQ/view?embed",
+                    "title": "확률의 덧셈정리",
+                    "src": "https://www.canva.com/design/DAHE0irIk_8/bhCvdYrxMvhSBd59OtrXmg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "여사건의 확률",
+                    "src": "https://www.canva.com/design/DAHE0qz9KNg/F37GtZ99uPIUJzWdiKEk7Q/view?embed",
                     "height": 800
                 },
                 {
@@ -290,40 +302,14 @@ CURRICULUM = [
                     "slug": "monty_hall_extended_p5"
                 }
           ]},
-          {"key": "2-1-3", "label": "확률의 덧셈정리", "items": [
+          {"key": "2-1-3", "label": "중단원 마무리 문제", "items": [
                 {
-                    "type": "canva",
-                    "title": "배반사건",
-                    "src": "https://www.canva.com/design/DAGNl4WLA34/0B49FEc9BXaV-f033EiDrA/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "확률의 덧셈정리",
-                    "src": "https://www.canva.com/design/DAGNl4dXCFU/wU2f46tNJIQxIAkx6WH_sw/view?embed",
-                    "height": 800
+                    "type": "pdf",
+                    "title": "중단원 마무리 문제",
+                    "src": "https://drive.google.com/file/d/1S4WxvVAEazBJXPR0ek6Sfo4JS0X0eDp8/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1S4WxvVAEazBJXPR0ek6Sfo4JS0X0eDp8"  # (선택) 다운로드 버튼 표시용
                 }
-          ]},
-          {"key": "2-1-4", "label": "여사건의 확률", "items": [
-                {
-                    "type": "canva",
-                    "title": "여사건",
-                    "src": "https://www.canva.com/design/DAGNlwRyb0Q/uFGi82VwEUHsPNn50t5RPg/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "여사건의 확률",
-                    "src": "https://www.canva.com/design/DAGNlwT2t6Y/8nByHtuP-3HKQ_4WkCsN4A/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "image",
-                    "title": "생일 예시",
-                    "src": "assets/birth.png",
-                    "width":640,
-                    "caption": "생일"
-                },
           ]},
         ],
       },
@@ -405,18 +391,27 @@ CURRICULUM = [
                     "slug": "binomial_simulator"
                 }
           ]},
+          {"key": "2-2-5", "label": "중단원 마무리 문제", "items": [
+                {
+                    "type": "pdf",
+                    "title": "중단원 마무리 문제",
+                    "src": "https://drive.google.com/file/d/1-0MKRkeaYx_-5X6yWR7ASIbI5mNTg0Dn/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1-0MKRkeaYx_-5X6yWR7ASIbI5mNTg0Dn"  # (선택) 다운로드 버튼 표시용
+                }
+          ]},
         ],
       },
       {
         "key": "2-3",
-        "label": "대단원 문제",
+        "label": "대단원 평가 문제",
         "items": [
                 {
                     "type": "pdf",
-                    "title": "단원평가문제",
-                    "src": "https://drive.google.com/file/d/1viXzZ3ETiz7kdmHfyLk91Lhfu-1HBUYu/preview",
+                    "title": "대단원 평가 문제",
+                    "src": "https://drive.google.com/file/d/1QOGba8ty59JZbRV7K4QmkUWa6DUk-RTw/preview",
                     #"height": 900,
-                    "download": "https://drive.google.com/uc?export=download&id=1viXzZ3ETiz7kdmHfyLk91Lhfu-1HBUYu"  # (선택) 다운로드 버튼 표시용
+                    "download": "https://drive.google.com/uc?export=download&id=1QOGba8ty59JZbRV7K4QmkUWa6DUk-RTw"  # (선택) 다운로드 버튼 표시용
                 }
         ],
       },
