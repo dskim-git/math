@@ -223,7 +223,7 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
-                    "title": "🎯 시행과 사건 용어 마스터",
+                    "title": "🎯 확률 용어 마스터",
                     "subject": "probability_new",
                     "slug": "mini/trial_event_vocab_game",
                 },
@@ -232,6 +232,12 @@ CURRICULUM = [
                     "title": "수학적 확률",
                     "src": "https://www.canva.com/design/DAHE0uTouFM/D7xBQtE_fDy1tiLEYssFMQ/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 이상한 주사위와 수학적 확률",
+                    "subject": "probability_new",
+                    "slug": "mini/weird_dice_sim",
                 },
                 {
                     "type": "canva",
@@ -269,12 +275,12 @@ CURRICULUM = [
                     "subject": "probability",
                     "slug": "buffon_needle_p5"
                 },
-                {
-                    "type": "iframe",
-                    "title": "뷔퐁의 바늘 실험(일리노이대)",
-                    "src": "https://mste.illinois.edu/activity/buffon/",
-                    "height": 800
-                },
+                #{
+                #    "type": "iframe",
+                #    "title": "뷔퐁의 바늘 실험(일리노이대)",
+                #    "src": "https://mste.illinois.edu/activity/buffon/",
+                #    "height": 800
+                #},
                 {
                     "type": "activity",
                     "title": "베르트랑의 역설",
