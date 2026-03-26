@@ -379,6 +379,29 @@ div.stAlert[data-testid="stAlert-error"]   { background: rgba(239,68,68,0.10)  !
 div.stAlert[data-testid="stAlert-success"] { background: rgba(34,197,94,0.10)  !important; border-color: rgba(34,197,94,0.30)  !important; }
 
 /* ══════════════════════════════════════════════════════════════════════
+   화면 전환 잔상 제거 — rerun 중 stale 요소 즉시 숨김
+══════════════════════════════════════════════════════════════════════ */
+/* Streamlit rerun 시 오래된 요소(stale)를 투명하게 처리 */
+.element-container.stale,
+.stale,
+[data-stale="true"] {
+    opacity: 0 !important;
+    transition: opacity 0.05s !important;
+}
+/* 새로운 요소가 나타날 때 부드럽게 페이드인 */
+.element-container {
+    animation: st-fadeIn 0.15s ease-out;
+}
+@keyframes st-fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+/* iframe(활동 콘텐츠) 전환 시 깜빡임 최소화 */
+iframe {
+    transition: opacity 0.1s ease !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    구분선 / 탭 / 스크롤바
 ══════════════════════════════════════════════════════════════════════ */
 hr, [data-testid="stDivider"] hr { border-color: rgba(99,102,241,0.20) !important; }
@@ -487,10 +510,41 @@ hr, [data-testid="stDivider"] hr { border-color: rgba(99,102,241,0.20) !importan
 [data-testid="stSpinner"] p { color: rgba(255,255,255,0.60) !important; }
 
 /* ══════════════════════════════════════════════════════════════════════
-   사이드바 확장 버튼 — 로그인 화면에서 숨긴 후에도 반드시 표시
+   Streamlit 기본 사이드바 완전 숨김 (커스텀 사이드바 사용)
 ══════════════════════════════════════════════════════════════════════ */
-[data-testid="stSidebarCollapsedControl"] {
+section[data-testid="stSidebar"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {
+    display: none !important;
+}
+</style>
+"""
+
+_DARK_THEME_CSS_NO_HIDE_SIDEBAR = _DARK_THEME_CSS.replace(
+    """/* ══════════════════════════════════════════════════════════════════════
+   Streamlit 기본 사이드바 완전 숨김 (커스텀 사이드바 사용)
+══════════════════════════════════════════════════════════════════════ */
+section[data-testid="stSidebar"],
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {
+    display: none !important;
+}""",
+    "",
+)
+
+# admin 페이지용 사이드바 강제 표시 CSS
+# html body 접두사로 specificity(0,0,2) 높여서 숨김 규칙(0,0,1)을 항상 이김
+_SHOW_SIDEBAR_CSS = """
+<style>
+/* admin 페이지: 사이드바 강제 표시 (high specificity) */
+html body section[data-testid="stSidebar"] {
     display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+html body [data-testid="stSidebarCollapsedControl"],
+html body [data-testid="collapsedControl"] {
+    display: block !important;
     visibility: visible !important;
 }
 </style>
@@ -509,9 +563,18 @@ section[data-testid="stSidebar"] nav
 """
 
 
-def inject_dark_theme():
-    """MathLab 다크 테마를 현재 페이지에 주입합니다. 매 rerun마다 주입해야 합니다."""
+def inject_dark_theme(hide_sidebar: bool = True):
+    """MathLab 다크 테마를 현재 페이지에 주입합니다. 매 rerun마다 주입해야 합니다.
+    
+    Args:
+        hide_sidebar: True(기본값)이면 Streamlit 기본 사이드바를 숨깁니다.
+                      False이면 사이드바를 표시합니다 (pages/ 하위 파이지에서 사용).
+    """
+    # 항상 풀 다크테마 CSS 주입 (sidebar hide 포함)
     st.markdown(_DARK_THEME_CSS, unsafe_allow_html=True)
+    if not hide_sidebar:
+        # hide 규칙보다 높은 specificity(html body prefix)로 사이드바 강제 표시
+        st.markdown(_SHOW_SIDEBAR_CSS, unsafe_allow_html=True)
 
 
 def inject_hide_nav():

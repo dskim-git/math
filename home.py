@@ -318,6 +318,39 @@ def _do_rerun():
     except Exception:
         st.experimental_rerun()  # type: ignore[attr-defined]
 
+
+# 페이드인 CSS (주요 전환 후 새 화면에 적용)
+_PAGE_FADE_IN_CSS = """<style>
+[data-testid="stMainBlockContainer"] {
+    animation: mlPageEnter 0.22s ease-out !important;
+}
+@keyframes mlPageEnter {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0);   }
+}
+</style>"""
+
+
+def _show_page_transition():
+    """로그인·로그아웃 등 주요 화면 전환 시 잔상 방지.
+    _do_rerun() 바로 직전에 호출합니다.
+    - JS로 브라우저에 즉시 오버레이를 그려 이전 화면을 가림
+    - 다음 렌더링 시 fade-in 플래그 설정
+    """
+    components.html(
+        """
+        <script>
+        (function(){
+            var ov = document.createElement('div');
+            ov.style.cssText = 'position:fixed;inset:0;background:#0f172a;z-index:2147483647;pointer-events:none;';
+            document.body.appendChild(ov);
+        })();
+        </script>
+        """,
+        height=0,
+    )
+    st.session_state["_page_fade_in"] = True
+
 def _is_dev_mode() -> bool:
     """관리자 모드 여부를 세션 상태에서 읽습니다."""
     return st.session_state.get("_dev_mode", False)
@@ -835,6 +868,9 @@ def login_view():
     except Exception:
         _is_debug = False
     _inject_login_style(hide_sidebar=True)
+    # 로그아웃 후 돌아올 때 부드러운 등장
+    if st.session_state.pop("_page_fade_in", False):
+        st.markdown(_PAGE_FADE_IN_CSS, unsafe_allow_html=True)
 
     _, col, _ = st.columns([1, 2, 1])
     with col:
@@ -906,6 +942,7 @@ def login_view():
                         if result["type"] == "admin":
                             st.session_state["_dev_mode"] = True
                         st.session_state.pop(ATTEMPT_KEY, None)
+                        _show_page_transition()  # 잔상 방지
                         _do_rerun()
 
             st.markdown(
@@ -1194,8 +1231,7 @@ def _inject_sidebar_nav_visibility(dev: bool):
     [data-testid="stSidebarNav"],
     [data-testid="stSidebarNavContainer"],
     [data-testid="stSidebarNavItems"],
-    [data-testid="stSidebarNavLink"],
-    section[data-testid="stSidebar"] nav
+    [data-testid="stSidebarNavLink"]
     { display: none !important; visibility: hidden !important; }
     </style>
     """, unsafe_allow_html=True)
@@ -1210,7 +1246,6 @@ def _inject_sidebar_nav_visibility(dev: bool):
             '[data-testid="stSidebarNavContainer"]',
             '[data-testid="stSidebarNavItems"]',
             '[data-testid="stSidebarNavLink"]',
-            'section[data-testid="stSidebar"] nav',
         ];
         function hide() {
             SELECTORS.forEach(function(sel) {
@@ -1242,29 +1277,150 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
     user_id        = st.session_state.get("_user_id",   "")
     _inject_sidebar_nav_visibility(dev)
 
+    # ── 닫기 버튼 ─────────────────────────────────────────
+    if st.button("✕ 닫기", key="_close_nav_btn", use_container_width=True):
+        st.session_state["_sidebar_open"] = False
+        _do_rerun()
+
     # ── 1. 사용자 정보 / 로그아웃 ────────────────────────────
     if user_name:
         type_icon = {"admin": "🔧", "student": "🎓", "general": "👤"}.get(user_type, "👤")
         type_lbl  = {"admin": "관리자", "student": "학생", "general": "일반인"}.get(user_type, "")
-        st.sidebar.caption(f"{type_icon} **{user_name}** ({user_id})  |  {type_lbl}")
-    if st.sidebar.button("🚪 로그아웃", use_container_width=True, key="_logout_btn"):
+        st.caption(f"{type_icon} **{user_name}** ({user_id})  |  {type_lbl}")
+    if st.button("🚪 로그아웃", use_container_width=True, key="_logout_btn"):
         for k in ["_authenticated", "_user_type", "_user_id", "_user_name",
                   "_login_allowed_subjects", "_dev_mode",
                   "_login_allowed_lessons",
                   "_show_pw_input", "_pw_error", "_visit_logged",
-                  "_ot_mode", "_subject_filter"]:
+                  "_ot_mode", "_subject_filter",
+                  "_sidebar_nav_js_injected", "_main_sidebar_js_injected",
+                  "_sidebar_open"]:
             st.session_state.pop(k, None)
         set_route("home")
+        _show_page_transition()  # 잔상 방지
         _do_rerun()
 
-    st.sidebar.divider()
+    st.divider()
 
     # ── 2. 내비게이션 ─────────────────────────────────────────
-    if st.sidebar.button("🏠 홈으로", use_container_width=True, key="_sidebar_home_btn"):
+    if st.button("🏠 홈으로", use_container_width=True, key="_sidebar_home_btn"):
         set_route("home")
         _do_rerun()
 
-    st.sidebar.markdown("**📂 교과별 활동**")
+    # ── 2-1. 수업 화면일 때: 단원 선택 ────────────────────────
+    cur_view, cur_subject, _, cur_unit = get_route()
+    if cur_view == "lessons" and cur_subject:
+        _cur_curriculum = load_curriculum(cur_subject)
+        _cur_units      = load_units(cur_subject)
+        _cur_allowed    = _get_login_allowed_units(cur_subject)
+        if _cur_allowed is not None:
+            if _cur_curriculum:
+                _cur_curriculum = _filter_curriculum_by_allowed_units(_cur_curriculum, _cur_allowed)
+            if _cur_units:
+                _cur_units = _filter_units_by_allowed(_cur_units, _cur_allowed)
+
+        if _cur_curriculum or _cur_units:
+            st.divider()
+            st.caption("📚 **단원 선택**")
+
+            if _cur_curriculum:
+                def _ch(node): return node.get("children", []) if isinstance(node, dict) else []
+                _skip_key = f"__skip_sync_{cur_subject}"
+                _maj_key  = f"_{cur_subject}_major"
+                _mid_key  = f"_{cur_subject}_mid"
+                _min_key  = f"_{cur_subject}_min"
+
+                def _mark_uc(): st.session_state[_skip_key] = True
+                def _on_maj():
+                    st.session_state[_mid_key] = 0
+                    st.session_state.pop(_min_key, None)
+                    _mark_uc()
+                def _on_mid():
+                    st.session_state.pop(_min_key, None)
+                    _mark_uc()
+                def _on_min(): _mark_uc()
+
+                _majors = _cur_curriculum
+                # ── URL → 세션 동기화 (위젯 렌더 전에 처리) ──────────────────
+                _skip_sync = st.session_state.pop(_skip_key, False)
+                if cur_unit and not _skip_sync:
+                    _url_path = _find_curriculum_path(_cur_curriculum, cur_unit)
+                    if _url_path:
+                        _u_maj, _u_mid, _u_min = _url_path
+                        st.session_state[_maj_key] = _u_maj
+                        if _u_mid is not None:
+                            st.session_state[_mid_key] = _u_mid
+                        else:
+                            st.session_state.pop(_mid_key, None)
+                        if _u_min is not None:
+                            st.session_state[_min_key] = _u_min
+                        else:
+                            st.session_state.pop(_min_key, None)
+                st.session_state.setdefault(_maj_key, 0)
+                if st.session_state[_maj_key] >= len(_majors):
+                    st.session_state[_maj_key] = 0
+
+                _maj_idx = st.selectbox(
+                    "대단원", options=range(len(_majors)),
+                    format_func=lambda i: _majors[i]["label"],
+                    key=_maj_key, on_change=_on_maj,
+                    label_visibility="visible",
+                )
+                _mids = _ch(_majors[_maj_idx])
+                _middle = None
+                if _mids:
+                    st.session_state.setdefault(_mid_key, 0)
+                    if st.session_state[_mid_key] >= len(_mids):
+                        st.session_state[_mid_key] = 0
+                    _mid_idx = st.selectbox(
+                        "중단원", options=range(len(_mids)),
+                        format_func=lambda i: _mids[i]["label"],
+                        key=_mid_key, on_change=_on_mid,
+                        label_visibility="visible",
+                    )
+                    _middle = _mids[_mid_idx]
+                else:
+                    st.session_state.pop(_mid_key, None)
+                    st.session_state.pop(_min_key, None)
+
+                _minor = None
+                if _middle:
+                    _mins = _ch(_middle)
+                    if _mins:
+                        st.session_state.setdefault(_min_key, 0)
+                        if st.session_state[_min_key] >= len(_mins):
+                            st.session_state[_min_key] = 0
+                        st.selectbox(
+                            "소단원", options=range(len(_mins)),
+                            format_func=lambda i: _mins[i]["label"],
+                            key=_min_key, on_change=_on_min,
+                            label_visibility="visible",
+                        )
+                        _minor = _mins[st.session_state[_min_key]]
+                    else:
+                        st.session_state.pop(_min_key, None)
+
+                # 선택된 노드 → URL 동기화 (lessons_view에서 처리)
+
+            elif _cur_units:
+                _unit_keys = list(_cur_units.keys())
+                _def_idx   = _unit_keys.index(cur_unit) if cur_unit in _unit_keys else 0
+                st.session_state.setdefault("_lesson_sel_idx", _def_idx)
+
+                def _on_flat_select():
+                    _idx = st.session_state.get("_lesson_sel_idx", 0)
+                    set_route("lessons", subject=cur_subject, unit=_unit_keys[_idx])
+                    _do_rerun()
+
+                st.selectbox(
+                    "단원", options=range(len(_unit_keys)),
+                    format_func=lambda i: _cur_units[_unit_keys[i]]["label"],
+                    index=_def_idx, key="_lesson_sel_idx",
+                    on_change=_on_flat_select,
+                    label_visibility="visible",
+                )
+
+    st.markdown("**📂 교과별 활동**")
     for key, label in SUBJECTS.items():
         if key in HIDDEN_SUBJECTS and not dev:
             continue
@@ -1272,7 +1428,7 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
             continue
         if login_allowed is not None and key not in login_allowed:
             continue
-        with st.sidebar.expander(f"{label}", expanded=False):
+        with st.expander(f"{label}", expanded=False):
             allowed_units = _get_login_allowed_units(key)
             if st.button("교과 메인 열기", key=f"open_{key}_index", use_container_width=True):
                 set_route("subject", subject=key)
@@ -1295,16 +1451,16 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
                         set_route("activity", subject=key, activity=act.slug)
                         _do_rerun()
 
-    st.sidebar.divider()
+    st.divider()
 
     # ── 3. 개인 메뉴 ──────────────────────────────────────────
     if user_type == "student":
-        if st.sidebar.button("📖 내 성찰 기록", use_container_width=True, key="_my_reflection_btn"):
+        if st.button("📖 내 성찰 기록", use_container_width=True, key="_my_reflection_btn"):
             set_route("my_reflection"); _do_rerun()
-    if st.sidebar.button("💬 의견 · 오류 접수", use_container_width=True, key="_sidebar_feedback_btn"):
+    if st.button("💬 의견 · 오류 접수", use_container_width=True, key="_sidebar_feedback_btn"):
         set_route("feedback"); _do_rerun()
     if user_type in ("student", "general"):
-        if st.sidebar.button("🔑 비밀번호 변경", use_container_width=True, key="_sidebar_chpw_btn"):
+        if st.button("🔑 비밀번호 변경", use_container_width=True, key="_sidebar_chpw_btn"):
             set_route("change_password"); _do_rerun()
 
     # ── 4. 교사 도구 (휘문고 수학과 그룹) ─────────────────────
@@ -1314,39 +1470,39 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
             try:
                 from auth_utils import is_math_teacher
                 if is_math_teacher(_uid):
-                    st.sidebar.divider()
-                    st.sidebar.caption("🏫 담당 교사 기능")
-                    if st.sidebar.button("👥 회원 관리", use_container_width=True,
-                                         key="_teacher_member_btn"):
+                    st.divider()
+                    st.caption("🏫 담당 교사 기능")
+                    if st.button("👥 회원 관리", use_container_width=True,
+                                 key="_teacher_member_btn"):
                         st.switch_page("pages/97_회원관리.py")
             except Exception:
                 pass
 
     # ── 5. 관리자 도구 ────────────────────────────────────────
     if user_type == "admin":
-        st.sidebar.divider()
+        st.divider()
         if dev:
-            st.sidebar.caption("🔧 **관리자 모드** 활성화 중")
-            if st.sidebar.button("🔓 일반 보기 모드로 전환", use_container_width=True,
-                                 key="_admin_exit_btn"):
+            st.caption("🔧 **관리자 모드** 활성화 중")
+            if st.button("🔓 일반 보기 모드로 전환", use_container_width=True,
+                         key="_admin_exit_btn"):
                 st.session_state["_dev_mode"] = False
                 _do_rerun()
-            if st.sidebar.button("👥 회원 관리", use_container_width=True,
-                                 key="_admin_member_btn"):
+            if st.button("👥 회원 관리", use_container_width=True,
+                         key="_admin_member_btn"):
                 st.switch_page("pages/97_회원관리.py")
-            if st.sidebar.button("📋 진도표 관리", use_container_width=True,
-                                 key="_admin_schedule_btn"):
+            if st.button("📋 진도표 관리", use_container_width=True,
+                         key="_admin_schedule_btn"):
                 st.switch_page("pages/98_진도표.py")
-            if st.sidebar.button("📁 Dev Tree (파일 구조 보기)", use_container_width=True,
-                                 key="_admin_dev_tree_btn"):
+            if st.button("📁 Dev Tree (파일 구조 보기)", use_container_width=True,
+                         key="_admin_dev_tree_btn"):
                 st.switch_page("pages/99_Dev_Tree.py")
-            if st.sidebar.button("📥 피드백 게시판", use_container_width=True,
-                                 key="_admin_feedback_board_btn"):
+            if st.button("📥 피드백 게시판", use_container_width=True,
+                         key="_admin_feedback_board_btn"):
                 set_route("feedback_board"); _do_rerun()
-            if st.sidebar.button("📊 방문자 통계", use_container_width=True,
-                                 key="_admin_visit_stats_btn"):
+            if st.button("📊 방문자 통계", use_container_width=True,
+                         key="_admin_visit_stats_btn"):
                 set_route("visit_stats"); _do_rerun()
-            st.sidebar.link_button(
+            st.link_button(
                 "🤖 AI 튜터와 대화하기",
                 "https://copilotstudio.microsoft.com/environments/"
                 "Default-62ae463a-9f12-4edf-8544-4f6ca3834524/bots/"
@@ -1354,8 +1510,8 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
                 use_container_width=True,
             )
         else:
-            if st.sidebar.button("🔧 관리자 모드로 전환", use_container_width=True,
-                                 key="_admin_enter_btn"):
+            if st.button("🔧 관리자 모드로 전환", use_container_width=True,
+                         key="_admin_enter_btn"):
                 st.session_state["_dev_mode"] = True
                 _do_rerun()
 
@@ -1722,30 +1878,7 @@ def home_view():
                     set_route("subject", subject=key)
                     _do_rerun()
 
-    # ── 의견 / 오류 접수 섹션 ──
-    st.divider()
-    st.markdown(
-        """
-        <div style="text-align:center; padding: 0.5rem 0 1rem;">
-          <div style="font-size:1.8rem;">💬</div>
-          <div style="font-size:1.1rem; font-weight:700; margin-bottom:0.3rem;">의견 · 오류 접수</div>
-          <div style="font-size:0.92rem; color:var(--secondary-text-color); line-height:1.6;">
-            활동 중 오류를 발견하셨나요? 새로운 활동을 건의하고 싶으신가요?<br>
-            아래 버튼을 눌러 선생님께 직접 말씀해 주세요.
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    col_fb1, col_fb2, col_fb3 = st.columns([2, 2, 2])
-    with col_fb2:
-        if st.button(
-            "✉️ 의견 · 오류 접수하기",
-            key="home_feedback_btn",
-            use_container_width=True,
-            type="secondary",
-        ):
-            set_route("feedback"); _do_rerun()
+    # 의견/오류 접수 섹션은 main()에서 full-page 레벨로 렌더링 (화면 정중앙 정렬을 위해)
 
 def subject_index_view(subject_key: str, registry: Dict[str, List[Activity]]):
     label = SUBJECTS.get(subject_key, subject_key)
@@ -1989,103 +2122,42 @@ def lessons_view(subject_key: str):
     if curriculum:
         def children(node): return node.get("children", []) if isinstance(node, dict) else []
 
-        # 사용자 변경 시 동기화 건너뛰기용 플래그
+        # ── 단원 선택은 sidebar_navigation()에서 처리, URL→세션 동기화도 거기서 완료 ──
+        # 세션 state에서 현재 선택값 읽기
+        maj_key = f"_{subject_key}_major"
+        mid_key = f"_{subject_key}_mid"
+        min_key = f"_{subject_key}_min"
         skip_key = f"__skip_sync_{subject_key}"
-        skip_sync = st.session_state.pop(skip_key, False)
 
-        # URL → 세션 동기화 (사용자 변경이 아닌 경우에만)
-        if unit_qp and not skip_sync:
-            path = _find_curriculum_path(curriculum, unit_qp)
-            maj_state_key = f"_{subject_key}_major"
-            mid_state_key = f"_{subject_key}_mid"
-            min_state_key = f"_{subject_key}_min"
-            if path:
-                maj_i, mid_i, min_i = path
-                st.session_state[maj_state_key] = maj_i
-                if mid_i is not None: st.session_state[mid_state_key] = mid_i
-                else: st.session_state.pop(mid_state_key, None)
-                if min_i is not None: st.session_state[min_state_key] = min_i
-                else: st.session_state.pop(min_state_key, None)
+        def ch(node): return node.get("children", []) if isinstance(node, dict) else []
+        majors = curriculum
 
-        # ── 사이드바 선택 ──
-        with st.sidebar:
-            st.subheader("📚 단원 선택")
+        st.session_state.setdefault(maj_key, 0)
+        if st.session_state[maj_key] >= len(majors):
+            st.session_state[maj_key] = 0
+        maj_idx = st.session_state[maj_key]
 
-            def ch(node): return node.get("children", []) if isinstance(node, dict) else []
-
-            majors = curriculum
-            maj_key = f"_{subject_key}_major"
-            mid_key = f"_{subject_key}_mid"
-            min_key = f"_{subject_key}_min"
-
-            # 사용자 변경 마크
-            def _mark_user_change():
-                st.session_state[skip_key] = True
-
-            # 대단원
-            st.session_state.setdefault(maj_key, 0)
-            if st.session_state[maj_key] >= len(majors):
-                st.session_state[maj_key] = 0
-
-            def _on_major_change():
+        mids = ch(majors[maj_idx])
+        middle = None
+        if mids:
+            st.session_state.setdefault(mid_key, 0)
+            if st.session_state[mid_key] >= len(mids):
                 st.session_state[mid_key] = 0
-                st.session_state.pop(min_key, None)
-                _mark_user_change()
+            middle = mids[st.session_state[mid_key]]
+        else:
+            st.session_state.pop(mid_key, None)
+            st.session_state.pop(min_key, None)
 
-            maj_idx = st.selectbox(
-                "대단원",
-                options=range(len(majors)),
-                format_func=lambda i: majors[i]["label"],
-                key=maj_key,
-                on_change=_on_major_change,
-            )
-
-            # 중단원
-            mids = ch(majors[maj_idx])
-            middle = None
-            if mids:
-                st.session_state.setdefault(mid_key, 0)
-                if st.session_state[mid_key] >= len(mids):
-                    st.session_state[mid_key] = 0
-
-                def _on_mid_change():
-                    st.session_state.pop(min_key, None)
-                    _mark_user_change()
-
-                mid_idx = st.selectbox(
-                    "중단원",
-                    options=range(len(mids)),
-                    format_func=lambda i: mids[i]["label"],
-                    key=mid_key,
-                    on_change=_on_mid_change,
-                )
-                middle = mids[mid_idx]
+        minor = None
+        if middle:
+            mins = ch(middle)
+            if mins:
+                st.session_state.setdefault(min_key, 0)
+                if st.session_state[min_key] >= len(mins):
+                    st.session_state[min_key] = 0
+                minor = mins[st.session_state[min_key]]
             else:
-                st.session_state.pop(mid_key, None)
                 st.session_state.pop(min_key, None)
-
-            # 소단원
-            minor = None
-            if middle:
-                mins = ch(middle)
-                if mins:
-                    st.session_state.setdefault(min_key, 0)
-                    if st.session_state[min_key] >= len(mins):
-                        st.session_state[min_key] = 0
-
-                    def _on_min_change():
-                        _mark_user_change()
-
-                    min_idx = st.selectbox(
-                        "소단원",
-                        options=range(len(mins)),
-                        format_func=lambda i: mins[i]["label"],
-                        key=min_key,
-                        on_change=_on_min_change,   # ← 추가
-                    )
-                    minor = mins[min_idx]
-                else:
-                    st.session_state.pop(min_key, None)
 
         # 현재 선택을 URL unit과 동기화 (다르면 갱신)
         sel_node = minor or middle or majors[maj_idx]
@@ -2164,19 +2236,9 @@ def lessons_view(subject_key: str):
 
         unit_keys = list(units.keys())
         default_idx = unit_keys.index(unit_qp) if (unit_qp in unit_keys) else 0
-        st.session_state["_lesson_sel_idx"] = default_idx
-
-        def _on_select():
-            idx = st.session_state.get("_lesson_sel_idx", 0)
-            set_route("lessons", subject=subject_key, unit=unit_keys[idx])
-            _do_rerun()
-
-        with st.sidebar:
-            st.subheader("📚 단원 선택")
-            st.selectbox("단원", options=range(len(unit_keys)),
-                         format_func=lambda i: units[unit_keys[i]]["label"],
-                         index=default_idx, key="_lesson_sel_idx",
-                         on_change=_on_select)
+        # 단원 선택은 sidebar_navigation()에서 처리 — 세션 state에서 읽기
+        if "_lesson_sel_idx" not in st.session_state:
+            st.session_state["_lesson_sel_idx"] = default_idx
 
         cur_idx = st.session_state.get("_lesson_sel_idx", default_idx)
         cur_key = unit_keys[cur_idx]
@@ -3286,7 +3348,7 @@ def _render_footer():
         """,
         unsafe_allow_html=True,
     )
-    _, _fc2, _ = st.columns([1, 1, 1])
+    _, _fc2, _ = st.columns([3, 2, 3])
     with _fc2:
         if st.button("📋 개인정보처리방침", key="_footer_privacy_btn", use_container_width=True):
             _privacy_policy_dialog()
@@ -3354,6 +3416,7 @@ def _render_debug_sidebar():
                     "_authenticated", "_user_type", "_user_id", "_user_name",
                     "_dev_mode", "_login_allowed_subjects",
                     "_login_allowed_lessons", "_visit_logged",
+                    "_sidebar_open",
                 ]
                 for k in _clear_keys:
                     st.session_state.pop(k, None)
@@ -3369,6 +3432,10 @@ def _render_debug_sidebar():
 def main():
     # 로컬 디버깅 패널 (local_debug_mode = true 시 활성화)
     _render_debug_sidebar()
+
+    # 주요 전환 후 페이드인
+    if st.session_state.pop("_page_fade_in", False):
+        st.markdown(_PAGE_FADE_IN_CSS, unsafe_allow_html=True)
 
     # sub-page에서의 라우트 이동 요청 처리
     if "_nav_to" in st.session_state:
@@ -3387,38 +3454,146 @@ def main():
     _log_visit()   # 세션 최초 1회 방문 기록
     _inject_app_theme()  # 전체 앱 다크 테마 적용
     registry = discover_activities()
-    sidebar_navigation(registry)
-
     view, subject, activity, unit = get_route()  # unit 포함
 
-    if view == "home":
-        home_view()
-    elif view == "change_password":
-        change_password_view()
-    elif view == "feedback":
-        feedback_view()
-    elif view == "feedback_board":
-        feedback_board_view()
-    elif view == "visit_stats":
-        visit_stats_view()
-    elif view == "my_reflection":
-        my_reflection_view()
-    elif view == "subject" and subject == "gifted":
-        gifted_subject_view()
-    elif view == "subject" and subject in SUBJECTS:
-        subject_index_view(subject, registry)
-    elif view == "ot" and subject in SUBJECTS and _is_ot_mode() and subject in _OT_CANVA:
-        ot_view(subject)
-    elif view == "lessons" and subject in SUBJECTS:
-        lessons_view(subject)
-    elif view == "activity" and subject in SUBJECTS and activity:
-        activity_view(subject, activity, registry, unit=unit)
-    else:
-        # 예외 시 홈으로
-        set_route("home")
-        _do_rerun()
+    # ── 커스텀 사이드바 레이아웃 ──────────────────────────────────────────────
+    st.markdown("""
+    <style>
+    /* 페이지 전체 여백 */
+    [data-testid="stMainBlockContainer"],
+    [data-testid="stMainBlockContainer"] > .block-container,
+    [data-testid="stMainBlockContainer"] > div {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        padding-top: 0.75rem !important;
+        max-width: 100% !important;
+    }
+    /* nav/main 레이아웃: #__ml_nav__ 마커를 포함한 컬럼과 그 형제만 대상으로 지정 */
+    /* 바깥 HorizontalBlock — nav 마커를 포함할 때만 gap 적용 */
+    [data-testid="stHorizontalBlock"]:has(#__ml_nav__) {
+        gap: 2rem !important;
+        padding: 0 !important;
+    }
+    /* 커스텀 nav 열 */
+    [data-testid="column"]:has(#__ml_nav__) {
+        background: transparent !important;
+        padding: 1rem 0.8rem 2rem 0.8rem !important;
+        min-height: calc(100vh - 1.5rem) !important;
+    }
+    /* nav 열 내 버튼 — 폰트 압축 */
+    [data-testid="column"]:has(#__ml_nav__) button {
+        font-size: 0.79rem !important;
+    }
+    /* nav 열 내 expander 헤더 — 한 줄 말줄임표 */
+    [data-testid="column"]:has(#__ml_nav__) [data-testid="stExpander"] summary p,
+    [data-testid="column"]:has(#__ml_nav__) [data-testid="stExpander"] summary span {
+        font-size: 0.79rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    /* 메인 콘텐츠 열 (nav 열의 인접 형제) */
+    [data-testid="column"]:has(#__ml_nav__) + [data-testid="column"] {
+        padding-left: 1.5rem !important;
+        padding-right: 1rem !important;
+    }
+    /* 메인 열 내부 중첩 컬럼 리셋 — 외부 CSS 부작용 방지 */
+    [data-testid="column"]:has(#__ml_nav__) + [data-testid="column"] [data-testid="stHorizontalBlock"] {
+        gap: 0.5rem !important;
+    }
+    [data-testid="column"]:has(#__ml_nav__) + [data-testid="column"] [data-testid="column"] {
+        padding: 0 !important;
+        min-height: 0 !important;
+    }
+    /* 햄버거 버튼 스타일 (사이드바 닫힘 시) */
+    [data-testid="stMainBlockContainer"] > div > div > div:first-child button[kind="secondary"]:first-of-type {
+        background: rgba(99,102,241,0.15) !important;
+        border: 1px solid rgba(99,102,241,0.35) !important;
+        color: rgba(255,255,255,0.85) !important;
+        font-size: 1.1rem !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    _render_footer()
+    _sidebar_open = st.session_state.get("_sidebar_open", True)
+
+    if _sidebar_open:
+        # stApp 배경 자체를 2색으로 분할: 왼쪽(사이드바)=짙은 보라, 오른쪽(메인)=기본 navy
+        # columns([1,5]) + padding 0.75rem×2 + gap 2rem → 분기점 = (100% - 3.5rem)/6 + 1.75rem
+        st.markdown("""
+        <style>
+        .stApp {
+            background-image:
+                linear-gradient(to right,
+                    #0d0626 calc((100% - 3.5rem) / 6 + 1.75rem),
+                    #0f172a calc((100% - 3.5rem) / 6 + 1.75rem)
+                ),
+                linear-gradient(rgba(99,102,241,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.06) 1px, transparent 1px) !important;
+            background-size: 100% 100%, 50px 50px, 50px 50px !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        nav_col, main_col = st.columns([1, 5])
+        with nav_col:
+            st.markdown('<div id="__ml_nav__"></div>', unsafe_allow_html=True)
+            sidebar_navigation(registry)
+    else:
+        if st.button("☰  메뉴", key="_hamburger_open_btn", help="메뉴 열기"):
+            st.session_state["_sidebar_open"] = True
+            _do_rerun()
+        main_col = st.container()
+
+    with main_col:
+        if view == "home":
+            home_view()
+        elif view == "change_password":
+            change_password_view()
+        elif view == "feedback":
+            feedback_view()
+        elif view == "feedback_board":
+            feedback_board_view()
+        elif view == "visit_stats":
+            visit_stats_view()
+        elif view == "my_reflection":
+            my_reflection_view()
+        elif view == "subject" and subject == "gifted":
+            gifted_subject_view()
+        elif view == "subject" and subject in SUBJECTS:
+            subject_index_view(subject, registry)
+        elif view == "ot" and subject in SUBJECTS and _is_ot_mode() and subject in _OT_CANVA:
+            ot_view(subject)
+        elif view == "lessons" and subject in SUBJECTS:
+            lessons_view(subject)
+        elif view == "activity" and subject in SUBJECTS and activity:
+            activity_view(subject, activity, registry, unit=unit)
+        else:
+            # 예외 시 홈으로
+            set_route("home")
+            _do_rerun()
+
+        if view == "home":
+            st.divider()
+            st.markdown(
+                """
+                <div style="text-align:center; padding: 0.5rem 0 1rem;">
+                  <div style="font-size:1.8rem;">💬</div>
+                  <div style="font-size:1.1rem; font-weight:700; margin-bottom:0.3rem;">의견 · 오류 접수</div>
+                  <div style="font-size:0.92rem; color:rgba(255,255,255,0.55); line-height:1.6;">
+                    활동 중 오류를 발견하셨나요? 새로운 활동을 건의하고 싶으신가요?<br>
+                    아래 버튼을 눌러 선생님께 직접 말씀해 주세요.
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            _, _fb_col, _ = st.columns([3, 2, 3])
+            with _fb_col:
+                if st.button("✉️ 의견 · 오류 접수하기", key="home_feedback_btn",
+                             use_container_width=True, type="secondary"):
+                    set_route("feedback"); _do_rerun()
+
+        _render_footer()
 
 if __name__ == "__main__":
     main()
