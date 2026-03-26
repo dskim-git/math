@@ -485,6 +485,14 @@ hr, [data-testid="stDivider"] hr { border-color: rgba(99,102,241,0.20) !importan
    스피너
 ══════════════════════════════════════════════════════════════════════ */
 [data-testid="stSpinner"] p { color: rgba(255,255,255,0.60) !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   사이드바 확장 버튼 — 로그인 화면에서 숨긴 후에도 반드시 표시
+══════════════════════════════════════════════════════════════════════ */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+}
 </style>
 """
 

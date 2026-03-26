@@ -116,7 +116,8 @@ def to_youtube_embed(src: str) -> str:
 st.set_page_config(
     page_title="Mathlab",
     page_icon="🧮",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 SHOW_MINI_IN_SIDEBAR = False
