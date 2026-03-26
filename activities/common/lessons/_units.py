@@ -299,6 +299,12 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "⚡ 복소수 계산 배틀!",
+                                "subject": "common",
+                                "slug": "mini/complex_arithmetic_game"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "음수의 제곱근",
                                 "src": "https://www.canva.com/design/DAHE7bz4Y8k/hBokecIfrDCrgKjL066XKA/view?embed",
