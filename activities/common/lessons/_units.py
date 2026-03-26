@@ -281,6 +281,12 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🌀 복소수 정복! 용어 마스터",
+                                "subject": "common",
+                                "slug": "mini/complex_number_terms"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "복소수의 상등",
                                 "src": "https://www.canva.com/design/DAHE7fXzzbA/fR5NLflGzEZj9PxQWD4s0Q/view?embed",
