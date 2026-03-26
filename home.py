@@ -117,7 +117,7 @@ st.set_page_config(
     page_title="Mathlab",
     page_icon="🧮",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 SHOW_MINI_IN_SIDEBAR = False
@@ -3457,6 +3457,19 @@ def main():
     view, subject, activity, unit = get_route()  # unit 포함
 
     # ── 커스텀 사이드바 레이아웃 ──────────────────────────────────────────────
+    # 기본 Streamlit 사이드바 숨기기 (디버그 모드 제외)
+    try:
+        _is_local_debug = bool(st.secrets.get("local_debug_mode", False))
+    except Exception:
+        _is_local_debug = False
+    if not _is_local_debug:
+        st.markdown("""
+        <style>
+        section[data-testid="stSidebar"],
+        [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+        </style>
+        """, unsafe_allow_html=True)
+
     st.markdown("""
     <style>
     /* 페이지 전체 여백 */
