@@ -222,6 +222,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "🎯 시행과 사건 용어 마스터",
+                    "subject": "probability_new",
+                    "slug": "mini/trial_event_vocab_game",
+                },
+                {
                     "type": "canva",
                     "title": "수학적 확률",
                     "src": "https://www.canva.com/design/DAHE0uTouFM/D7xBQtE_fDy1tiLEYssFMQ/view?embed",
