@@ -21,7 +21,7 @@ spreadsheet_id = secrets['reflection_spreadsheet_probability_new']
 sh = client.open_by_key(spreadsheet_id)
 
 # 시트명
-sheet_name = '원위도형개수탐구'
+sheet_name = '통계적확률탐험대'
 
 # 기존 시트 확인
 try:
@@ -36,7 +36,7 @@ except gspread.exceptions.WorksheetNotFound:
     print(f'✓ "{sheet_name}" 시트를 생성했습니다')
     
     # 헤더 설정
-    headers = ['timestamp', '학번', '이름', '발견한패턴', '이항계수연결', '새롭게알게된점', '느낀점']
+    headers = ['timestamp', '학번', '이름', '왜통계적확률', '대수의법칙', '통계적확률정의', '실생활예시', '새롭게알게된점', '느낀점']
     ws.append_row(headers)
     print(f'✓ 헤더가 생성되었습니다: {headers}')
 

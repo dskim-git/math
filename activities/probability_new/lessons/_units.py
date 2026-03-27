@@ -246,6 +246,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 통계적 확률 탐험대 (윷놀이·기상예보·야구 타율)",
+                    "subject": "probability_new",
+                    "slug": "mini/statistical_prob_sim",
+                },
+                {
                     "type": "canva",
                     "title": "확률의 기본 성질",
                     "src": "https://www.canva.com/design/DAHE0hzig3g/gCebYuXyGrimsNtlwODBkw/view?embed",
