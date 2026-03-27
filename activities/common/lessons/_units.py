@@ -305,10 +305,22 @@ CURRICULUM = [
                                 "slug": "mini/complex_arithmetic_game"
                             },
                             {
+                                "type": "activity",
+                                "title": "🔄 허수단위 i의 순환 탐구",
+                                "subject": "common",
+                                "slug": "mini/imaginary_unit_cycle"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "음수의 제곱근",
                                 "src": "https://www.canva.com/design/DAHE7bz4Y8k/hBokecIfrDCrgKjL066XKA/view?embed",
                                 "height": 800
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🚨 음수의 제곱근 함정 탈출!",
+                                "subject": "common",
+                                "slug": "mini/negative_sqrt_trap"
                             },
                         ],
                     },
