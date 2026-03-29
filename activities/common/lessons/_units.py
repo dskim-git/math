@@ -335,6 +335,12 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🔮 켤레근 탐정단!",
+                                "subject": "common",
+                                "slug": "mini/conjugate_roots_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "이차방정식의 근의 판별",
                                 "src": "https://www.canva.com/design/DAHE7eJoQMA/-k4-Gza3fyNMvL36jXriDg/view?embed",
