@@ -252,22 +252,10 @@ CURRICULUM = [
                     "slug": "mini/statistical_prob_sim",
                 },
                 {
-                    "type": "canva",
-                    "title": "확률의 기본 성질",
-                    "src": "https://www.canva.com/design/DAHE0hzig3g/gCebYuXyGrimsNtlwODBkw/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "gsheet",
-                    "title": "수학적 확률과 통계적 확률의 관계",
-                    "src": "https://docs.google.com/spreadsheets/d/1oz2DHhzrRxRFRn92RcGZdupPGvXUzWTk/edit?usp=drivesdk",
-                    "height": 800
-                },
-                {
-                    "type": "iframe",
-                    "title": "수학적 확률과 통계적 확률의 관계 (통그라미)",
-                    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
-                    "height": 800
+                    "type": "activity",
+                    "title": "미니: 통계적 확률 실험실 (동전·주사위·카드)",
+                    "subject": "probability_new",
+                    "slug": "mini/stat_prob_experiment",
                 },
                 {
                     "type": "activity",
@@ -276,10 +264,34 @@ CURRICULUM = [
                     "slug": "mini/dice_lab",
                 },
                 {
+                    "type": "canva",
+                    "title": "확률의 기본 성질",
+                    "src": "https://www.canva.com/design/DAHE0hzig3g/gCebYuXyGrimsNtlwODBkw/view?embed",
+                    "height": 800
+                },
+                #{
+                #    "type": "gsheet",
+                #    "title": "수학적 확률과 통계적 확률의 관계",
+                #    "src": "https://docs.google.com/spreadsheets/d/1oz2DHhzrRxRFRn92RcGZdupPGvXUzWTk/edit?usp=drivesdk",
+                #    "height": 800
+                #},
+                #{
+                #    "type": "iframe",
+                #    "title": "수학적 확률과 통계적 확률의 관계 (통그라미)",
+                #    "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
+                #    "height": 800
+                #},
+                #{
+                #    "type": "activity",
+                #    "title": "뷔퐁의 바늘 실험",
+                #    "subject": "probability",
+                #    "slug": "buffon_needle_p5"
+                #},
+                {
                     "type": "activity",
-                    "title": "뷔퐁의 바늘 실험",
-                    "subject": "probability",
-                    "slug": "buffon_needle_p5"
+                    "title": "미니: 뷔퐁의 바늘 실험 (π 추정 시뮬레이터)",
+                    "subject": "probability_new",
+                    "slug": "mini/buffon_needle_mini",
                 },
                 #{
                 #    "type": "iframe",
