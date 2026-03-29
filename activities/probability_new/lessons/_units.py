@@ -301,9 +301,9 @@ CURRICULUM = [
                 #},
                 {
                     "type": "activity",
-                    "title": "베르트랑의 역설",
-                    "subject": "probability",
-                    "slug": "bertrand_paradox_p5"
+                    "title": "미니: 베르트랑의 역설 시뮬레이터",
+                    "subject": "probability_new",
+                    "slug": "mini/bertrand_paradox_mini",
                 }
           ]},
           {"key": "2-1-2", "label": "확률의 덧셈정리", "items": [
