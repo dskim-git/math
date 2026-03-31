@@ -370,6 +370,12 @@ CURRICULUM = [
                                 "src": "https://www.canva.com/design/DAHE7WwixW4/gSt96iFCzcayYLyluWm-gg/view?embed",
                                 "height": 800
                             },
+                            {
+                                "type": "activity",
+                                "title": "🔑 근과 계수의 관계 탐정단",
+                                "subject": "common",
+                                "slug": "mini/vieta_roots_game"
+                            },
                         ],
                     },
                     {
