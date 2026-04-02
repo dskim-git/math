@@ -392,7 +392,7 @@ def render_reflection_form(
             **values,
         }
         try:
-            resp = requests.post(gas_url, json=payload, timeout=30)
+            resp = requests.post(gas_url, json=payload, timeout=60)
             if resp.status_code == 200:
                 st.success(f"✅ {student_name}님의 기록이 제출되었습니다!")
                 st.balloons()

@@ -408,6 +408,12 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "📈 이차함수·방정식 그래프 탐구",
+                                "subject": "common",
+                                "slug": "mini/quad_func_equation_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "이차방정식의 그래프와 직선의 위치 관계",
                                 "src": "https://www.canva.com/design/DAHE7ZMRi-s/1RnXe5hXXX1eOBJrecMJeg/view?embed",
