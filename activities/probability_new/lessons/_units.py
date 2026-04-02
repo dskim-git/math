@@ -356,6 +356,12 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
+                    "title": "미니: 몬티홀 문제 시뮬레이터",
+                    "subject": "probability",
+                    "slug": "mini/monty_hall_mini",
+                },
+                {
+                    "type": "activity",
                     "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
                     "subject": "probability",
                     "slug": "mini/odd_prime_conditional",   # 👈 파일명
