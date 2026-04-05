@@ -891,12 +891,12 @@ def render():
         """
         <style>
         .main { max-width: 100%; }
-        iframe { width: 100% !important; height: 1600px !important; }
+        iframe { width: 100% !important; height: 2200px !important; }
         </style>
         """,
         unsafe_allow_html=True,
     )
-    components.html(_HTML, height=1200, scrolling=False)
+    components.html(_HTML, height=1800, scrolling=False)
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
 
 
