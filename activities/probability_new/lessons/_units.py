@@ -264,10 +264,28 @@ CURRICULUM = [
                     "slug": "mini/dice_lab",
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 뷔퐁의 바늘 실험 (π 추정 시뮬레이터)",
+                    "subject": "probability_new",
+                    "slug": "mini/buffon_needle_mini",
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 베르트랑의 역설 시뮬레이터",
+                    "subject": "probability_new",
+                    "slug": "mini/bertrand_paradox_mini",
+                },
+                {
                     "type": "canva",
                     "title": "확률의 기본 성질",
                     "src": "https://www.canva.com/design/DAHE0hzig3g/gCebYuXyGrimsNtlwODBkw/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 확률의 기본 성질 탐험 (공사건·전사건)",
+                    "subject": "probability_new",
+                    "slug": "mini/prob_basic_properties",
                 },
                 #{
                 #    "type": "gsheet",
@@ -287,24 +305,12 @@ CURRICULUM = [
                 #    "subject": "probability",
                 #    "slug": "buffon_needle_p5"
                 #},
-                {
-                    "type": "activity",
-                    "title": "미니: 뷔퐁의 바늘 실험 (π 추정 시뮬레이터)",
-                    "subject": "probability_new",
-                    "slug": "mini/buffon_needle_mini",
-                },
                 #{
                 #    "type": "iframe",
                 #    "title": "뷔퐁의 바늘 실험(일리노이대)",
                 #    "src": "https://mste.illinois.edu/activity/buffon/",
                 #    "height": 800
-                #},
-                {
-                    "type": "activity",
-                    "title": "미니: 베르트랑의 역설 시뮬레이터",
-                    "subject": "probability_new",
-                    "slug": "mini/bertrand_paradox_mini",
-                }
+                #}
           ]},
           {"key": "2-1-2", "label": "확률의 덧셈정리", "items": [
                 {
@@ -319,18 +325,18 @@ CURRICULUM = [
                     "src": "https://www.canva.com/design/DAHE0qz9KNg/F37GtZ99uPIUJzWdiKEk7Q/view?embed",
                     "height": 800
                 },
-                {
-                    "type": "activity",
-                    "title": "몬티홀 문제",
-                    "subject": "probability",
-                    "slug": "monty_hall_p5"
-                },
-                {
-                    "type": "activity",
-                    "title": "몬티홀 문제(확장)",
-                    "subject": "probability",
-                    "slug": "monty_hall_extended_p5"
-                }
+                #{
+                #    "type": "activity",
+                #    "title": "몬티홀 문제",
+                #    "subject": "probability",
+                #    "slug": "monty_hall_p5"
+                #},
+                #{
+                #    "type": "activity",
+                #    "title": "몬티홀 문제(확장)",
+                #    "subject": "probability",
+                #    "slug": "monty_hall_extended_p5"
+                #}
           ]},
           {"key": "2-1-3", "label": "중단원 마무리 문제", "items": [
                 {

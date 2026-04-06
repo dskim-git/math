@@ -419,6 +419,12 @@ CURRICULUM = [
                                 "src": "https://www.canva.com/design/DAHE7ZMRi-s/1RnXe5hXXX1eOBJrecMJeg/view?embed",
                                 "height": 800
                             },
+                            {
+                                "type": "activity",
+                                "title": "📐 이차함수·직선 위치관계 실험실",
+                                "subject": "common",
+                                "slug": "mini/quad_line_position_explorer"
+                            },
                         ],
                     },
                     {
