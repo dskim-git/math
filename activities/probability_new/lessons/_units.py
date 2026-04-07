@@ -320,6 +320,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 확률의 덧셈정리 탐험",
+                    "subject": "probability_new",
+                    "slug": "mini/prob_addition_theorem",
+                },
+                {
                     "type": "canva",
                     "title": "여사건의 확률",
                     "src": "https://www.canva.com/design/DAHE0qz9KNg/F37GtZ99uPIUJzWdiKEk7Q/view?embed",
