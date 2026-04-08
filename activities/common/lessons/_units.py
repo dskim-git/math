@@ -443,6 +443,12 @@ CURRICULUM = [
                                 "src": "https://www.canva.com/design/DAHE7l6rADk/ByrggqhWTQFvOcGijaIaGA/view?embed",
                                 "height": 800
                             },
+                            {
+                                "type": "activity",
+                                "title": "📈 이차함수의 최대·최소 탐구 (미니활동)",
+                                "slug": "mini/quad_maxmin_explorer",
+                                "subject": "common",
+                            },
                         ],
                     },
                     {
