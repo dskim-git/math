@@ -449,6 +449,12 @@ CURRICULUM = [
                                 "slug": "mini/quad_maxmin_explorer",
                                 "subject": "common",
                             },
+                            {
+                                "type": "activity",
+                                "title": "🏗️ 이차함수 최대·최소 실생활 탐구 (미니활동)",
+                                "slug": "mini/quad_maxmin_reallife",
+                                "subject": "common",
+                            },
                         ],
                     },
                     {
