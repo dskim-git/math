@@ -868,7 +868,7 @@ def render():
     ])
 
     with tab1:
-        components.html(_HTML_TAB1, height=1220, scrolling=False)
+        components.html(_HTML_TAB1, height=1420, scrolling=False)
 
     with tab2:
         components.html(_HTML_TAB2, height=1550, scrolling=False)

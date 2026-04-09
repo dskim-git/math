@@ -319,6 +319,13 @@ function castVote(c) {
   nextStep(1);
   document.querySelectorAll('#s1 .btn').forEach(function(b){b.disabled=true});
 }
+function reportHeight(){
+  var h = document.documentElement.scrollHeight;
+  window.parent.postMessage({type:'streamlit:setFrameHeight',height:h},'*');
+}
+var _ro = new ResizeObserver(reportHeight);
+_ro.observe(document.body);
+reportHeight();
 </script>
 </body>
 </html>"""
@@ -556,6 +563,13 @@ function showReveal2(){
   document.getElementById('reveal2-prompt').querySelector('button').disabled=true;
   setTimeout(function(){document.getElementById('reveal2').scrollIntoView({behavior:'smooth',block:'nearest'})},80);
 }
+function reportHeight(){
+  var h = document.documentElement.scrollHeight;
+  window.parent.postMessage({type:'streamlit:setFrameHeight',height:h},'*');
+}
+var _ro = new ResizeObserver(reportHeight);
+_ro.observe(document.body);
+reportHeight();
 </script>
 </body>
 </html>"""
@@ -879,6 +893,13 @@ function update(){
   }
 }
 update();
+function reportHeight(){
+  var h = document.documentElement.scrollHeight;
+  window.parent.postMessage({type:'streamlit:setFrameHeight',height:h},'*');
+}
+var _ro = new ResizeObserver(reportHeight);
+_ro.observe(document.body);
+reportHeight();
 </script>
 </body>
 </html>"""
@@ -902,13 +923,13 @@ def render():
     ])
 
     with tab1:
-        components.html(_HTML_TAB1, height=1140, scrolling=False)
+        components.html(_HTML_TAB1, height=1600, scrolling=False)
 
     with tab2:
-        components.html(_HTML_TAB2, height=1300, scrolling=False)
+        components.html(_HTML_TAB2, height=1850, scrolling=False)
 
     with tab3:
-        components.html(_HTML_TAB3, height=920, scrolling=False)
+        components.html(_HTML_TAB3, height=1580, scrolling=False)
 
     st.divider()
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
