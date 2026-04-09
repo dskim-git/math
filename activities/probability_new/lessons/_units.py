@@ -331,6 +331,18 @@ CURRICULUM = [
                     "src": "https://www.canva.com/design/DAHE0qz9KNg/F37GtZ99uPIUJzWdiKEk7Q/view?embed",
                     "height": 800
                 },
+                {
+                    "type": "activity",
+                    "title": "미니: 생일 역설 탐구",
+                    "subject": "probability_new",
+                    "slug": "mini/birthday_paradox_mini",
+                },
+                {
+                    "type": "activity",
+                    "title": "🔀 미니: 심프슨의 역설",
+                    "subject": "probability_new",
+                    "slug": "mini/simpsons_paradox_mini",
+                },
                 #{
                 #    "type": "activity",
                 #    "title": "몬티홀 문제",
