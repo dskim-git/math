@@ -455,6 +455,12 @@ CURRICULUM = [
                                 "slug": "mini/quad_maxmin_reallife",
                                 "subject": "common",
                             },
+                            {
+                                "type": "activity",
+                                "title": "🌉 다리에서 이차함수 찾기 (미니활동)",
+                                "slug": "mini/quad_bridge_curve_fit",
+                                "subject": "common",
+                            },
                         ],
                     },
                     {
