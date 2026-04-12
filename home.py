@@ -1457,6 +1457,17 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
     if user_type == "student":
         if st.button("📖 내 성찰 기록", use_container_width=True, key="_my_reflection_btn"):
             set_route("my_reflection"); _do_rerun()
+        # 활성화된 설문 버튼
+        try:
+            from survey_research_utils import get_config
+            if get_config("pre_active"):
+                if st.button("📋 사전 설문", use_container_width=True, key="_pre_survey_btn"):
+                    set_route("activity", subject="etc", activity="survey_pre"); _do_rerun()
+            if get_config("post_active"):
+                if st.button("📋 사후 설문", use_container_width=True, key="_post_survey_btn"):
+                    set_route("activity", subject="etc", activity="survey_post"); _do_rerun()
+        except Exception:
+            pass
     if st.button("💬 의견 · 오류 접수", use_container_width=True, key="_sidebar_feedback_btn"):
         set_route("feedback"); _do_rerun()
     if user_type in ("student", "general"):
@@ -1496,6 +1507,9 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
             if st.button("📁 Dev Tree (파일 구조 보기)", use_container_width=True,
                          key="_admin_dev_tree_btn"):
                 st.switch_page("pages/99_Dev_Tree.py")
+            if st.button("🗂️ 설문 관리", use_container_width=True,
+                         key="_admin_survey_mgr_btn"):
+                set_route("activity", subject="etc", activity="survey_admin"); _do_rerun()
             if st.button("📥 피드백 게시판", use_container_width=True,
                          key="_admin_feedback_board_btn"):
                 set_route("feedback_board"); _do_rerun()
