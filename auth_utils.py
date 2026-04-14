@@ -144,17 +144,33 @@ def _get_users_spreadsheet_id() -> str:
 
 def _get_or_create_ws(client, sheet_id: str, ws_name: str,
                       header: list, rows: int = 1000):
-    """워크시트를 가져오거나 없으면 생성하여 반환합니다."""
+    """워크시트를 가져오거나 없으면 생성하여 반환합니다.
+    rate limit 등 일시 오류는 SheetsUnavailableError를 발생시킵니다.
+    """
     try:
+        import gspread.exceptions as _gex
         sh = client.open_by_key(sheet_id)
         try:
             return sh.worksheet(ws_name)
-        except Exception:
+        except _gex.WorksheetNotFound:
+            # 시트가 실제로 없을 때만 새로 생성
             ws = sh.add_worksheet(title=ws_name, rows=rows,
                                   cols=len(header) + 2)
             ws.append_row(header)
             return ws
-    except Exception:
+        except Exception as e:
+            if _is_sheets_rate_limit_error(e):
+                raise SheetsUnavailableError(
+                    f"'{ws_name}' 워크시트를 읽는 중 서버가 혼잡합니다."
+                ) from e
+            raise
+    except SheetsUnavailableError:
+        raise
+    except Exception as e:
+        if _is_sheets_rate_limit_error(e):
+            raise SheetsUnavailableError(
+                f"Google Sheets 접속 중 서버가 혼잡합니다."
+            ) from e
         return None
 
 
@@ -256,7 +272,10 @@ def _cached_students(sheet_id: str) -> list[dict]:
     if not client or not sheet_id:
         return []
     ws = _get_or_create_ws(client, sheet_id, WS_STUDENTS, STUDENTS_HEADER)
-    return _safe_get_all_records(ws) if ws else []
+    # ws=None 이면 빈 리스트를 캐시하지 않도록 예외 발생 (캐시 미스로 재시도 유도)
+    if ws is None:
+        raise SheetsUnavailableError("학생 워크시트를 열 수 없습니다.")
+    return _safe_get_all_records(ws)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -265,7 +284,9 @@ def _cached_general(sheet_id: str) -> list[dict]:
     if not client or not sheet_id:
         return []
     ws = _get_or_create_ws(client, sheet_id, WS_GENERAL, GENERAL_HEADER)
-    return _safe_get_all_records(ws) if ws else []
+    if ws is None:
+        raise SheetsUnavailableError("일반인 워크시트를 열 수 없습니다.")
+    return _safe_get_all_records(ws)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -276,8 +297,8 @@ def _cached_grade_perms(sheet_id: str) -> dict[str, set]:
         return {}
     ws = _get_or_create_ws(client, sheet_id, WS_GRADE_PERM,
                            GRADE_PERM_HEADER, rows=20)
-    if not ws:
-        return {}
+    if ws is None:
+        raise SheetsUnavailableError("학년권한 워크시트를 열 수 없습니다.")
     result: dict[str, set] = {}
     for row in _safe_get_all_records(ws):
         grade = str(row.get("학년", "")).strip()
@@ -295,8 +316,8 @@ def _cached_group_perms(sheet_id: str) -> dict[str, set]:
         return {}
     ws = _get_or_create_ws(client, sheet_id, WS_GROUP_PERM,
                            GROUP_PERM_HEADER, rows=50)
-    if not ws:
-        return {}
+    if ws is None:
+        raise SheetsUnavailableError("그룹권한 워크시트를 열 수 없습니다.")
     result: dict[str, set] = {}
     for row in _safe_get_all_records(ws):
         group = _normalize_group_name(row.get("그룹명", ""))
@@ -316,8 +337,8 @@ def _cached_group_lesson_perms(sheet_id: str) -> dict[str, dict[str, set[str]]]:
         return {}
     ws = _get_or_create_ws(client, sheet_id, WS_GROUP_LESSON_PERM,
                            GROUP_LESSON_PERM_HEADER, rows=200)
-    if not ws:
-        return {}
+    if ws is None:
+        raise SheetsUnavailableError("그룹수업권한 워크시트를 열 수 없습니다.")
     result: dict[str, dict[str, set[str]]] = {}
     for row in _safe_get_all_records(ws):
         group = _normalize_group_name(row.get("그룹명", ""))
@@ -335,12 +356,13 @@ def _cached_group_lesson_perms(sheet_id: str) -> dict[str, dict[str, set[str]]]:
 
 # ── 계정 잠금 관련 함수 ──────────────────────────────────────────────────────
 
-@st.cache_data(ttl=30, show_spinner=False)
+@st.cache_data(ttl=60, show_spinner=False)
 def _cached_lockout(sheet_id: str) -> list[dict]:
     client = _get_gspread_client()
     if not client or not sheet_id:
         return []
     ws = _get_or_create_ws(client, sheet_id, WS_LOCKOUT, LOCKOUT_HEADER, rows=200)
+    # 잠금 시트가 없으면 빈 리스트(잠금 없음)로 처리 — 로그인 차단보다 허용이 더 안전
     return _safe_get_all_records(ws) if ws else []
 
 
@@ -795,7 +817,18 @@ def verify_teacher_roster_student(roster_sheet_id: str,
 # ── 마지막 로그인 기록 ────────────────────────────────────────────────────────
 
 def _bump_last_login(ws_name: str, id_col: str, id_val: str) -> None:
-    """마지막 로그인 일시를 Google Sheets에 기록합니다(실패 시 무시)."""
+    """마지막 로그인 일시를 비동기로 기록합니다 (로그인 응답 속도에 영향 없음)."""
+    threading.Thread(
+        target=_bump_last_login_sync,
+        args=(ws_name, id_col, id_val),
+        daemon=True,
+    ).start()
+
+
+def _bump_last_login_sync(ws_name: str, id_col: str, id_val: str) -> None:
+    """마지막 로그인 일시를 Google Sheets에 기록합니다(실패 시 무시).
+    캐시 무효화를 하지 않아 다른 사용자 로그인에 영향을 주지 않습니다.
+    """
     try:
         sheet_id = _get_users_spreadsheet_id()
         client = _get_gspread_client()
@@ -816,16 +849,18 @@ def _bump_last_login(ws_name: str, id_col: str, id_val: str) -> None:
                     break
         if login_col is None:
             return
-        id_idx     = header.index(id_col) + 1
-        login_idx  = header.index(login_col) + 1
-        now_str    = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
-        for i, row in enumerate(ws.get_all_records(), start=2):
-            if str(row.get(id_col, "")).strip() == id_val:
-                ws.update_cell(i, login_idx, now_str)
-                break
-        _clear_auth_caches(clear_users=True)
+        login_idx = header.index(login_col) + 1
+        now_str   = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
+        # find()로 한 번에 행 위치를 찾아 불필요한 전체 읽기 제거
+        import gspread.exceptions as _gex
+        try:
+            cell = ws.find(id_val, in_column=header.index(id_col) + 1)
+            if cell:
+                ws.update_cell(cell.row, login_idx, now_str)
+        except _gex.CellNotFound:
+            pass
+        # 캐시는 무효화하지 않음 — 마지막 로그인 시각은 로그인 로직에 영향 없음
     except Exception as e:
-        # 로그인 성공 자체는 유지하되, 서버 로그에는 남겨 원인 추적 가능하게 함
         print(f"[auth_utils] last login update failed ({ws_name}, {id_col}={id_val}): {e}")
 
 
