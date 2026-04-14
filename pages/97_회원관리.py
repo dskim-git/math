@@ -111,6 +111,7 @@ with _main_col:
         _cached_grade_perms, _cached_group_perms, _cached_group_lesson_perms, _cached_lockout,
         _cached_roster, _cached_teacher_settings,
         get_roster_student_counts, verify_roster_student,
+        SheetsUnavailableError,
         get_roster_debug_info,
         _get_users_spreadsheet_id,
         update_user_status, reset_user_password,
@@ -360,15 +361,19 @@ with _main_col:
                 joined = str(row.get("가입일", ""))
     
                 # 명단 검증 — 교사는 자신의 명단 우선, 없으면 전체 명단으로 폴백
-                if _is_teacher and _teacher_roster_id:
-                    in_roster = verify_teacher_roster_student(_teacher_roster_id, num, name)
-                else:
-                    in_roster = verify_roster_student(sheet_id, num, name)
-                roster_badge = (
-                    "✅ 명단 확인됨"  if in_roster
-                    else "⚠️ 명단에 없음 (학번·이름 불일치 또는 미등록)"
-                )
-                roster_color = "green" if in_roster else "red"
+                try:
+                    if _is_teacher and _teacher_roster_id:
+                        in_roster = verify_teacher_roster_student(_teacher_roster_id, num, name)
+                    else:
+                        in_roster = verify_roster_student(sheet_id, num, name)
+                    roster_badge = (
+                        "✅ 명단 확인됨"  if in_roster
+                        else "⚠️ 명단에 없음 (학번·이름 불일치 또는 미등록)"
+                    )
+                    roster_color = "green" if in_roster else "red"
+                except SheetsUnavailableError:
+                    roster_badge = "⏳ 명단 조회 불가 (서버 혼잡, 잠시 후 새로고침)"
+                    roster_color = "gray"
     
                 # 담당 학급 표시 (교사 명단 우선, 없으면 관리자 명단)
                 _ref_r = _teacher_roster_all if (_is_teacher and _teacher_roster_all) else roster_all

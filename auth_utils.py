@@ -14,11 +14,17 @@
 """
 
 import re
+import time
 import threading
 import bcrypt
 import streamlit as st
 from datetime import datetime, timezone, timedelta
 from typing import Optional
+
+
+class SheetsUnavailableError(Exception):
+    """Google Sheets API를 일시적으로 사용할 수 없을 때 발생합니다 (rate limit 또는 네트워크 오류)."""
+    pass
 
 _KST = timezone(timedelta(hours=9))
 
@@ -157,24 +163,44 @@ def _is_sheets_rate_limit_error(exc: Exception) -> bool:
     return "429" in msg or "Read requests per minute per user" in msg or "Quota exceeded" in msg
 
 
-def _safe_get_all_records(ws) -> list[dict]:
-    try:
-        return ws.get_all_records(numericise_ignore=['all'])
-    except Exception as e:
-        if _is_sheets_rate_limit_error(e):
-            print(f"[auth_utils] sheets read throttled: {e}")
-            return []
-        raise
+def _safe_get_all_records(ws, _retries: int = 2) -> list[dict]:
+    """rate limit 시 최대 _retries회 재시도 후 SheetsUnavailableError를 발생시킵니다."""
+    last_exc: Exception = RuntimeError("unknown")
+    for attempt in range(_retries + 1):
+        try:
+            return ws.get_all_records(numericise_ignore=['all'])
+        except Exception as e:
+            last_exc = e
+            if _is_sheets_rate_limit_error(e):
+                if attempt < _retries:
+                    time.sleep(0.5 * (attempt + 1))   # 0.5s → 1.0s
+                    continue
+                print(f"[auth_utils] sheets read throttled after {_retries+1} attempts: {e}")
+                raise SheetsUnavailableError(
+                    "Google Sheets 읽기 한도를 초과했습니다. 잠시 후 다시 시도해 주세요."
+                ) from e
+            raise
+    raise SheetsUnavailableError("Google Sheets 읽기에 실패했습니다.") from last_exc
 
 
-def _safe_get_all_values(ws) -> list[list[str]]:
-    try:
-        return ws.get_all_values()
-    except Exception as e:
-        if _is_sheets_rate_limit_error(e):
-            print(f"[auth_utils] sheets read throttled: {e}")
-            return []
-        raise
+def _safe_get_all_values(ws, _retries: int = 2) -> list[list[str]]:
+    """rate limit 시 최대 _retries회 재시도 후 SheetsUnavailableError를 발생시킵니다."""
+    last_exc: Exception = RuntimeError("unknown")
+    for attempt in range(_retries + 1):
+        try:
+            return ws.get_all_values()
+        except Exception as e:
+            last_exc = e
+            if _is_sheets_rate_limit_error(e):
+                if attempt < _retries:
+                    time.sleep(0.5 * (attempt + 1))
+                    continue
+                print(f"[auth_utils] sheets read throttled after {_retries+1} attempts: {e}")
+                raise SheetsUnavailableError(
+                    "Google Sheets 읽기 한도를 초과했습니다. 잠시 후 다시 시도해 주세요."
+                ) from e
+            raise
+    raise SheetsUnavailableError("Google Sheets 읽기에 실패했습니다.") from last_exc
 
 
 def _normalize_group_name(group_name: str) -> str:
@@ -224,7 +250,7 @@ def _clear_auth_caches(*, clear_users: bool = False,
 
 # ── 캐시된 데이터 로더 ────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _cached_students(sheet_id: str) -> list[dict]:
     client = _get_gspread_client()
     if not client or not sheet_id:
@@ -233,7 +259,7 @@ def _cached_students(sheet_id: str) -> list[dict]:
     return _safe_get_all_records(ws) if ws else []
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _cached_general(sheet_id: str) -> list[dict]:
     client = _get_gspread_client()
     if not client or not sheet_id:
@@ -242,7 +268,7 @@ def _cached_general(sheet_id: str) -> list[dict]:
     return _safe_get_all_records(ws) if ws else []
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _cached_grade_perms(sheet_id: str) -> dict[str, set]:
     """학년 → 허용 교과 key 집합."""
     client = _get_gspread_client()
@@ -261,7 +287,7 @@ def _cached_grade_perms(sheet_id: str) -> dict[str, set]:
     return result
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _cached_group_perms(sheet_id: str) -> dict[str, set]:
     """그룹명 → 허용 교과 key 집합."""
     client = _get_gspread_client()
@@ -282,7 +308,7 @@ def _cached_group_perms(sheet_id: str) -> dict[str, set]:
     return result
 
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _cached_group_lesson_perms(sheet_id: str) -> dict[str, dict[str, set[str]]]:
     """그룹명 → (교과 key → 허용 unit key 집합)."""
     client = _get_gspread_client()
@@ -450,6 +476,8 @@ def _cached_roster(sheet_id: str) -> list[dict]:
                 return _parse_roster_horizontal(all_values)
 
         return []
+    except SheetsUnavailableError:
+        raise   # rate limit 오류는 상위로 전파해 적절한 안내 메시지 표시
     except Exception:
         return []
 
@@ -582,7 +610,7 @@ def reset_lockout(user_id: str) -> bool:
 
 # ── 교사 설정 ─────────────────────────────────────────────────────────────────
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def _cached_teacher_settings(sheet_id: str) -> list[dict]:
     """교사설정 시트에서 모든 교사 설정을 불러옵니다."""
     client = _get_gspread_client()
@@ -819,13 +847,21 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
                              "grade": str|None, "group": str|None,
                              "allowed_subjects": set|None,
                              "allowed_lessons": dict[str, set[str]]|None}
-      미승인 → {"type": "pending", "id": str}
-      잠금  → {"type": "locked",  "id": str}
+      미승인 → {"type": "pending",         "id": str}
+      잠금  → {"type": "locked",           "id": str}
+      혼잡  → {"type": "service_error",    "message": str}
       실패  → None
     """
     if not user_id or not password:
         return None
+    try:
+        return _authenticate_inner(user_id, password)
+    except SheetsUnavailableError as e:
+        return {"type": "service_error", "message": str(e)}
 
+
+def _authenticate_inner(user_id: str, password: str) -> Optional[dict]:
+    """authenticate()의 실제 구현. SheetsUnavailableError를 그대로 전파합니다."""
     # 관리자
     if user_id == ADMIN_ID:
         admin_hash = _get_admin_hash()
@@ -859,9 +895,9 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
             return None
         grade      = str(row.get("학년", "")).strip()
         grade_perms = _cached_grade_perms(sheet_id)
-        allowed    = grade_perms.get(grade, None)
+        allowed    = grade_perms.get(grade, set())
         # 마지막 로그인은 동기 기록으로 처리해 누락 가능성을 줄임
-        threading.Thread(target=reset_lockout,     args=(user_id,),                          daemon=True).start()
+        threading.Thread(target=reset_lockout, args=(user_id,), daemon=True).start()
         _bump_last_login(WS_STUDENTS, "아이디", user_id)
         return {
             "type": "student",
@@ -890,7 +926,7 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
         lesson_perms = _cached_group_lesson_perms(sheet_id)
         allowed_lessons = lesson_perms.get(group, {}) if group else {}
         # 마지막 로그인은 동기 기록으로 처리해 누락 가능성을 줄임
-        threading.Thread(target=reset_lockout,     args=(user_id,),                          daemon=True).start()
+        threading.Thread(target=reset_lockout, args=(user_id,), daemon=True).start()
         _bump_last_login(WS_GENERAL, "아이디", user_id)
         return {
             "type": "general",
@@ -906,10 +942,19 @@ def authenticate(user_id: str, password: str) -> Optional[dict]:
 
 
 def get_user_permission_snapshot(user_type: str, user_id: str) -> Optional[dict]:
-    """현재 시트 기준으로 사용자의 최신 권한 스냅샷을 반환합니다."""
+    """현재 시트 기준으로 사용자의 최신 권한 스냅샷을 반환합니다.
+    서버 혼잡(SheetsUnavailableError) 시 None을 반환하며 호출자는 기존 세션 값을 유지해야 합니다.
+    """
     if not user_type or not user_id:
         return None
+    try:
+        return _get_user_permission_snapshot_inner(user_type, user_id)
+    except SheetsUnavailableError:
+        return None
 
+
+def _get_user_permission_snapshot_inner(user_type: str, user_id: str) -> Optional[dict]:
+    """실제 구현 — SheetsUnavailableError를 그대로 전파합니다."""
     if user_type == "admin":
         return {
             "type": "admin",
@@ -1005,7 +1050,10 @@ def register_student(student_num: str, name: str, password: str,
     if ws is None:
         return False, "워크시트 연결에 실패했습니다."
 
-    live_students = _safe_get_all_records(ws)
+    try:
+        live_students = _safe_get_all_records(ws)
+    except SheetsUnavailableError:
+        return False, "서버가 혼잡합니다. 잠시 후 다시 시도해 주세요."
     for row in live_students:
         if str(row.get("학번", "")).strip() == student_num:
             return False, "이미 가입된 학번입니다."

@@ -24,6 +24,7 @@ from auth_utils import (
     authenticate, register_student, register_general,
     check_password_policy, is_id_taken, is_student_num_taken,
     ALL_SUBJECTS as _AUTH_SUBJECTS,
+    SheetsUnavailableError as _SheetsUnavailableError,
 )
 
 @lru_cache(maxsize=256)
@@ -376,7 +377,8 @@ def _get_login_allowed_subjects() -> Optional[set]:
     None = 제한 없음(관리자 또는 미설정), set = 허용 key 목록."""
     if _is_dev_mode():
         return None
-    if st.session_state.get("_user_type") == "general":
+    user_type = st.session_state.get("_user_type", "")
+    if user_type == "general":
         raw = st.session_state.get("_login_allowed_subjects", set())
         if raw is None:
             return set()
@@ -385,6 +387,18 @@ def _get_login_allowed_subjects() -> Optional[set]:
         if isinstance(raw, (list, tuple)):
             return {str(v).strip() for v in raw if str(v).strip()}
         return set()
+    if user_type == "student":
+        raw = st.session_state.get("_login_allowed_subjects", None)
+        # None = rate limit 등으로 권한을 못 읽은 것 → 빈 집합(접근 불가)으로 안전 처리
+        # admin은 None이 "무제한"이지만 student는 명시적 허용 목록이 있어야 함
+        if raw is None:
+            return set()
+        if isinstance(raw, set):
+            return raw
+        if isinstance(raw, (list, tuple)):
+            return {str(v).strip() for v in raw if str(v).strip()}
+        return set()
+    # admin (None = 제한 없음)
     return st.session_state.get("_login_allowed_subjects", None)
 
 
@@ -412,23 +426,46 @@ def _get_login_allowed_units(subject_key: str) -> Optional[set[str]]:
     return set()
 
 
+_PERM_REFRESH_INTERVAL = 300  # 권한 갱신 최소 간격 (초) — API 호출 빈도 제어
+
+
 def _refresh_current_user_permissions() -> None:
-    """현재 로그인 사용자의 최신 권한을 시트 기준으로 세션에 반영합니다."""
+    """현재 로그인 사용자의 최신 권한을 시트 기준으로 세션에 반영합니다.
+
+    매 렌더링마다 Sheets를 호출하면 rate limit 병목이 생기므로,
+    세션 내 마지막 갱신 시각 기준으로 _PERM_REFRESH_INTERVAL 초에 1회만 호출합니다.
+    서버 혼잡(SheetsUnavailableError) 시에는 기존 세션 권한을 그대로 유지합니다.
+    """
     user_type = st.session_state.get("_user_type", "")
     user_id = st.session_state.get("_user_id", "")
     if not user_type or not user_id:
         return
 
+    # ── 세션별 쓰로틀링: 마지막 갱신 후 _PERM_REFRESH_INTERVAL 초 미경과 시 스킵 ──
+    from time import monotonic
+    last_refresh = st.session_state.get("_perm_last_refresh", 0.0)
+    if monotonic() - last_refresh < _PERM_REFRESH_INTERVAL:
+        return
+    st.session_state["_perm_last_refresh"] = monotonic()
+
     get_snapshot = getattr(_auth_utils, "get_user_permission_snapshot", None)
     if not callable(get_snapshot):
         return
 
-    snap = get_snapshot(user_type, user_id)
+    try:
+        snap = get_snapshot(user_type, user_id)
+    except _SheetsUnavailableError:
+        # 서버 혼잡: 기존 세션 권한 유지, 다음 간격에 재시도
+        return
     if not snap:
         return
 
     st.session_state["_user_name"] = snap.get("name", st.session_state.get("_user_name", ""))
-    st.session_state["_login_allowed_subjects"] = snap.get("allowed_subjects")
+    new_subjects = snap.get("allowed_subjects")
+    # 학생에게 None이 반환되면(rate limit 등) 기존 세션 값 보존
+    if user_type == "student" and new_subjects is None:
+        return
+    st.session_state["_login_allowed_subjects"] = new_subjects
     st.session_state["_login_allowed_lessons"] = snap.get("allowed_lessons")
 
 
@@ -920,6 +957,12 @@ def login_view():
                         st.error(
                             f"❌ 아이디 또는 비밀번호가 틀렸습니다. "
                             f"(남은 시도: {remaining}회)"
+                        )
+                    elif result.get("type") == "service_error":
+                        # 실패 횟수를 증가시키지 않고 서버 혼잡 안내
+                        st.warning(
+                            "⚠️ 서버가 혼잡하여 인증에 실패했습니다. "
+                            "잠시 후 다시 시도해 주세요."
                         )
                     elif result.get("type") == "locked":
                         st.error(
