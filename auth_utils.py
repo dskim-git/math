@@ -935,7 +935,7 @@ def get_user_permission_snapshot(user_type: str, user_id: str) -> Optional[dict]
                 "name": str(row.get("이름", "")),
                 "grade": grade,
                 "group": None,
-                "allowed_subjects": grade_perms.get(grade, None),
+                "allowed_subjects": grade_perms.get(grade, set()),
                 "allowed_lessons": None,
             }
         return None
@@ -1000,14 +1000,19 @@ def register_student(student_num: str, name: str, password: str,
     year    = datetime.now(_KST).year
     auto_id = f"{year}{student_num}"
 
-    if is_student_num_taken(student_num):
-        return False, "이미 가입된 학번입니다."
-    if is_id_taken(auto_id):
-        return False, f"이미 사용 중인 아이디입니다({auto_id})."
-
+    # 캐시를 우회하고 시트에서 직접 읽어 중복 체크 (race condition 방지)
     ws = _get_or_create_ws(client, sheet_id, WS_STUDENTS, STUDENTS_HEADER)
     if ws is None:
         return False, "워크시트 연결에 실패했습니다."
+
+    live_students = _safe_get_all_records(ws)
+    for row in live_students:
+        if str(row.get("학번", "")).strip() == student_num:
+            return False, "이미 가입된 학번입니다."
+        if str(row.get("아이디", "")).strip() == auto_id:
+            return False, f"이미 사용 중인 아이디입니다({auto_id})."
+    if is_id_taken(auto_id):  # 일반인 아이디와도 중복 체크
+        return False, f"이미 사용 중인 아이디입니다({auto_id})."
 
     hashed  = hash_password(password)
     now_str = datetime.now(_KST).strftime("%Y-%m-%d %H:%M:%S")
