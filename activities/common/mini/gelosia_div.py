@@ -425,7 +425,7 @@ function renderGrid(p, data){
   // row r>0: A[nRows-1-r] (아래일수록 A[0], 위로 갈수록 A[1], ...)
   html+='<div class="gdiv-left-labels" style="width:'+LL+'px">';
   for(let r=0;r<nRows;r++){
-    const leftVal = r===0 ? '' : p.A[nRows-1-r];
+    const leftVal = r===0 ? '' : p.A[r-1];
     html+='<div class="gdiv-ll" style="height:72px;line-height:72px;color:#fbbf24">'+leftVal+'</div>';
   }
   html+='</div>';
