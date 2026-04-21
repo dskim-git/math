@@ -485,22 +485,80 @@ CURRICULUM = [
                     {
                         "key": "2-3-1",
                         "label": "삼차방정식과 사차방정식",
-                        "items": [],
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "삼차방정식과 사차방정식의 풀이",
+                                "src": "https://www.canva.com/design/DAHHbyPhIYs/lsLR_Pm-rR__YK36OcU5eQ/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "삼차방정식과 사차방정식의 활용",
+                                "src": "https://www.canva.com/design/DAHHbxzHqBM/4GDOralpxhcXeYumy4vngA/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "w-법칙",
+                                "src": "https://www.canva.com/design/DAHHbyJLhtY/t8IhmlA4upQDfvON6Ns_FQ/view?embed",
+                                "height": 800
+                            }
+                        ],
                     },
                     {
                         "key": "2-3-2",
                         "label": "연립이차방정식",
-                        "items": [],
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "미지수가 2개인 연립이차방정식",
+                                "src": "https://www.canva.com/design/DAHHb5kNV0E/L2ivZ9Pjbvc8JGvuo7gwvw/view?embed",
+                                "height": 800
+                            }
+                        ],
                     },
                     {
                         "key": "2-3-3",
                         "label": "연립일차부등식",
-                        "items": [],
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "미지수가 1개인 연립일차부등식",
+                                "src": "https://www.canva.com/design/DAHHb9jqa8Y/mo9f4Ug5I51hZdYMR7DQ-g/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "절댓값을 포함한 일차부등식",
+                                "src": "https://www.canva.com/design/DAHHb8CZid4/GsuMyDU3dOwz751vtqsUxg/view?embed",
+                                "height": 800
+                            }
+                        ],
                     },
                     {
                         "key": "2-3-4",
                         "label": "이차부등식과 연립이차부등식",
-                        "items": [],
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "이차부등식과 이차함수의 그래프",
+                                "src": "https://www.canva.com/design/DAHHbz03zgQ/rmNIom715GhwzWOkxiQaSQ/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "이차부등식의 해",
+                                "src": "https://www.canva.com/design/DAHHb2VlOsk/xOY-27XtUEJLSqg7umpGuw/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "연립이차부등식",
+                                "src": "https://www.canva.com/design/DAHHb97cGSM/jkWhZ_wESwri1jWVyCNdHQ/view?embed",
+                                "height": 800
+                            }
+                        ],
                     },
                     {
                         "key": "2-3-5",
@@ -549,17 +607,204 @@ CURRICULUM = [
                     {
                         "key": "3-1-1",
                         "label": "합의 법칙과 곱의 법칙",
-                        "items": [],
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "합의 법칙",
+                                "src": "https://www.canva.com/design/DAHHb314kpY/i0bcYzULGOHOIVP6lH07ow/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "곱의 법칙",
+                                "src": "https://www.canva.com/design/DAHHb6IfcsU/4y09zB97RqVnLDwllsI0Tw/view?embed",
+                                "height": 800
+                            }
+                        ],
                     },
                     {
                         "key": "3-1-2",
                         "label": "순열",
-                        "items": [],
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "순열",
+                                "src": "https://www.canva.com/design/DAHHbz68Whc/2SUTctbM_Lbyj3VYHPnpgg/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "계승",
+                                "src": "https://www.canva.com/design/DAHHb07u12o/aq-lMHKzEYjpT0lr_FvXOA/view?embed",
+                                "height": 800
+                            }
+                        ],
                     },
                     {
                         "key": "3-1-3",
                         "label": "조합",
-                        "items": [],
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "조합",
+                                "src": "https://www.canva.com/design/DAHHbwVkFrk/hC2D0U2rHWq0t7PN_R2xqw/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "조합의 성질",
+                                "src": "https://www.canva.com/design/DAHHb1kmgnw/bbS8YERDM__q_I_rzAqgGw/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "경우의 수 관련 활동",
+                                "src": "https://www.canva.com/design/DAHHb_e10w8/ivJuDyifG4baDWLyP-y7jg/view?embed",
+                                "height": 800
+                            }
+                        ],
+                    },
+                    {
+                        "key": "3-1-4",
+                        "label": "중단원 점검하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "중단원 마무리 문제",
+                                "src": "https://drive.google.com/file/d/10krBfUGNSiQ1zIHEneodCLUW7M1cYF2_/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=10krBfUGNSiQ1zIHEneodCLUW7M1cYF2_"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
+                    },
+                ],
+            },
+            {
+                "key": "3-2",
+                "label": "대단원 평가하기",
+                "children": [
+                    {
+                        "key": "3-2-1",
+                        "label": "대단원 평가하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "대단원 평가하기",
+                                "src": "https://drive.google.com/file/d/1WnMPm0cknbDnpz3XjCKzMfvVY0e4AUCF/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=1WnMPm0cknbDnpz3XjCKzMfvVY0e4AUCF"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        "key": "4",
+        "label": "[4] 행렬",
+        "children": [
+            {
+                "key": "4-1",
+                "label": "(1) 행렬과 그 연산",
+                "children": [
+                    {
+                        "key": "4-1-1",
+                        "label": "행렬의 뜻",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "행렬의 뜻",
+                                "src": "https://www.canva.com/design/DAHHb01kNB0/pxxJqS1xQ7yeCBJ4kzF9zQ/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "행렬의 상등",
+                                "src": "https://www.canva.com/design/DAHHb95LzP0/pqciQUO17pfhVG1G8ejdDA/view?embed",
+                                "height": 800
+                            }
+                        ],
+                    },
+                    {
+                        "key": "4-1-2",
+                        "label": "행렬의 덧셈과 뺄셈, 실수배",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "행렬의 덧셈",
+                                "src": "https://www.canva.com/design/DAHHb1C-BsM/9uR7gp5SPjYxSk6uh2EJCQ/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "행렬의 뺄셈",
+                                "src": "https://www.canva.com/design/DAHHb-hTRcY/IgIp03ne1WQUo78avIrRPg/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "행렬의 실수배",
+                                "src": "https://www.canva.com/design/DAHHb5Z-Crw/bawSGqne4wR7H4EUEXGBVQ/view?embed",
+                                "height": 800
+                            }
+                        ],
+                    },
+                    {
+                        "key": "4-1-3",
+                        "label": "행렬의 곱셈",
+                        "items": [
+                            {
+                                "type": "canva",
+                                "title": "행렬의 곱셈",
+                                "src": "https://www.canva.com/design/DAHHbw2oB4Y/XssuVNyVUSmqe-a9mauyPg/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "단위행렬",
+                                "src": "https://www.canva.com/design/DAHHb-iwSlk/GVIsVzdXBEIM021Rhd6YQg/view?embed",
+                                "height": 800
+                            },
+                            {
+                                "type": "canva",
+                                "title": "행렬 관련 활동",
+                                "src": "https://www.canva.com/design/DAHHb7ei_6w/HMyIdZzwGqvG__ryj5Wr3w/view?embed",
+                                "height": 800
+                            }
+                        ],
+                    },
+                    {
+                        "key": "4-1-4",
+                        "label": "중단원 점검하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "중단원 마무리 문제",
+                                "src": "https://drive.google.com/file/d/1Ax1WNJnEshA2YXYjOaZpK19w-N6goGBG/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=1Ax1WNJnEshA2YXYjOaZpK19w-N6goGBG"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
+                    },
+                ],
+            },
+            {
+                "key": "4-2",
+                "label": "대단원 평가하기",
+                "children": [
+                    {
+                        "key": "4-2-1",
+                        "label": "대단원 평가하기",
+                        "items": [
+                            {
+                                "type": "pdf",
+                                "title": "대단원 평가하기",
+                                "src": "https://drive.google.com/file/d/1Ecc7Lhm5UhHL7BFRoPKoZY1Fvk7VZH3p/preview",
+                                #"height": 900,
+                                "download": "https://drive.google.com/uc?export=download&id=1Ecc7Lhm5UhHL7BFRoPKoZY1Fvk7VZH3p"  # (선택) 다운로드 버튼 표시용
+                            }
+                        ],
                     },
                 ],
             },
