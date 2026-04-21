@@ -1133,7 +1133,7 @@ def login_view():
             with st.container():
                 st.markdown('<div class="debug-panel-header">🐛 LOCAL DEBUG — 빠른 접속</div>',
                             unsafe_allow_html=True)
-                _dc = st.columns(len(_DEBUG_ROLES))
+                _dc = st.columns(len(_DEBUG_ROLES) + 1)
                 _CLEAR = ["_authenticated", "_user_type", "_user_id", "_user_name",
                           "_dev_mode", "_login_allowed_subjects",
                           "_login_allowed_lessons", "_visit_logged"]
@@ -1144,6 +1144,22 @@ def login_view():
                                 st.session_state.pop(_k, None)
                             st.session_state.update(_data)
                             _do_rerun()
+                with _dc[-1]:
+                    if st.button("📱 모바일", use_container_width=True, key="_dbg_mobile_inline",
+                                 help="모바일 크기(430×932) 팝업으로 미리보기"):
+                        st.session_state["_mobile_popup"] = True
+                        _do_rerun()
+            # 모바일 미리보기 팝업 트리거
+            if st.session_state.pop("_mobile_popup", False):
+                components.html("""
+                <script>
+                window.parent.open(
+                    window.parent.location.href,
+                    'mathlab_mobile',
+                    'width=430,height=932,resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no'
+                );
+                </script>
+                """, height=0)
 
 def _get_subject_filter() -> Optional[str]:
     """URL 우회 토큰 방식은 제거됨. 항상 None(필터 없음)을 반환합니다."""
@@ -3481,6 +3497,22 @@ def _render_debug_sidebar():
                 if data:
                     st.session_state.update(data)
                 _do_rerun()
+
+        # 📱 모바일 미리보기 팝업
+        if st.session_state.pop("_mobile_popup_sidebar", False):
+            components.html("""
+            <script>
+            window.parent.open(
+                window.parent.location.href,
+                'mathlab_mobile',
+                'width=430,height=932,resizable=yes,scrollbars=yes,menubar=no,toolbar=no,location=no'
+            );
+            </script>
+            """, height=0)
+        if st.button("📱 모바일 미리보기", key="_dbg_mobile_sidebar", use_container_width=True,
+                     help="현재 URL을 430×932(iPhone 14) 크기 팝업으로 엽니다"):
+            st.session_state["_mobile_popup_sidebar"] = True
+            _do_rerun()
         st.markdown("---")
 
 
@@ -3608,7 +3640,66 @@ def main():
         with nav_col:
             st.markdown('<div id="__ml_nav__"></div>', unsafe_allow_html=True)
             sidebar_navigation(registry)
+            # ── 모바일 드로어: JS로 column을 fixed 오버레이로 변환 ──
+            components.html("""
+            <script>
+            (function () {
+                if (window.parent.innerWidth > 768) return;
+
+                function applyDrawer() {
+                    var marker = window.parent.document.getElementById('__ml_nav__');
+                    if (!marker) { setTimeout(applyDrawer, 80); return; }
+
+                    /* marker 조상 중 column data-testid 요소 탐색 */
+                    var col = marker.parentElement;
+                    while (col) {
+                        var tid = col.getAttribute('data-testid') || '';
+                        if (tid === 'column' || tid === 'stColumn') break;
+                        col = col.parentElement;
+                    }
+                    if (!col) { setTimeout(applyDrawer, 80); return; }
+                    if (col.dataset.mlDrawer) return;
+                    col.dataset.mlDrawer = '1';
+
+                    /* 드로어 스타일 적용 */
+                    var s = col.style;
+                    s.setProperty('position', 'fixed', 'important');
+                    s.setProperty('top', '0', 'important');
+                    s.setProperty('left', '0', 'important');
+                    s.setProperty('width', 'min(82vw, 300px)', 'important');
+                    s.setProperty('min-width', 'unset', 'important');
+                    s.setProperty('height', '100dvh', 'important');
+                    s.setProperty('overflow-y', 'auto', 'important');
+                    s.setProperty('overflow-x', 'hidden', 'important');
+                    s.setProperty('z-index', '9999', 'important');
+                    s.setProperty('background', '#0d0626', 'important');
+                    s.setProperty('border-right', '1px solid rgba(99,102,241,0.4)', 'important');
+                    s.setProperty('padding', '0.75rem 0.6rem', 'important');
+                    s.setProperty('box-sizing', 'border-box', 'important');
+                    s.setProperty('box-shadow', '4px 0 30px rgba(0,0,0,0.6)', 'important');
+
+                    /* 반투명 오버레이를 body에 추가 */
+                    if (!window.parent.document.getElementById('__ml_ov__')) {
+                        var ov = window.parent.document.createElement('div');
+                        ov.id = '__ml_ov__';
+                        ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;pointer-events:none;';
+                        window.parent.document.body.appendChild(ov);
+                    }
+                }
+                applyDrawer();
+            })();
+            </script>
+            """, height=0)
     else:
+        # 사이드바 닫힘 — 오버레이 정리
+        components.html("""
+        <script>
+        (function() {
+            var ov = window.parent.document.getElementById('__ml_ov__');
+            if (ov) ov.remove();
+        })();
+        </script>
+        """, height=0)
         if st.button("☰  메뉴", key="_hamburger_open_btn", help="메뉴 열기"):
             st.session_state["_sidebar_open"] = True
             _do_rerun()

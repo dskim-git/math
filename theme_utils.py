@@ -517,6 +517,132 @@ section[data-testid="stSidebar"],
 [data-testid="collapsedControl"] {
     display: none !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   반응형 — 태블릿 / 모바일 (≤ 768 px)
+══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+    /* 메인 콘텐츠 여백 축소 */
+    .block-container,
+    [data-testid="stMainBlockContainer"] {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 1rem !important;
+        max-width: 100% !important;
+    }
+
+    /* st.columns() → 수직 스택 */
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    [data-testid="column"],
+    [data-testid="stColumn"] {
+        width: 100% !important;
+        min-width: 100% !important;
+        flex: unset !important;
+    }
+
+    /* 버튼 — 터치 타겟 최소 48 px */
+    .stButton > button,
+    .stButton > button[kind="secondary"],
+    .stButton > button[kind="primary"],
+    .stFormSubmitButton > button {
+        min-height: 48px !important;
+        font-size: 1rem !important;
+        padding: 10px 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+    .stLinkButton > a {
+        min-height: 48px !important;
+        font-size: 1rem !important;
+        padding: 10px 16px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 셀렉트박스 터치 타겟 */
+    [data-baseweb="select"] > div {
+        min-height: 48px !important;
+    }
+
+    /* 입력 필드 — 모바일 폰트 자동 확대 방지 (16px 이상이면 iOS가 확대 안 함) */
+    [data-testid="stTextInput"] input,
+    [data-testid="stTextArea"] textarea,
+    [data-testid="stNumberInput"] input {
+        font-size: 1rem !important;
+        padding: 10px 12px !important;
+    }
+
+    /* 슬라이더 thumb 크게 (터치 편의) */
+    [data-testid="stSlider"] [data-baseweb="slider"] div[role="slider"] {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    /* 탭 — 가로 스크롤 */
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none !important; }
+    .stTabs [data-baseweb="tab"] {
+        white-space: nowrap !important;
+        padding: 8px 14px !important;
+        font-size: 0.9rem !important;
+    }
+
+    /* Plotly / iframe 가로 넘침 방지 */
+    [data-testid="stPlotlyChart"],
+    [data-testid="stPlotlyChart"] > div {
+        max-width: 100% !important;
+        overflow-x: auto !important;
+    }
+    iframe {
+        max-width: 100% !important;
+    }
+
+    /* 메트릭 카드 값 크기 */
+    [data-testid="stMetricValue"] { font-size: 1.5rem !important; }
+
+    /* 제목 크기 */
+    h1 { font-size: 1.6rem !important; }
+    h2 { font-size: 1.3rem !important; }
+    h3 { font-size: 1.1rem !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   반응형 — 소형 스마트폰 (≤ 480 px)
+══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+    .block-container,
+    [data-testid="stMainBlockContainer"] {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    h1 { font-size: 1.4rem !important; }
+    h2 { font-size: 1.15rem !important; }
+
+    /* 카드(border container) 패딩 축소 */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.5rem !important;
+    }
+
+    /* 숫자 입력 버튼 좀 더 크게 */
+    [data-testid="stNumberInput"] button {
+        min-height: 40px !important;
+        min-width: 40px !important;
+    }
+}
 </style>
 """
 
