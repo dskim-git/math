@@ -505,11 +505,23 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🏺 바빌로니아인의 방정식 풀이",
+                                "subject": "common",
+                                "slug": "mini/babylonian_cubic_solver"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "📜 방정식 해법의 역사",
+                                "subject": "common",
+                                "slug": "mini/equation_history_flash"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "w-법칙",
                                 "src": "https://www.canva.com/design/DAHHbyJLhtY/t8IhmlA4upQDfvON6Ns_FQ/view?embed",
                                 "height": 800
-                            }
+                            },
                         ],
                     },
                     {
