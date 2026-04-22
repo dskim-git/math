@@ -1390,14 +1390,44 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
                 _min_key  = f"_{cur_subject}_min"
 
                 def _mark_uc(): st.session_state[_skip_key] = True
+
+                def _compute_sel_key():
+                    """현재 session_state 기준 선택된 노드의 key를 계산합니다."""
+                    _mi = st.session_state.get(_maj_key, 0)
+                    _mids = _ch(_cur_curriculum[_mi]) if _mi < len(_cur_curriculum) else []
+                    if _mids:
+                        _di = st.session_state.get(_mid_key, 0)
+                        _di = _di if _di < len(_mids) else 0
+                        _middle_node = _mids[_di]
+                        _mins = _ch(_middle_node)
+                        if _mins:
+                            _ni = st.session_state.get(_min_key, 0)
+                            _ni = _ni if _ni < len(_mins) else 0
+                            _sel = _mins[_ni]
+                        else:
+                            _sel = _middle_node
+                    else:
+                        _sel = _cur_curriculum[_mi]
+                    return _sel.get("key") if isinstance(_sel, dict) else None
+
                 def _on_maj():
                     st.session_state[_mid_key] = 0
                     st.session_state.pop(_min_key, None)
                     _mark_uc()
+                    _key = _compute_sel_key()
+                    if _key:
+                        set_route("lessons", subject=cur_subject, unit=_key)
                 def _on_mid():
                     st.session_state.pop(_min_key, None)
                     _mark_uc()
-                def _on_min(): _mark_uc()
+                    _key = _compute_sel_key()
+                    if _key:
+                        set_route("lessons", subject=cur_subject, unit=_key)
+                def _on_min():
+                    _mark_uc()
+                    _key = _compute_sel_key()
+                    if _key:
+                        set_route("lessons", subject=cur_subject, unit=_key)
 
                 _majors = _cur_curriculum
                 # ── URL → 세션 동기화 (위젯 렌더 전에 처리) ──────────────────
@@ -2232,14 +2262,19 @@ def lessons_view(subject_key: str):
             else:
                 st.session_state.pop(min_key, None)
 
-        # 현재 선택을 URL unit과 동기화 (다르면 갱신)
+        # 현재 선택을 URL unit과 동기화
+        # on_change 콜백에서 set_route()가 이미 호출됐으므로
+        # 콜백 직후 리런에서는 skip_key가 True — 2차 rerun 방지
         sel_node = minor or middle or majors[maj_idx]
         sel_key = sel_node.get("key") if isinstance(sel_node, dict) else None
         if sel_key and sel_key != unit_qp:
-            st.session_state[skip_key] = True     # ← 갱신 직전 플래그 세팅
+            _from_callback = st.session_state.get(skip_key, False)
+            st.session_state[skip_key] = True
             set_route("lessons", subject=subject_key, unit=sel_key)
-            _do_rerun()
-            return
+            if not _from_callback:
+                # URL로 직접 진입한 경우에만 rerun (콜백 경유는 rerun 스킵)
+                _do_rerun()
+                return
 
         # ── 렌더 ──
         items_node = None

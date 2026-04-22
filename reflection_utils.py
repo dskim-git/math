@@ -433,32 +433,28 @@ def render_reflection_form(
     </script>
     """, height=0)
 
-    # ── 개별 위젯 (st.form 대신 session_state 키 사용) ─────────────────────
-    # 이렇게 하면 같은 세션 내 rerun이 일어나도 입력 내용이 유지됩니다.
-    values: dict = {}
-    for q in questions:
-        qtype = q.get("type", "text_input")
-        _wkey = f"_refl_{sheet_name}_{q.get('key', '')}"
-        if qtype == "markdown":
-            st.markdown(q["text"])
-        elif qtype == "text_input":
-            values[q["key"]] = st.text_input(
-                q["label"],
-                placeholder=q.get("placeholder", ""),
-                key=_wkey,
-            )
-        elif qtype == "text_area":
-            values[q["key"]] = st.text_area(
-                q["label"],
-                height=q.get("height", 80),
-                placeholder=q.get("placeholder", ""),
-                key=_wkey,
-            )
+    # ── st.form(): 입력 중 rerun 없음 → 깜빡임 방지 ─────────────────────────
+    with st.form(f"reflection_{sheet_name}", clear_on_submit=True):
+        values: dict = {}
+        for q in questions:
+            qtype = q.get("type", "text_input")
+            if qtype == "markdown":
+                st.markdown(q["text"])
+            elif qtype == "text_input":
+                values[q["key"]] = st.text_input(
+                    q["label"],
+                    placeholder=q.get("placeholder", ""),
+                )
+            elif qtype == "text_area":
+                values[q["key"]] = st.text_area(
+                    q["label"],
+                    height=q.get("height", 80),
+                    placeholder=q.get("placeholder", ""),
+                )
 
-    submitted = st.button(
-        "📤 제출하기", use_container_width=True, type="primary",
-        key=f"_refl_submit_{sheet_name}",
-    )
+        submitted = st.form_submit_button(
+            "📤 제출하기", use_container_width=True, type="primary"
+        )
 
     if submitted:
         payload = {
@@ -481,16 +477,12 @@ def render_reflection_form(
                     args=(sheet_name, gas_url, payload, _short_id),
                     daemon=True,
                 ).start()
-                # localStorage 초안 삭제
+                # 제출 성공 시 localStorage 초안 삭제
                 _components.html(f"""
                 <script>
                 try {{ localStorage.removeItem('ml_refl__{_safe_sheet}__draft'); }} catch(e) {{}}
                 </script>
                 """, height=0)
-                # 제출 후 위젯 값 초기화
-                for _q in questions:
-                    _k = f"_refl_{sheet_name}_{_q.get('key', '')}"
-                    st.session_state.pop(_k, None)
             else:
                 st.error(f"제출 중 오류가 발생했습니다. (상태코드: {resp.status_code})")
         except Exception as exc:

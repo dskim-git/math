@@ -493,6 +493,12 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🔢 삼·사차방정식 풀이 탐구",
+                                "subject": "common",
+                                "slug": "mini/cubic_quartic_equation_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "삼차방정식과 사차방정식의 활용",
                                 "src": "https://www.canva.com/design/DAHHbxzHqBM/4GDOralpxhcXeYumy4vngA/view?embed",

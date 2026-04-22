@@ -379,24 +379,25 @@ div.stAlert[data-testid="stAlert-error"]   { background: rgba(239,68,68,0.10)  !
 div.stAlert[data-testid="stAlert-success"] { background: rgba(34,197,94,0.10)  !important; border-color: rgba(34,197,94,0.30)  !important; }
 
 /* ══════════════════════════════════════════════════════════════════════
-   화면 전환 잔상 제거 — rerun 중 stale 요소 즉시 숨김
+   화면 전환 — rerun 시 깜빡임 최소화
 ══════════════════════════════════════════════════════════════════════ */
-/* Streamlit rerun 시 오래된 요소(stale)를 투명하게 처리 */
+/* stale 요소: 즉시 숨김 대신 짧게 유지해서 깜빡임 방지 */
 .element-container.stale,
 .stale,
 [data-stale="true"] {
-    opacity: 0 !important;
-    transition: opacity 0.05s !important;
+    opacity: 0.15 !important;
+    transition: opacity 0.08s ease !important;
+    pointer-events: none !important;
 }
-/* 새로운 요소가 나타날 때 부드럽게 페이드인 */
+/* 새 요소: 아주 짧은 페이드인 (너무 길면 오히려 느려 보임) */
 .element-container {
-    animation: st-fadeIn 0.15s ease-out;
+    animation: st-fadeIn 0.08s ease-out;
 }
 @keyframes st-fadeIn {
-    from { opacity: 0; }
+    from { opacity: 0.4; }
     to   { opacity: 1; }
 }
-/* iframe(활동 콘텐츠) 전환 시 깜빡임 최소화 */
+/* iframe 전환 시 깜빡임 최소화 */
 iframe {
     transition: opacity 0.1s ease !important;
 }
