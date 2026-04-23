@@ -539,7 +539,13 @@ CURRICULUM = [
                                 "title": "미지수가 2개인 연립이차방정식",
                                 "src": "https://www.canva.com/design/DAHHb5kNV0E/L2ivZ9Pjbvc8JGvuo7gwvw/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🎯 연립이차방정식 해의 개수 스피드퀴즈",
+                                "subject": "common",
+                                "slug": "mini/simultaneous_quadratic_quiz"
+                            },
                         ],
                     },
                     {
