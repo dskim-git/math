@@ -522,6 +522,12 @@ CURRICULUM = [
                                 "src": "https://www.canva.com/design/DAHHbyJLhtY/t8IhmlA4upQDfvON6Ns_FQ/view?embed",
                                 "height": 800
                             },
+                            {
+                                "type": "activity",
+                                "title": "🌀 ω-법칙 탐구",
+                                "subject": "common",
+                                "slug": "mini/omega_law_explorer"
+                            },
                         ],
                     },
                     {
