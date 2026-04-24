@@ -545,7 +545,7 @@ CURRICULUM = [
                                 "title": "🎯 연립이차방정식 해의 개수 스피드퀴즈",
                                 "subject": "common",
                                 "slug": "mini/simultaneous_quadratic_quiz"
-                            },
+                            }
                         ],
                     },
                     {
@@ -559,11 +559,23 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "📏 연립일차부등식 수직선 탐구",
+                                "subject": "common",
+                                "slug": "mini/linear_ineq_system_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "절댓값을 포함한 일차부등식",
                                 "src": "https://www.canva.com/design/DAHHb8CZid4/GsuMyDU3dOwz751vtqsUxg/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "📐 절댓값 부등식 탐구",
+                                "subject": "common",
+                                "slug": "mini/abs_value_ineq_explorer"
+                            },
                         ],
                     },
                     {
