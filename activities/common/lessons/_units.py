@@ -595,6 +595,12 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "📊 이차부등식과 그래프 탐구",
+                                "subject": "common",
+                                "slug": "mini/quad_ineq_graph_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "연립이차부등식",
                                 "src": "https://www.canva.com/design/DAHHb97cGSM/jkWhZ_wESwri1jWVyCNdHQ/view?embed",
