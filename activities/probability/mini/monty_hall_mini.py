@@ -1064,7 +1064,7 @@ function revealGroup(arr){
 </html>
 """.replace("__GOAT__", goat_uri).replace("__CAR__", car_uri)
 
-    components.html(html, height=1000, scrolling=True)
+    components.html(html, height=2900, scrolling=True)
 
     # ── 성찰 기록 폼 ────────────────────────────────────────────────────────
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)

@@ -379,10 +379,34 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
+                    "subject": "probability",
+                    "slug": "mini/odd_prime_conditional",   # 👈 파일명
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 조건부확률 탐험기 (주사위·공·카드)",
+                    "subject": "probability_new",
+                    "slug": "mini/conditional_prob_explorer",
+                },
+                {
                     "type": "canva",
                     "title": "베이즈 정리와 몬티홀 문제",
                     "src": "https://www.canva.com/design/DAHHun0TwPc/dfBTMOWl1vTJYQvoKsKGMQ/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 베이즈 정리 탐구",
+                    "subject": "probability_new",
+                    "slug": "mini/bayes_theorem_mini",
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 몬티홀 문제 시뮬레이터",
+                    "subject": "probability",
+                    "slug": "mini/monty_hall_mini",
                 },
                 {
                     "type": "canva",
@@ -390,18 +414,18 @@ CURRICULUM = [
                     "src": "https://www.canva.com/design/DAHHtj9V3gk/MAt-nX9jo26AolBCJa5vVQ/view?embed",
                     "height": 800
                 },
-                #{
-                #    "type": "activity",
-                #    "title": "미니: 몬티홀 문제 시뮬레이터",
-                #    "subject": "probability",
-                #    "slug": "mini/monty_hall_mini",
-                #},
-                #{
-                #    "type": "activity",
-                #    "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
-                #    "subject": "probability",
-                #    "slug": "mini/odd_prime_conditional",   # 👈 파일명
-                #},
+                {
+                    "type": "activity",
+                    "title": "🎲 신기한(비추이적) 주사위",
+                    "subject": "probability_new",
+                    "slug": "mini/nontransitive_dice",
+                },
+                {
+                    "type": "canva",
+                    "title": "AI로 공정한 게임의 확률 검증하기",
+                    "src": "https://www.canva.com/design/DAG2NDANiTM/ZrgIgrdEzKG5g_7eF_gvDQ/view?embed",
+                    "height": 800
+                }
                 #{
                 #    "type": "activity",
                 #    "title": "미니: 확률 수렴 관찰(10,100,1,000...)", 
@@ -422,18 +446,6 @@ CURRICULUM = [
                     "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
                     "height": 800
                 },
-                #{
-                #    "type": "activity",
-                #    "title": "신기한 주사위", 
-                #    "subject": "probability",
-                #    "slug": "mini/nontransitive_dice_lab",
-                #},
-                #{
-                #    "type": "canva",
-                #    "title": "AI로 공정한 게임의 확률 검증하기",
-                #    "src": "https://www.canva.com/design/DAG2NDANiTM/ZrgIgrdEzKG5g_7eF_gvDQ/view?embed",
-                #    "height": 800
-                #},
                 {
                     "type": "youtube",
                     "title": "상금 분배 문제",
