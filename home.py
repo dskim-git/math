@@ -2286,6 +2286,7 @@ def lessons_view(subject_key: str):
             st.info("이 단원에는 아직 자료(items)가 없습니다. `_units.py`의 해당 지점에 items를 추가해 주세요.")
             return
 
+        # 단원이 바뀌었으면 맨 위로 스크롤, 같으면 스크롤 위치 유지
         st.subheader(items_node.get("label", "선택한 단원"))
         st.divider()
 
@@ -2351,6 +2352,7 @@ def lessons_view(subject_key: str):
         cur_idx = st.session_state.get("_lesson_sel_idx", default_idx)
         cur_key = unit_keys[cur_idx]
         data = units[cur_key]
+
         st.subheader(f"단원: {data.get('label','')}")
         st.divider()
 
