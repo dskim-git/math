@@ -375,73 +375,69 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "조건부확률",
-                    "src": "https://www.canva.com/design/DAGNl-3fzAo/dG6Ih5DHeLzB3_-3yFkWmw/view?embed",
+                    "src": "https://www.canva.com/design/DAHHjd-T0pM/t7BwcejOtZqBjDgCMNdJWw/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "activity",
-                    "title": "미니: 몬티홀 문제 시뮬레이터",
-                    "subject": "probability",
-                    "slug": "mini/monty_hall_mini",
+                    "type": "canva",
+                    "title": "베이즈 정리와 몬티홀 문제",
+                    "src": "https://www.canva.com/design/DAHHun0TwPc/dfBTMOWl1vTJYQvoKsKGMQ/view?embed",
+                    "height": 800
                 },
-                {
-                    "type": "activity",
-                    "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
-                    "subject": "probability",
-                    "slug": "mini/odd_prime_conditional",   # 👈 파일명
-                },
-                {
-                    "type": "activity",
-                    "title": "미니: 확률 수렴 관찰(10,100,1,000...)", 
-                    "subject": "probability",
-                    "slug": "mini/odd_prime_convergence",
-                }
-          ]},
-          {"key": "2-2-2", "label": "확률의 곱셈정리", "items": [
                 {
                     "type": "canva",
                     "title": "확률의 곱셈정리",
-                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
+                    "src": "https://www.canva.com/design/DAHHtj9V3gk/MAt-nX9jo26AolBCJa5vVQ/view?embed",
                     "height": 800
                 },
-                {
-                    "type": "activity",
-                    "title": "신기한 주사위", 
-                    "subject": "probability",
-                    "slug": "mini/nontransitive_dice_lab",
-                },
-                {
-                    "type": "canva",
-                    "title": "AI로 공정한 게임의 확률 검증하기",
-                    "src": "https://www.canva.com/design/DAG2NDANiTM/ZrgIgrdEzKG5g_7eF_gvDQ/view?embed",
-                    "height": 800
-                }
+                #{
+                #    "type": "activity",
+                #    "title": "미니: 몬티홀 문제 시뮬레이터",
+                #    "subject": "probability",
+                #    "slug": "mini/monty_hall_mini",
+                #},
+                #{
+                #    "type": "activity",
+                #    "title": "미니: 홀수일 때 소수일 확률 (한 번 실행)",
+                #    "subject": "probability",
+                #    "slug": "mini/odd_prime_conditional",   # 👈 파일명
+                #},
+                #{
+                #    "type": "activity",
+                #    "title": "미니: 확률 수렴 관찰(10,100,1,000...)", 
+                #    "subject": "probability",
+                #    "slug": "mini/odd_prime_convergence",
+                #}
           ]},
-          {"key": "2-2-3", "label": "사건의 독립과 종속", "items": [
+          {"key": "2-2-2", "label": "사건의 독립과 종속", "items": [
                 {
                     "type": "canva",
                     "title": "사건의 독립과 종속",
+                    "src": "https://www.canva.com/design/DAHHtjXp3tM/YHLc81eRZyMuS30Pb8OMXg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "독립시행",
                     "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
                     "height": 800
                 },
+                #{
+                #    "type": "activity",
+                #    "title": "신기한 주사위", 
+                #    "subject": "probability",
+                #    "slug": "mini/nontransitive_dice_lab",
+                #},
+                #{
+                #    "type": "canva",
+                #    "title": "AI로 공정한 게임의 확률 검증하기",
+                #    "src": "https://www.canva.com/design/DAG2NDANiTM/ZrgIgrdEzKG5g_7eF_gvDQ/view?embed",
+                #    "height": 800
+                #},
                 {
                     "type": "youtube",
                     "title": "상금 분배 문제",
                     "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b&start=535",
-                    "height": 800
-                }
-          ]},
-          {"key": "2-2-4", "label": "독립시행의 확률", "items": [
-                {
-                    "type": "canva",
-                    "title": "독립시행",
-                    "src": "https://www.canva.com/design/DAGNl8UMPCw/ksQ3KQ4X1iM2Oqkeaph6AA/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "독립시행의 확률",
-                    "src": "https://www.canva.com/design/DAGNl5tpm-U/FDixwJ7G4_sU_sDAq0SB_A/view?embed",
                     "height": 800
                 },
                 {
@@ -451,7 +447,7 @@ CURRICULUM = [
                     "slug": "binomial_simulator"
                 }
           ]},
-          {"key": "2-2-5", "label": "중단원 마무리 문제", "items": [
+          {"key": "2-2-3", "label": "중단원 마무리 문제", "items": [
                 {
                     "type": "pdf",
                     "title": "중단원 마무리 문제",
@@ -490,19 +486,19 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "확률변수",
-                    "src": "https://www.canva.com/design/DAGPlXhzlhY/SxhvEidQ8E8E2NcPxBSXDw/view?embed",
+                    "src": "https://www.canva.com/design/DAHHjRnO0ko/J64Bs8aj0bS4hYD50_CpGw/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "이산확률변수와 확률질량함수",
-                    "src": "https://www.canva.com/design/DAGPlRs_7yA/CEbhOvfHuo8JL5PnKtbUiQ/view?embed",
+                    "title": "이산확률변수와 확률분포",
+                    "src": "https://www.canva.com/design/DAHHtpfVIuY/fjt5cjcVR2Kdi4xj0UrF4g/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "연속확률변수와 확률밀도함수",
-                    "src": "https://www.canva.com/design/DAGPlflvccI/Ita2MhE6WA61T6wbNILfsA/view?embed",
+                    "title": "연속확률변수와 확률분포",
+                    "src": "https://www.canva.com/design/DAHHtvKWtZM/e1YwzLcb0TIGtuMYa9D4Kw/view?embed",
                     "height": 800
                 }
           ]},
@@ -510,15 +506,13 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "이산확률변수의 기댓값과 표준편차",
-                    "src": "https://www.canva.com/design/DAGPlVNYwTY/jVyt833FOWh8vvOxJpdNmg/view?embed",
+                    "src": "https://www.canva.com/design/DAHHtqGo-6k/DQusCYDoZYH9bAtF_kwPug/view?embed",
                     "height": 800
-                }
-          ]},
-          {"key": "3-1-3", "label": "이산확률변수 aX+b의 평균, 분산, 표준편차", "items": [
+                },
                 {
                     "type": "canva",
                     "title": "이산확률변수 aX+b의 평균과 표준편차",
-                    "src": "https://www.canva.com/design/DAGPlSwzIeE/R_uZ69JnP1om6lBeE5UijA/view?embed",
+                    "src": "https://www.canva.com/design/DAHHtj_-9Aw/9v2LPxicZwwbfuDekrCVVg/view?embed",
                     "height": 800
                 },
                 {
@@ -528,23 +522,23 @@ CURRICULUM = [
                     "height": 800
                 }
           ]},
-          {"key": "3-1-4", "label": "이항분포", "items": [
+          {"key": "3-1-3", "label": "이항분포", "items": [
                 {
                     "type": "canva",
                     "title": "이항분포",
-                    "src": "https://www.canva.com/design/DAGPla1Cvro/HtiMM_RVFELx46wGvk76iw/view?embed",
+                    "src": "https://www.canva.com/design/DAHHtsAfOrM/SD11sAaEr-VB4V1NRgUbuQ/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "이항분포의 평균과 표준편차",
-                    "src": "https://www.canva.com/design/DAGPlRem8xg/hYCHXkQKzbCavXITM80CXw/view?embed",
+                    "title": "이항분포의 평균, 분산, 표준편차",
+                    "src": "https://www.canva.com/design/DAHHthQw6HA/2jFxEgrrAK_wxhoHz2cmHA/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
                     "title": "이항분포의 그래프",
-                    "src": "https://www.canva.com/design/DAGPlWgz3UQ/0GLwwGBBhQRa5JafSZ55cQ/view?embed",
+                    "src": "https://www.canva.com/design/DAHHtlDw-2I/EybNje4V8ld_PBWQqOYwOg/view?embed",
                     "height": 800
                 },
                 {
@@ -556,7 +550,7 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "큰 수의 법칙",
-                    "src": "https://www.canva.com/design/DAGPlZbIltE/uDkL0_1Qcg5b4A_tj6fQuw/view?embed",
+                    "src": "https://www.canva.com/design/DAHHtmIHxYQ/NDR1ngyJdVyRL0e_AkoCLg/view?embed",
                     "height": 800
                 },
                 {
@@ -566,11 +560,11 @@ CURRICULUM = [
                     "slug": "mini/lln_binomial_simple"
                 }
           ]},
-          {"key": "3-1-5", "label": "정규분포", "items": [
+          {"key": "3-1-4", "label": "정규분포", "items": [
                 {
                     "type": "canva",
                     "title": "정규분포",
-                    "src": "https://www.canva.com/design/DAGPlbH_5JI/ubpH_t_WTPU99u-sB-Rjew/view?embed",
+                    "src": "https://www.canva.com/design/DAHHttZIu5s/sPcx8s1EV6pD_13IYxJ8MA/view?embed",
                     "height": 800
                 },
                 {
@@ -582,21 +576,19 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "표준정규분포",
-                    "src": "https://www.canva.com/design/DAGPlg-qoNE/P2cinoqT-ioXTFKQvLtb6Q/view?embed",
+                    "src": "https://www.canva.com/design/DAHHth-zVlo/dBt59aVjfTzSB53aYrk-Wg/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
                     "title": "정규분포의 표준화",
-                    "src": "https://www.canva.com/design/DAGPlvghs60/OysmhTfWoIpbxX35Q2abzQ/view?embed",
+                    "src": "https://www.canva.com/design/DAHHtiQHdp8/XpN9BZZmdcrUyobqH_y8Jg/view?embed",
                     "height": 800
-                }
-          ]},
-          {"key": "3-1-6", "label": "이항분포와 정규분포의 관계", "items": [
+                },
                 {
                     "type": "canva",
                     "title": "이항분포와 정규분포의 관계",
-                    "src": "https://www.canva.com/design/DAGPleUNg4U/51nlL9mmKChTXvKFKr55GQ/view?embed",
+                    "src": "https://www.canva.com/design/DAHHtlDD220/Go3VKHllAg4LBe-HbcovKw/view?embed",
                     "height": 800
                 },
                 {
@@ -604,6 +596,15 @@ CURRICULUM = [
                     "title": "이항분포의 정규 근사", 
                     "subject": "probability",
                     "slug": "binomial_normal_approx",
+                }
+          ]},
+          {"key": "3-1-5", "label": "중단원 마무리 문제", "items": [
+                {
+                    "type": "pdf",
+                    "title": "중단원 마무리 문제",
+                    "src": "https://drive.google.com/file/d/1mSG1Iq91ghij6RGu4TD8pI3FdSjuWWsO/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1mSG1Iq91ghij6RGu4TD8pI3FdSjuWWsO"  # (선택) 다운로드 버튼 표시용
                 }
           ]},
         ],
@@ -616,13 +617,13 @@ CURRICULUM = [
                 {
                     "type": "canva",
                     "title": "모집단과 표본",
-                    "src": "https://www.canva.com/design/DAGS9opzh4Y/uefQkrReWXgNcqXPqPmD9g/view?embed",
+                    "src": "https://www.canva.com/design/DAHHjWpeMM4/1TFOK8RjuqLGfjsgFtpg4Q/view?embed",
                     "height": 800
                 },
                 {
                     "type": "canva",
-                    "title": "표본추출",
-                    "src": "https://www.canva.com/design/DAGS9xLh_3g/BXrxqAs_K6enUC7eEfXEeg/view?embed",
+                    "title": "임의추출",
+                    "src": "https://www.canva.com/design/DAHHuXg-Lcs/k5ZtC2VJ-xpslK3ffT4Hiw/view?embed",
                     "height": 800
                 },
                 {
@@ -630,11 +631,13 @@ CURRICULUM = [
                     "title": "카드 추출하기", 
                     "subject": "probability",
                     "slug": "mini/sampling_cards",
-                },
+                }
+          ]},
+          {"key": "3-2-2", "label": "모평균의 추정", "items": [
                 {
                     "type": "canva",
                     "title": "모평균과 표본평균",
-                    "src": "https://www.canva.com/design/DAGS91-b3vE/4oH3vpKWWgEPdmSKWo7flg/view?embed",
+                    "src": "https://www.canva.com/design/DAHHuYYnToQ/9KwMXGYRpyFzn7LEPj_33A/view?embed",
                     "height": 800
                 },
                 {
@@ -645,8 +648,14 @@ CURRICULUM = [
                 },
                 {
                     "type": "canva",
+                    "title": "표본평균의 평균, 분산, 표준편차",
+                    "src": "https://www.canva.com/design/DAHHuVkY5Nk/_WjjnmteoptPg3Cu1nsfbw/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
                     "title": "표본평균의 분포",
-                    "src": "https://www.canva.com/design/DAGS9z4Un_I/01aa-XnuOLe4unwLzFniBQ/view?embed",
+                    "src": "https://www.canva.com/design/DAHHubQNSZ0/s9MAmaWQRfhqnf_uQn5gAQ/view?embed",
                     "height": 800
                 },
                 {
@@ -660,13 +669,11 @@ CURRICULUM = [
                     "title": "표본평균의 분포", 
                     "subject": "probability",
                     "slug": "sampling_mean_demo_p5",
-                }
-          ]},
-          {"key": "3-2-2", "label": "모평균의 추정", "items": [
+                },
                 {
                     "type": "canva",
                     "title": "모평균의 추정",
-                    "src": "https://www.canva.com/design/DAGS90gRVbo/9uH90_qTyrhm2goy6M41Ug/view?embed",
+                    "src": "https://www.canva.com/design/DAHHuebhCRE/pZdi-cCqw6KItUAt2WXCgw/view?embed",
                     "height": 800
                 },
                 {
@@ -688,6 +695,35 @@ CURRICULUM = [
                     "slug": "ci_length_lab",
                 }
           ]},
+          {"key": "3-2-3", "label": "모비율의 추정", "items": [
+                {
+                    "type": "canva",
+                    "title": "모비율과 표본비율",
+                    "src": "https://www.canva.com/design/DAHHubI7TPY/TE4S7QmetsL7EWiTgCAITg/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "표본비율의 분포",
+                    "src": "https://www.canva.com/design/DAHHuURQStE/HiQwUmv9U6WlYoxcgSj6HA/view?embed",
+                    "height": 800
+                },
+                {
+                    "type": "canva",
+                    "title": "모비율의 추정",
+                    "src": "https://www.canva.com/design/DAHHuZyUjs4/3nw4kr83Dw90dK7kvv5eUA/view?embed",
+                    "height": 800
+                },
+          ]},
+          {"key": "3-2-4", "label": "중단원 마무리 문제", "items": [
+                {
+                    "type": "pdf",
+                    "title": "중단원 마무리 문제",
+                    "src": "https://drive.google.com/file/d/1fuMquRZOaueDf_JoGXeBWh9SJSyigt9G/preview",
+                    #"height": 900,
+                    "download": "https://drive.google.com/uc?export=download&id=1fuMquRZOaueDf_JoGXeBWh9SJSyigt9G"  # (선택) 다운로드 버튼 표시용
+                }
+          ]}
         ],
       },
       {
@@ -697,9 +733,9 @@ CURRICULUM = [
                 {
                     "type": "pdf",
                     "title": "단원평가문제",
-                    "src": "https://drive.google.com/file/d/1GzpmbrVEvP48zQ60gkh7TYDKJAV31Hsv/preview",
+                    "src": "https://drive.google.com/file/d/1PT-xpGi6feHIS2lUEJy1skBvbgBlIrUo/preview",
                     #"height": 900,
-                    "download": "https://drive.google.com/uc?export=download&id=1GzpmbrVEvP48zQ60gkh7TYDKJAV31Hsv"  # (선택) 다운로드 버튼 표시용
+                    "download": "https://drive.google.com/uc?export=download&id=1PT-xpGi6feHIS2lUEJy1skBvbgBlIrUo"  # (선택) 다운로드 버튼 표시용
                 }
         ],
       },
@@ -742,26 +778,6 @@ CURRICULUM = [
                     "type": "canva",
                     "title": "집합의 분할",
                     "src": "https://www.canva.com/design/DAGS9oZDjH0/fNsFxjitrj0nTZrAwmBccA/view?embed",
-                    "height": 800
-                }
-      ]},
-      {"key": "X-3", "label": "모비율의 추정", "items": [
-                {
-                    "type": "canva",
-                    "title": "모비율과 표본비율",
-                    "src": "https://www.canva.com/design/DAGS90stL6s/rMetpkhThK6Ji_AHJuYAeQ/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "집합의 분할",
-                    "src": "https://www.canva.com/design/DAGS99UW0Mg/8ZKtl84JYgpW9KBrW32hPg/view?embed",
-                    "height": 800
-                },
-                {
-                    "type": "canva",
-                    "title": "집합의 분할",
-                    "src": "https://www.canva.com/design/DAGS99puNoY/FYgb8JOvqHhlPQgS0TGebQ/view?embed",
                     "height": 800
                 }
       ]},
