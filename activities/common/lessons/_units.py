@@ -605,6 +605,12 @@ CURRICULUM = [
                                 "title": "연립이차부등식",
                                 "src": "https://www.canva.com/design/DAHHb97cGSM/jkWhZ_wESwri1jWVyCNdHQ/view?embed",
                                 "height": 800
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🛒 최댓값 찾기: 표 vs 수식 (미니활동)",
+                                "subject": "common",
+                                "slug": "mini/quad_ineq_maxmin_reallife"
                             }
                         ],
                     },
