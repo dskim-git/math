@@ -16,28 +16,34 @@ creds_dict = secrets['gcp_service_account']
 creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
 client = gspread.authorize(creds)
 
-# 확률과통계 스프레드시트 열기
-spreadsheet_id = secrets['reflection_spreadsheet_probability_new']
-sh = client.open_by_key(spreadsheet_id)
 
-# 시트명
-sheet_name = '독립과배반탐구'
+def ensure_sheet(sh, sheet_name, headers):
+    """시트가 없으면 생성하고 헤더를 설정합니다."""
+    try:
+        ws = sh.worksheet(sheet_name)
+        first_row = ws.row_values(1)
+        print(f'[OK] "{sheet_name}" 시트 이미 존재 / 헤더: {first_row}')
+    except gspread.exceptions.WorksheetNotFound:
+        ws = sh.add_worksheet(title=sheet_name, rows=10000, cols=len(headers) + 2)
+        ws.append_row(headers)
+        print(f'[NEW] "{sheet_name}" 시트 생성 완료 / 헤더: {headers}')
+    return ws
 
-# 기존 시트 확인
-try:
-    ws = sh.worksheet(sheet_name)
-    print(f'✓ "{sheet_name}" 시트가 이미 존재합니다')
-    # 헤더 확인
-    first_row = ws.row_values(1)
-    print(f'현재 헤더: {first_row}')
-except gspread.exceptions.WorksheetNotFound:
-    # 새 시트 생성
-    ws = sh.add_worksheet(title=sheet_name, rows=10000, cols=12)
-    print(f'✓ "{sheet_name}" 시트를 생성했습니다')
-    
-    # 헤더 설정
-    headers = ['timestamp', '학번', '이름', '배반vs독립', '혼동이유', '독립4쌍', '비추이성', '새롭게알게된점', '느낀점']
-    ws.append_row(headers)
-    print(f'✓ 헤더가 생성되었습니다: {headers}')
+
+# ── 확률과통계 스프레드시트 ────────────────────────────────────────────────
+sh_prob = client.open_by_key(secrets['reflection_spreadsheet_probability_new'])
+print('=== 확률과통계 ===')
+
+ensure_sheet(sh_prob, '독립시행실생활', [
+    'timestamp', '학번', '이름',
+    '독립시행이유', '공식분해', '나만의예시',
+    '새롭게알게된점', '느낀점',
+])
+
+ensure_sheet(sh_prob, '솔직한설문의비밀', [
+    'timestamp', '학번', '이름',
+    '독립시행이유', '조사자모름이유', '확률계산', '한계와개선',
+    '새롭게알게된점', '느낀점',
+])
 
 print('\n✅ 성찰 기록 시트 준비 완료!')

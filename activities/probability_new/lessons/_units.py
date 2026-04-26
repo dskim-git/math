@@ -453,22 +453,34 @@ CURRICULUM = [
                     "slug": "mini/de_mere_letter",
                 },
                 {
-                    "type": "canva",
-                    "title": "독립시행",
-                    "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
-                    "height": 800
-                },
-                {
                     "type": "youtube",
                     "title": "상금 분배 문제",
                     "src": "https://youtu.be/InAIZ3tP_Mk?si=pQoxDuxJBC1AsC3b&start=535",
                     "height": 800
                 },
                 {
+                    "type": "canva",
+                    "title": "독립시행",
+                    "src": "https://www.canva.com/design/DAHHtqOU_1A/wKn6wBnXM-sqjruruk_wUA/view?embed",
+                    "height": 800
+                },
+                {
                     "type": "activity",
-                    "title": "몬테카를로 시뮬레이션",
-                    "subject": "probability",
-                    "slug": "binomial_simulator"
+                    "title": "미니: 독립시행 실생활 탐구",
+                    "subject": "probability_new",
+                    "slug": "mini/independent_trial_apply"
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 솔직한 설문의 비밀 – 무작위 응답 기법",
+                    "subject": "probability_new",
+                    "slug": "mini/random_response_survey"
+                },
+                {
+                    "type": "activity",
+                    "title": "🎲 몬테카를로 시뮬레이션",
+                    "subject": "probability_new",
+                    "slug": "mini/monte_carlo_sim"
                 }
           ]},
           {"key": "2-2-3", "label": "중단원 마무리 문제", "items": [
