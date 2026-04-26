@@ -627,7 +627,7 @@ def render():
     with t3:
         components.html(_HTML_SIM, height=1000, scrolling=False)
     with t4:
-        components.html(_HTML_PASCAL, height=1350, scrolling=False)
+        components.html(_HTML_PASCAL, height=1700, scrolling=False)
     with t5:
         components.html(_HTML_SUMMARY, height=650, scrolling=False)
     st.markdown("---")
