@@ -21,7 +21,7 @@ spreadsheet_id = secrets['reflection_spreadsheet_probability_new']
 sh = client.open_by_key(spreadsheet_id)
 
 # 시트명
-sheet_name = '베르트랑의역설'
+sheet_name = '독립과배반탐구'
 
 # 기존 시트 확인
 try:
@@ -36,7 +36,7 @@ except gspread.exceptions.WorksheetNotFound:
     print(f'✓ "{sheet_name}" 시트를 생성했습니다')
     
     # 헤더 설정
-    headers = ['timestamp', '학번', '이름', '역설설명', '어떤방법이맞나', '중점분포관찰', '통계적확률연결', '실생활연결', '새롭게알게된점', '느낀점']
+    headers = ['timestamp', '학번', '이름', '배반vs독립', '혼동이유', '독립4쌍', '비추이성', '새롭게알게된점', '느낀점']
     ws.append_row(headers)
     print(f'✓ 헤더가 생성되었습니다: {headers}')
 

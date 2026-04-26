@@ -441,6 +441,18 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 독립과 배반 탐구",
+                    "subject": "probability_new",
+                    "slug": "mini/independence_vs_exclusive",
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 드 메레의 편지",
+                    "subject": "probability_new",
+                    "slug": "mini/de_mere_letter",
+                },
+                {
                     "type": "canva",
                     "title": "독립시행",
                     "src": "https://www.canva.com/design/DAGNlxAwu88/yD-UCHkAqRJGp1wInKifRA/view?embed",
