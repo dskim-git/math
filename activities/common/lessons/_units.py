@@ -729,10 +729,28 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🎲 조합 실생활 탐구",
+                                "subject": "common",
+                                "slug": "mini/combination_reallife_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "조합의 성질",
                                 "src": "https://www.canva.com/design/DAHHb1kmgnw/bbS8YERDM__q_I_rzAqgGw/view?embed",
                                 "height": 800
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔺 조합 활용 탐구",
+                                "subject": "common",
+                                "slug": "mini/combination_application_explorer"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔢 조합 등식 탐구",
+                                "subject": "common",
+                                "slug": "mini/combination_identity_explorer"
                             },
                             {
                                 "type": "canva",

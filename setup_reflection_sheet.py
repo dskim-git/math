@@ -30,6 +30,16 @@ def ensure_sheet(sh, sheet_name, headers):
     return ws
 
 
+# ── 공통수학 스프레드시트 ────────────────────────────────────────────────────
+sh_common = client.open_by_key(secrets['reflection_spreadsheet_common'])
+print('=== 공통수학 ===')
+
+ensure_sheet(sh_common, '조합등식탐구', [
+    'timestamp', '학번', '이름',
+    'eq1_insight', 'eq2_insight', 'eq3_insight', 'eq4_insight',
+    '새롭게알게된점', '느낀점',
+])
+
 # ── 확률과통계 스프레드시트 ────────────────────────────────────────────────
 sh_prob = client.open_by_key(secrets['reflection_spreadsheet_probability_new'])
 print('=== 확률과통계 ===')
