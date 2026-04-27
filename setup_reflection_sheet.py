@@ -40,6 +40,12 @@ ensure_sheet(sh_common, '조합등식탐구', [
     '새롭게알게된점', '느낀점',
 ])
 
+ensure_sheet(sh_common, '지도색칠경우의수', [
+    'timestamp', '학번', '이름',
+    '색칠방법수', '색최솟값', '4색정리연결', '조건영향',
+    '새롭게알게된점', '느낀점',
+])
+
 # ── 확률과통계 스프레드시트 ────────────────────────────────────────────────
 sh_prob = client.open_by_key(secrets['reflection_spreadsheet_probability_new'])
 print('=== 확률과통계 ===')

@@ -742,22 +742,34 @@ CURRICULUM = [
                             },
                             {
                                 "type": "activity",
-                                "title": "🔺 조합 활용 탐구",
-                                "subject": "common",
-                                "slug": "mini/combination_application_explorer"
-                            },
-                            {
-                                "type": "activity",
                                 "title": "🔢 조합 등식 탐구",
                                 "subject": "common",
                                 "slug": "mini/combination_identity_explorer"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔺 조합 활용 탐구",
+                                "subject": "common",
+                                "slug": "mini/combination_application_explorer"
                             },
                             {
                                 "type": "canva",
                                 "title": "경우의 수 관련 활동",
                                 "src": "https://www.canva.com/design/DAHHb_e10w8/ivJuDyifG4baDWLyP-y7jg/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "📱 경우의 수로 바라본 하루",
+                                "subject": "common",
+                                "slug": "mini/counting_daily_sumin"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🗺️ 지도 색칠 경우의 수",
+                                "subject": "common",
+                                "slug": "mini/map_coloring_explorer"
+                            },
                         ],
                     },
                     {
