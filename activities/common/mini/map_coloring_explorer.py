@@ -7,6 +7,32 @@ import streamlit as st
 import streamlit.components.v1 as components
 from reflection_utils import render_reflection_form
 
+def _fetch_json(url, timeout=8):
+    try:
+        req = __import__('urllib.request', fromlist=['Request','urlopen'])
+        r = req.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with req.urlopen(r, timeout=timeout) as resp:
+            return resp.read().decode('utf-8')
+    except Exception:
+        return 'null'
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _load_geojson():
+    import pathlib, json as _json
+    base = pathlib.Path(__file__).parent.parent.parent.parent / 'assets' / 'geojson'
+    seoul_path = base / 'seoul_districts.json'
+    usa_path   = base / 'us_states.json'
+    # Read from bundled files (primary)
+    try:
+        seoul = seoul_path.read_text(encoding='utf-8')
+    except Exception:
+        seoul = _fetch_json('https://cdn.jsdelivr.net/gh/southkorea/seoul-maps@master/kostat/2013/json/seoul_municipalities_geo_simple.json')
+    try:
+        usa = usa_path.read_text(encoding='utf-8')
+    except Exception:
+        usa = _fetch_json('https://cdn.jsdelivr.net/gh/python-visualization/folium@main/examples/data/us-states.json')
+    return seoul, usa
+
 _GAS_URL    = st.secrets["gas_url_common"]
 _SHEET_NAME = "지도색칠경우의수"
 
@@ -117,6 +143,12 @@ body{font-family:'Nanum Gothic',sans-serif;background:#0f1123;color:#eee;padding
 .th-card ul{padding-left:20px;margin:8px 0;}
 .hi-box{background:linear-gradient(135deg,#1e3a5e,#1a2a4e);border:2px solid #3ecef7;border-radius:12px;padding:16px;margin:12px 0;text-align:center;}
 .hi-box p{color:#eef;font-size:15px;line-height:1.8;font-weight:bold;}
+.info-toggle{background:none;border:1px solid #7c6fff55;border-radius:8px;padding:9px 14px;color:#9a8fff;font-size:13px;cursor:pointer;width:100%;text-align:left;margin:4px 0;transition:background .2s;}
+.info-toggle:hover{background:#1c1c3e;}
+.info-panel{display:none;background:#12122a;border:1px solid #3a3a6e;border-radius:10px;padding:14px;margin:6px 0 4px;font-size:13px;color:#bbc;line-height:1.9;}
+.info-panel.open{display:block;}
+.ex-box{background:#1a1a3e;border-left:3px solid #7c6fff;padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0;}
+.formula{font-family:'Courier New',monospace;font-size:14px;color:#FFD700;background:#0f0f2a;padding:4px 10px;border-radius:5px;display:inline-block;margin:4px 0;letter-spacing:.04em;}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
@@ -270,6 +302,28 @@ body{font-family:'Nanum Gothic',sans-serif;background:#0f1123;color:#eee;padding
     <div class="status-bar s-neutral" id="t2-status">🖌️ 색을 고른 뒤 자치구를 클릭하여 색칠하세요</div>
     <div class="celebrate" id="t2-celebrate">🎉 완성! 서울 25개 자치구를 인접 규칙에 맞게 색칠했어요! 🎉</div>
   </div>
+  <div class="card" style="padding:10px 14px;">
+    <button class="info-toggle" onclick="toggleInfo('t2-info')">💡 경우의 수를 어떻게 구할까? ▾</button>
+    <div class="info-panel" id="t2-info">
+      <p><b style="color:#FFD700">곱의 법칙</b>을 이용하면 경우의 수를 원리적으로 구할 수 있습니다.</p>
+      <div class="ex-box">
+        <b>간단한 예 — 3개 구역이 일렬로 연결된 경우</b><br>
+        A ─ B ─ C &nbsp;(A↔B 인접, B↔C 인접)<br>
+        A: k가지 &rarr; B: (k−1)가지 &rarr; C: (k−1)가지<br>
+        <span class="formula">k &times; (k−1) &times; (k−1) = k(k−1)²</span><br>
+        4가지 색이면: 4 &times; 3 &times; 3 = <b style="color:#4ECDC4">36가지</b>
+      </div>
+      <p>실제 지도에서는 구역마다 인접한 이웃의 수가 달라 훨씬 복잡합니다.<br>
+      이를 체계적으로 정리한 것이 <b style="color:#3ecef7">채색 다항식 P(G, k)</b>입니다.</p>
+      <div class="ex-box">
+        <b>채색 다항식이란?</b><br>
+        그래프 G를 k가지 색으로 올바르게 색칠하는 방법의 수를 k의 식으로 나타낸 것<br>
+        <span class="formula">P(G, k) &nbsp;= &nbsp;k에 관한 다항식</span><br>
+        → 서울 25개 자치구의 경우 <b>25차 다항식</b>이 됩니다!
+      </div>
+      <p style="color:#aab;font-size:12px;">※ 계산 방법: 구역을 하나씩 추가할 때마다 「이웃과 같은 변 삭제 / 이웃과 합치기」 두 경우를 재귀적으로 처리하는 <em>삭제-수축법(deletion-contraction)</em>을 사용합니다.</p>
+    </div>
+  </div>
   <div class="card" style="padding:6px;">
     <div id="seoulMap" class="leaf-map"></div>
     <div style="font-size:11px;color:#667;margin-top:6px;padding:4px;">※ 대한민국 통계청 행정구역 경계 데이터 기반 (southkorea/seoul-maps). 지도를 드래그/확대·축소할 수 있습니다.</div>
@@ -298,6 +352,26 @@ body{font-family:'Nanum Gothic',sans-serif;background:#0f1123;color:#eee;padding
     </div>
     <div class="status-bar s-neutral" id="t3-status">🖌️ 색을 고른 뒤 주를 클릭하여 색칠하세요</div>
     <div class="celebrate" id="t3-celebrate">🎉 완성! 미국 50개 주를 인접 규칙에 맞게 색칠했어요! 🎉</div>
+  </div>
+  <div class="card" style="padding:10px 14px;">
+    <button class="info-toggle" onclick="toggleInfo('t3-info')">💡 경우의 수를 어떻게 구할까? ▾</button>
+    <div class="info-panel" id="t3-info">
+      <p>서울 25구와 같은 원리로, 미국 50개 주의 <b style="color:#3ecef7">채색 다항식 P(G, k)</b>도 구할 수 있습니다.</p>
+      <div class="ex-box">
+        <b>알래스카(AK)·하와이(HI)의 특수성</b><br>
+        이 두 주는 어느 주와도 인접하지 않으므로 색을 완전히 자유롭게 선택합니다.<br>
+        → 각각 <b>k가지</b> 선택 가능 → 전체 식에 <span class="formula">× k²</span> 기여
+      </div>
+      <div class="ex-box">
+        <b>나머지 48개 주 본토 그래프 G<sub>48</sub></b><br>
+        인접 관계를 그래프로 나타내면 48개 꼭짓점의 평면 그래프<br>
+        <span class="formula">P(전체, k) &nbsp;= &nbsp;P(G₄₈, k) &times; k²</span><br>
+        → 전체는 <b>50차 다항식</b>이 됩니다!
+      </div>
+      <p><b style="color:#FFD700">4색 정리</b>에 따르면 k = 4일 때 P(G, 4) &gt; 0이 반드시 성립합니다.<br>
+      즉 어떤 평면 지도든 4색으로 색칠하는 방법이 <b>반드시 존재</b>합니다.</p>
+      <p style="color:#aab;font-size:12px;">※ 실제 미국 48개 주 본토의 채색 다항식을 k = 4로 계산하면 수십 자리의 엄청난 수가 됩니다.</p>
+    </div>
   </div>
   <div class="card" style="padding:6px;">
     <div id="usaMap" class="leaf-map"></div>
@@ -402,6 +476,10 @@ body{font-family:'Nanum Gothic',sans-serif;background:#0f1123;color:#eee;padding
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// GeoJSON data embedded server-side (replaced in render())
+const SEOUL_GEOJSON=__SEOUL_GEOJSON__;
+const USA_GEOJSON=__USA_GEOJSON__;
+
 const COLORS=['#FF6B6B','#4ECDC4','#45B7D1','#FFA726','#9CCC65','#CE93D8','#FFD54F','#78909C'];
 const CNAMES=['빨강','청록','하늘','주황','초록','보라','노랑','회색'];
 const DEFAULT_FILL='#2a2a55';
@@ -625,32 +703,28 @@ function initSeoulMap(){
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
     maxZoom:19
   }).addTo(map);
-  const loadingEl=document.getElementById('seoulMap');
-  if(loadingEl)loadingEl.style.cursor='wait';
-  fetch('https://raw.githubusercontent.com/southkorea/seoul-maps/master/kostat/2013/json/seoul_municipalities_geo_simple.json')
-    .then(r=>r.json())
-    .then(data=>{
-      if(loadingEl)loadingEl.style.cursor='';
-      const geoLayer=L.geoJSON(data,{
-        style:leafStyle(),
-        onEachFeature:(feature,featureLayer)=>{
-          const props=feature.properties||{};
-          const rawName=props.SIG_KOR_NM||props.sig_kor_nm||props.NAME_2||props.name||'';
-          const rid=normalizeSeoulName(rawName);
-          if(rid&&ADJ[2][rid]!==undefined){
-            LEAF_LAYERS[2][rid]=featureLayer;
-            featureLayer.on('click',()=>paint(2,rid));
-            featureLayer.bindTooltip(rid,{
-              sticky:true,className:'leaflet-tooltip-dark',direction:'top',offset:[0,-4]
-            });
-          }
-        }
-      }).addTo(map);
-      map.fitBounds(geoLayer.getBounds());
-    })
-    .catch(()=>{
-      if(loadingEl)loadingEl.innerHTML='<div style="color:#f77;text-align:center;padding:20px;">지도 데이터를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.</div>';
-    });
+  const data=SEOUL_GEOJSON;
+  if(!data){
+    const el=document.getElementById('seoulMap');
+    if(el)el.innerHTML='<div style="color:#f77;text-align:center;padding:20px;">서울 지도 데이터를 불러올 수 없습니다.</div>';
+    return;
+  }
+  const geoLayer=L.geoJSON(data,{
+    style:leafStyle(),
+    onEachFeature:(feature,featureLayer)=>{
+      const props=feature.properties||{};
+      const rawName=props.SIG_KOR_NM||props.sig_kor_nm||props.NAME_2||props.name||'';
+      const rid=normalizeSeoulName(rawName);
+      if(rid&&ADJ[2][rid]!==undefined){
+        LEAF_LAYERS[2][rid]=featureLayer;
+        featureLayer.on('click',()=>paint(2,rid));
+        featureLayer.bindTooltip(rid,{
+          sticky:true,className:'leaflet-tooltip-dark',direction:'top',offset:[0,-4]
+        });
+      }
+    }
+  }).addTo(map);
+  map.fitBounds(geoLayer.getBounds());
 }
 
 function initUSAMap(){
@@ -662,35 +736,32 @@ function initUSAMap(){
     attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
     maxZoom:19
   }).addTo(map);
-  const loadingEl=document.getElementById('usaMap');
-  fetch('https://raw.githubusercontent.com/python-visualization/folium/main/examples/data/us-states.json')
-    .then(r=>r.json())
-    .then(data=>{
-      const geoLayer=L.geoJSON(data,{
-        style:leafStyle(),
-        onEachFeature:(feature,featureLayer)=>{
-          // feature.id is the 2-letter state abbreviation in folium's GeoJSON
-          let rid=typeof feature.id==='string'&&feature.id.length===2?feature.id:null;
-          if(!rid){
-            const name=(feature.properties&&(feature.properties.name||feature.properties.NAME))||'';
-            rid=STATE_ABBR[name]||null;
-          }
-          if(rid&&ADJ[3][rid]!==undefined){
-            LEAF_LAYERS[3][rid]=featureLayer;
-            featureLayer.on('click',()=>paint(3,rid));
-            const fullName=(feature.properties&&(feature.properties.name||feature.properties.NAME))||rid;
-            featureLayer.bindTooltip(rid+' — '+fullName,{
-              sticky:true,className:'leaflet-tooltip-dark',direction:'top',offset:[0,-4]
-            });
-          }
-        }
-      }).addTo(map);
-      // 미국 본토(48개 주) 위주로 표시
-      map.fitBounds([[24.4,-124.8],[49.4,-66.9]]);
-    })
-    .catch(()=>{
-      if(loadingEl)loadingEl.innerHTML='<div style="color:#f77;text-align:center;padding:20px;">지도 데이터를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.</div>';
-    });
+  const data=USA_GEOJSON;
+  if(!data){
+    const el=document.getElementById('usaMap');
+    if(el)el.innerHTML='<div style="color:#f77;text-align:center;padding:20px;">미국 지도 데이터를 불러올 수 없습니다.</div>';
+    return;
+  }
+  L.geoJSON(data,{
+    style:leafStyle(),
+    onEachFeature:(feature,featureLayer)=>{
+      let rid=typeof feature.id==='string'&&feature.id.length===2?feature.id:null;
+      if(!rid){
+        const name=(feature.properties&&(feature.properties.name||feature.properties.NAME))||'';
+        rid=STATE_ABBR[name]||null;
+      }
+      if(rid&&ADJ[3][rid]!==undefined){
+        LEAF_LAYERS[3][rid]=featureLayer;
+        featureLayer.on('click',()=>paint(3,rid));
+        const fullName=(feature.properties&&(feature.properties.name||feature.properties.NAME))||rid;
+        featureLayer.bindTooltip(rid+' — '+fullName,{
+          sticky:true,className:'leaflet-tooltip-dark',direction:'top',offset:[0,-4]
+        });
+      }
+    }
+  }).addTo(map);
+  // 미국 본토(48개 주) 위주로 표시
+  map.fitBounds([[24.4,-124.8],[49.4,-66.9]]);
 }
 
 // ── tab switching ──────────────────────────────────────────────────────────
@@ -699,15 +770,18 @@ function showTab(n){
   document.querySelectorAll('.tab-btn').forEach((el,i)=>el.classList.toggle('active',i===n));
   if(n===2){
     setTimeout(()=>{
-      initSeoulMap();
-      if(LEAF_MAPS[2])LEAF_MAPS[2].invalidateSize();
-    },120);
+      if(!LEAF_INITED[2])initSeoulMap();
+      else if(LEAF_MAPS[2])LEAF_MAPS[2].invalidateSize({animate:false});
+    },200);
+    setTimeout(()=>{if(LEAF_MAPS[2])LEAF_MAPS[2].invalidateSize({animate:false});},700);
   }else if(n===3){
     setTimeout(()=>{
-      initUSAMap();
-      if(LEAF_MAPS[3])LEAF_MAPS[3].invalidateSize();
-    },120);
+      if(!LEAF_INITED[3])initUSAMap();
+      else if(LEAF_MAPS[3])LEAF_MAPS[3].invalidateSize({animate:false});
+    },200);
+    setTimeout(()=>{if(LEAF_MAPS[3])LEAF_MAPS[3].invalidateSize({animate:false});},700);
   }
+  setTimeout(sendHeight,300);
 }
 
 function showDemo4(){
@@ -715,14 +789,37 @@ function showDemo4(){
   if(el)el.style.display=el.style.display==='none'?'block':'none';
 }
 
+function toggleInfo(id){
+  const el=document.getElementById(id);
+  if(el)el.classList.toggle('open');
+}
+
 function sendHeight(){
   const h=document.documentElement.scrollHeight;
   window.parent.postMessage({type:'streamlit:setFrameHeight',height:h+20},'*');
 }
 
+// Pre-initialize Leaflet maps while containers are briefly forced visible
+// (Leaflet needs non-zero container dimensions to initialize correctly)
+function preInitMaps(){
+  const tabs=document.querySelectorAll('.tab-content');
+  const t2=tabs[2],t3=tabs[3];
+  if(t2&&!LEAF_INITED[2]){t2.style.display='block';t2.style.visibility='hidden';t2.style.pointerEvents='none';}
+  if(t3&&!LEAF_INITED[3]){t3.style.display='block';t3.style.visibility='hidden';t3.style.pointerEvents='none';}
+  if(t2&&!LEAF_INITED[2])void document.getElementById('seoulMap').offsetHeight;
+  if(t3&&!LEAF_INITED[3])void document.getElementById('usaMap').offsetHeight;
+  if(!LEAF_INITED[2])initSeoulMap();
+  if(!LEAF_INITED[3])initUSAMap();
+  if(t2&&t2.style.visibility==='hidden'){t2.style.display='';t2.style.visibility='';t2.style.pointerEvents='';}
+  if(t3&&t3.style.visibility==='hidden'){t3.style.display='';t3.style.visibility='';t3.style.pointerEvents='';}
+}
+
 // Init
 for(let t=0;t<=4;t++)initPalette(t);
-window.addEventListener('load',()=>setTimeout(sendHeight,300));
+window.addEventListener('load',()=>{
+  setTimeout(sendHeight,300);
+  setTimeout(preInitMaps,900);
+});
 document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>setTimeout(sendHeight,200)));
 </script>
 </body>
@@ -730,5 +827,7 @@ document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>
 """
 
 def render():
-    components.html(_HTML, height=1700, scrolling=True)
+    seoul_json, usa_json = _load_geojson()
+    html = _HTML.replace('__SEOUL_GEOJSON__', seoul_json).replace('__USA_GEOJSON__', usa_json)
+    components.html(html, height=2200, scrolling=True)
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
