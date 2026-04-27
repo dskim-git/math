@@ -669,11 +669,23 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🎲 주사위로 경우의 수 탐구",
+                                "subject": "common",
+                                "slug": "mini/dice_counting_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "곱의 법칙",
                                 "src": "https://www.canva.com/design/DAHHb6IfcsU/4y09zB97RqVnLDwllsI0Tw/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🎮 합·곱 법칙 판별 챌린지",
+                                "subject": "common",
+                                "slug": "mini/addition_multiplication_rule"
+                            },
                         ],
                     },
                     {
@@ -687,11 +699,23 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🎯 순열 실생활 탐구",
+                                "subject": "common",
+                                "slug": "mini/permutation_reallife_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "계승",
                                 "src": "https://www.canva.com/design/DAHHb07u12o/aq-lMHKzEYjpT0lr_FvXOA/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔍 순열 등식 탐구",
+                                "subject": "common",
+                                "slug": "mini/permutation_identity_explorer"
+                            },
                         ],
                     },
                     {
