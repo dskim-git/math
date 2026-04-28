@@ -526,6 +526,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 이산 vs 연속 확률변수 분류 게임",
+                    "subject": "probability_new",
+                    "slug": "mini/rv_classify_game",
+                },
+                {
                     "type": "canva",
                     "title": "이산확률변수와 확률분포",
                     "src": "https://www.canva.com/design/DAHHtpfVIuY/fjt5cjcVR2Kdi4xj0UrF4g/view?embed",
@@ -536,9 +542,15 @@ CURRICULUM = [
                     "title": "연속확률변수와 확률분포",
                     "src": "https://www.canva.com/design/DAHHtvKWtZM/e1YwzLcb0TIGtuMYa9D4Kw/view?embed",
                     "height": 800
-                }
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 세상의 확률분포 한눈에 보기",
+                    "subject": "probability_new",
+                    "slug": "mini/distribution_zoo",
+                },
           ]},
-          {"key": "3-1-2", "label": "이산확률변수의 기댓값과 표준편차", "items": [
+          {"key": "3-1-2", "label": "이산확률변수의 기댓값과 표준편차","items": [
                 {
                     "type": "canva",
                     "title": "이산확률변수의 기댓값과 표준편차",
