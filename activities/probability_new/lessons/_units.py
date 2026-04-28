@@ -558,13 +558,31 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 승경도 윤목 시뮬레이션",
+                    "subject": "probability_new",
+                    "slug": "mini/seunggyeongdo_sim",
+                },
+                {
                     "type": "canva",
                     "title": "이산확률변수 aX+b의 평균과 표준편차",
                     "src": "https://www.canva.com/design/DAHHtj_-9Aw/9v2LPxicZwwbfuDekrCVVg/view?embed",
                     "height": 800
                 },
                 {
-                    "type": "iframe",
+                    "type": "activity",
+                    "title": "미니: 기댓값·분산·표준편차 탐험",
+                    "subject": "probability_new",
+                    "slug": "mini/rv_mean_var_lab",
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 스프레드시트로 확률변수 분석",
+                    "subject": "probability_new",
+                    "slug": "mini/rv_spreadsheet_lab",
+                },
+                {
+                    "type": "tongrami",
                     "title": "확률변수 aX+b의 평균과 표준편차 확인 (통그라미)",
                     "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
                     "height": 800
@@ -590,7 +608,7 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
-                    "type": "iframe",
+                    "type": "tongrami",
                     "title": "이항분포의 그래프 (통그라미)",
                     "src": "https://tong.kostat.go.kr/tongramy_web/main.do?menuSn=163#",
                     "height": 800

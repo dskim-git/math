@@ -2299,6 +2299,12 @@ def lessons_view(subject_key: str):
                 embed_iframe(item["src"], height=item.get("height", 700))
             elif typ == "iframe":
                 embed_iframe(item["src"], height=item.get("height", 800))
+            elif typ == "tongrami":
+                if st.button(f"🌐 통그라미 열기", key=f"tongrami_{subject_key}_{i}_{sel_key}", use_container_width=True):
+                    st.session_state["_embed_url"]   = item["src"]
+                    st.session_state["_embed_title"] = title
+                    set_route("embed", subject=subject_key, unit=sel_key)
+                    _do_rerun()
             elif typ == "canva":
                 components.html(
                     f'''<iframe loading="lazy" style="border:0;width:100%;height:{item.get("height",600)}px;" allowfullscreen src="{item["src"]}"></iframe>''',
@@ -2366,6 +2372,12 @@ def lessons_view(subject_key: str):
                 embed_iframe(item["src"], height=item.get("height", 700))
             elif typ == "iframe":
                 embed_iframe(item["src"], height=item.get("height", 800))
+            elif typ == "tongrami":
+                if st.button(f"🌐 통그라미 열기", key=f"tongrami_{subject_key}_{i}_{cur_key}", use_container_width=True):
+                    st.session_state["_embed_url"]   = item["src"]
+                    st.session_state["_embed_title"] = title
+                    set_route("embed", subject=subject_key, unit=cur_key)
+                    _do_rerun()
             elif typ == "canva":
                 components.html(
                     f'''
@@ -2392,6 +2404,25 @@ def lessons_view(subject_key: str):
 
 
         # ✅ 하단 네비 버튼은 제거됨 (상단만 사용)
+
+
+def embed_view(subject_key: str, unit: Optional[str] = None):
+    """통그라미 등 외부 임베드 콘텐츠를 전체 화면으로 보여주는 뷰."""
+    url   = st.session_state.get("_embed_url", "")
+    title = st.session_state.get("_embed_title", "외부 콘텐츠")
+
+    if st.button("← 수업으로 돌아가기", key="embed_back_btn", use_container_width=False):
+        set_route("lessons", subject=subject_key, unit=unit)
+        _do_rerun()
+
+    if url:
+        st.subheader(title)
+        embed_iframe(url, height=850)
+    else:
+        st.warning("임베드할 URL이 없습니다.")
+        if st.button("🏠 홈으로", key="embed_no_url_home"):
+            set_route("home")
+            _do_rerun()
 
 
 def activity_view(subject_key: str, slug: str, registry: Dict[str, List[Activity]], unit: Optional[str] = None):
@@ -3763,6 +3794,8 @@ def main():
             ot_view(subject)
         elif view == "lessons" and subject in SUBJECTS:
             lessons_view(subject)
+        elif view == "embed" and subject in SUBJECTS:
+            embed_view(subject, unit)
         elif view == "activity" and subject in SUBJECTS and activity:
             activity_view(subject, activity, registry, unit=unit)
         else:
