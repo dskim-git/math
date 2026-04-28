@@ -1,0 +1,66 @@
+function initSeoulMap(){
+  if(LEAF_INITED[2])return;
+  LEAF_INITED[2]=true;
+  const map=L.map('seoulMap',{zoomControl:true,scrollWheelZoom:false});
+  LEAF_MAPS[2]=map;
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',{
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+    maxZoom:19
+  }).addTo(map);
+  const loadingEl=document.getElementById('seoulMap');
+  if(loadingEl)loadingEl.style.cursor='wait';
+  fetch('https://raw.githubusercontent.com/southkorea/seoul-maps/master/kostat/2013/json/seoul_municipalities_geo_simple.json')
+    .then(r=>r.json())
+    .then(data=>{
+      if(loadingEl)loadingEl.style.cursor='';
+      const geoLayer=L.geoJSON(data,{
+        style:leafStyle(),
+        onEachFeature:(feature,featureLayer)=>{
+          const props=feature.properties||{};
+          const rawName=props.SIG_KOR_NM||props.sig_kor_nm||props.NAME_2||props.name||'';
+          const rid=normalizeSeoulName(rawName);
+          if(rid&&ADJ[2][rid]!==undefined){
+            LEAF_LAYERS[2][rid]=featureLayer;
+            featureLayer.on('click',()=>paint(2,rid));
+            featureLayer.bindTooltip(rid,{
+              sticky:true,className:'leaflet-tooltip-dark',direction:'top',offset:[0,-4]
+            });
+          }
+        }
+      }).addTo(map);
+      map.fitBounds(geoLayer.getBounds());
+    })
+    .catch(()=>{
+      if(loadingEl)loadingEl.innerHTML='<div style="color:#f77;text-align:center;padding:20px;">지도 데이터를 불러올 수 없습니다. 인터넷 연결을 확인해 주세요.</div>';
+    });
+}
+
+function initUSAMap(){
+  if(LEAF_INITED[3])return;
+  LEAF_INITED[3]=true;
+  const map=L.map('usaMap',{zoomControl:true,scrollWheelZoom:false,center:[38,-96],zoom:4});
+  LEAF_MAPS[3]=map;
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',{
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+    maxZoom:19
+  }).addTo(map);
+  const loadingEl=document.getElementById('usaMap');
+  fetch('https://raw.githubusercontent.com/python-visualization/folium/main/examples/data/us-states.json')
+    .then(r=>r.json())
+    .then(data=>{
+      const geoLayer=L.geoJSON(data,{
+        style:leafStyle(),
+        onEachFeature:(feature,featureLayer)=>{
+          // feature.id is the 2-letter state abbreviation in folium's GeoJSON
+          let rid=typeof feature.id==='string'&&feature.id.length===2?feature.id:null;
+          if(!rid){
+            const name=(feature.properties&&(feature.properties.name||feature.properties.NAME))||'';
+            rid=STATE_ABBR[name]||null;
+          }
+          if(rid&&ADJ[3][rid]!==undefined){
+            LEAF_LAYERS[3][rid]=featureLayer;
+            featureLayer.on('click',()=>paint(3,rid));
+            const fullName=(feature.properties&&(feature.properties.name||feature.properties.NAME))||rid;
+            featureLayer.bindTooltip(rid+' — '+fullName,{
+              sticky:true,className:'leaflet-tooltip-dark',direction:'top',offset:[0,-4]
+            });
