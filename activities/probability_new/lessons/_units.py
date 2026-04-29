@@ -602,10 +602,22 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "미니: 이항분포 평균·분산 탐험",
+                    "subject": "probability_new",
+                    "slug": "mini/binomial_mean_var_explorer",
+                },
+                {
                     "type": "canva",
                     "title": "이항분포의 그래프",
                     "src": "https://www.canva.com/design/DAHHtlDw-2I/EybNje4V8ld_PBWQqOYwOg/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 이항분포 그래프 시뮬레이터",
+                    "subject": "probability_new",
+                    "slug": "mini/binomial_graph_sim",
                 },
                 {
                     "type": "tongrami",
@@ -622,11 +634,17 @@ CURRICULUM = [
                 {
                     "type": "activity",
                     "title": "미니: 큰 수의 법칙 이해",
-                    "subject": "probability",
+                    "subject": "probability_new",
                     "slug": "mini/lln_binomial_simple"
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 하디-바인베르크 법칙",
+                    "subject": "probability_new",
+                    "slug": "mini/hardy_weinberg_mini"
                 }
           ]},
-          {"key": "3-1-4", "label": "정규분포", "items": [
+          {"key": "3-1-4", "label": "정규분포","items": [
                 {
                     "type": "canva",
                     "title": "정규분포",
