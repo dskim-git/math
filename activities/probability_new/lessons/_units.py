@@ -654,7 +654,7 @@ CURRICULUM = [
                 {
                     "type": "activity",
                     "title": "정규분포곡선 비교", 
-                    "subject": "probability",
+                    "subject": "probability_new",
                     "slug": "mini/normal_compare_p5",
                 },
                 {
@@ -662,6 +662,12 @@ CURRICULUM = [
                     "title": "표준정규분포",
                     "src": "https://www.canva.com/design/DAHHth-zVlo/dBt59aVjfTzSB53aYrk-Wg/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "미니: 표준정규분포표 활용 퀴즈",
+                    "subject": "probability_new",
+                    "slug": "mini/std_normal_table_quiz",
                 },
                 {
                     "type": "canva",
@@ -677,9 +683,9 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
-                    "title": "이항분포의 정규 근사", 
-                    "subject": "probability",
-                    "slug": "binomial_normal_approx",
+                    "title": "미니: 이항분포의 정규 근사",
+                    "subject": "probability_new",
+                    "slug": "mini/binom_normal_approx",
                 }
           ]},
           {"key": "3-1-5", "label": "중단원 마무리 문제", "items": [
