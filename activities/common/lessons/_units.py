@@ -827,6 +827,12 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "📷 사진 속 행렬 탐험",
+                                "subject": "common",
+                                "slug": "mini/matrix_pixel_explorer"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "행렬의 상등",
                                 "src": "https://www.canva.com/design/DAHHb95LzP0/pqciQUO17pfhVG1G8ejdDA/view?embed",
