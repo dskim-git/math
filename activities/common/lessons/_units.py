@@ -867,7 +867,13 @@ CURRICULUM = [
                                 "title": "행렬의 실수배",
                                 "src": "https://www.canva.com/design/DAHHb5Z-Crw/bawSGqne4wR7H4EUEXGBVQ/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔢 행렬 연산 탐험",
+                                "subject": "common",
+                                "slug": "mini/matrix_ops_explore"
+                            },
                         ],
                     },
                     {
