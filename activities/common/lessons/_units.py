@@ -831,7 +831,13 @@ CURRICULUM = [
                                 "title": "행렬의 상등",
                                 "src": "https://www.canva.com/design/DAHHb95LzP0/pqciQUO17pfhVG1G8ejdDA/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🕵️ 행렬 상등 탐정 게임",
+                                "subject": "common",
+                                "slug": "mini/matrix_equality_game"
+                            },
                         ],
                     },
                     {
