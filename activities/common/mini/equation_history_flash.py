@@ -659,7 +659,7 @@ def render():
     st.caption("이차방정식부터 5차 방정식 비가해성까지, 수학자들의 드라마틱한 도전과 좌절을 만나 보세요.")
 
     import streamlit.components.v1 as components
-    components.html(_HTML, height=2100, scrolling=False)
+    components.html(_HTML, height=2500, scrolling=False)
 
     # ── 성찰 기록 폼 ────────────────────────────────────────────────────────
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
