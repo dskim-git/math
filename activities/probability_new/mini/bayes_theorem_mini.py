@@ -394,6 +394,58 @@ function calc(){
 }
 calc();
 </script>
+
+<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:13px 12px;margin-top:12px">
+<div style="font-size:.92rem;font-weight:700;margin-bottom:9px;color:#38bdf8">&#128203; 국내 주요 감염병 감염률 참고표</div>
+<div style="font-size:.76rem;color:#94a3b8;margin-bottom:10px">항목을 클릭하면 감염률 슬라이더에 자동 적용됩니다.</div>
+<table id="diseaseTable" style="width:100%;border-collapse:collapse;font-size:.76rem">
+<thead>
+<tr style="background:rgba(56,189,248,.15);color:#38bdf8">
+  <th style="padding:6px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,.1)">감염병</th>
+  <th style="padding:6px 8px;text-align:center;border-bottom:1px solid rgba(255,255,255,.1)">유행 시기</th>
+  <th style="padding:6px 8px;text-align:right;border-bottom:1px solid rgba(255,255,255,.1)">감염률 (추정)</th>
+  <th style="padding:6px 8px;text-align:right;border-bottom:1px solid rgba(255,255,255,.1)">적용값</th>
+</tr>
+</thead>
+<tbody id="diseaseTbody"></tbody>
+</table>
+</div>
+
+<script>
+var diseases=[
+  {name:'결핵 (TB)',            period:'매년',              rate:'0.04%',   sv:1},
+  {name:'홍역 (Measles)',       period:'2019년',            rate:'0.001%',  sv:1},
+  {name:'메르스 (MERS)',        period:'2015년 5~7월',      rate:'0.001%',  sv:1},
+  {name:'수두 (Varicella)',     period:'매년 봄·가을', rate:'0.16%',   sv:2},
+  {name:'백일해 (Pertussis)',   period:'매년 봄',           rate:'0.05%',   sv:1},
+  {name:'계절 독감 (Influenza)',period:'매년 12~2월',       rate:'0.5~2%',  sv:10},
+  {name:'신종플루 (H1N1)',      period:'2009~2010년',       rate:'~1.5%',   sv:15},
+  {name:'코로나19 초기',        period:'2020년',            rate:'~0.1%',   sv:1},
+  {name:'코로나19 델타',        period:'2021년 하반기',     rate:'0.3~0.5%',sv:4},
+  {name:'코로나19 오미크론',    period:'2022년 3월',        rate:'3~5%',    sv:35}
+];
+(function(){
+  var tbody=document.getElementById('diseaseTbody');
+  if(!tbody)return;
+  diseases.forEach(function(d,i){
+    var tr=document.createElement('tr');
+    tr.style.cssText='cursor:pointer;transition:background .15s';
+    tr.onmouseover=function(){this.style.background='rgba(56,189,248,.12)'};
+    tr.onmouseout=function(){this.style.background=(i%2===0)?'transparent':'rgba(255,255,255,.02)'};
+    if(i%2!==0)tr.style.background='rgba(255,255,255,.02)';
+    tr.innerHTML=
+      '<td style="padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:#e2e8f0">'+d.name+'</td>'+
+      '<td style="padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);text-align:center;color:#94a3b8">'+d.period+'</td>'+
+      '<td style="padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);text-align:right;color:#fbbf24">'+d.rate+'</td>'+
+      '<td style="padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);text-align:right;color:#34d399">'+(d.sv/10).toFixed(1)+'%</td>';
+    tr.onclick=function(){
+      var sl=document.getElementById('slRate');
+      if(sl){sl.value=d.sv;sl.dispatchEvent(new Event('input'));}
+    };
+    tbody.appendChild(tr);
+  });
+})();
+</script>
 </body></html>"""
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -761,6 +813,240 @@ calc();
 </script>
 </body></html>"""
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TAB 5: 반복 검사의 신뢰도
+# ─────────────────────────────────────────────────────────────────────────────
+_HTML_TAB5 = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#0a0e1a 0%,#0f1b2d 55%,#0a1420 100%);color:#e2e8f0;padding:14px 12px 28px;min-height:100vh}
+.hdr{text-align:center;padding:16px 20px 12px;background:linear-gradient(135deg,rgba(139,92,246,.14),rgba(99,102,241,.1));border:1px solid rgba(139,92,246,.32);border-radius:14px;margin-bottom:12px}
+.hdr h1{font-size:1.2rem;font-weight:700;color:#a78bfa;margin-bottom:6px}
+.hdr p{font-size:.79rem;color:#94a3b8;line-height:1.65}
+.section{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:13px;padding:13px 12px;margin-bottom:10px}
+.sec-title{font-size:.92rem;font-weight:700;margin-bottom:9px;color:#a78bfa}
+.ctrl-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.ctrl-item label{font-size:.75rem;color:#94a3b8;display:block;margin-bottom:3px}
+.ctrl-val{font-size:.95rem;font-weight:700;color:#38bdf8}
+input[type=range]{width:100%;accent-color:#a78bfa;margin-top:2px}
+.round-card{border-radius:12px;padding:12px 14px;margin-bottom:4px}
+.r1{background:rgba(99,102,241,.07);border-left:3px solid #6366f1}
+.r2{background:rgba(139,92,246,.07);border-left:3px solid #8b5cf6}
+.r3{background:rgba(168,85,247,.07);border-left:3px solid #a855f7}
+.round-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px}
+.round-title{font-size:.95rem;font-weight:700}
+.r1 .round-title{color:#818cf8}
+.r2 .round-title{color:#a78bfa}
+.r3 .round-title{color:#c084fc}
+.eff-tag{font-size:.72rem;color:#94a3b8;text-align:right;line-height:1.5}
+.eff-tag b{color:#fbbf24}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.bar-lbl{font-size:.69rem;color:#94a3b8;width:70px;flex-shrink:0;line-height:1.4}
+.bar-track{flex:1;height:18px;border-radius:9px;overflow:hidden;display:flex;background:rgba(255,255,255,.07)}
+.seg-inf{background:#10b981;transition:width .4s}
+.seg-notinf{background:#334155;transition:width .4s}
+.seg-tp{background:#22c55e;transition:width .4s}
+.seg-fp{background:#ef4444;transition:width .4s}
+.bar-annot{font-size:.68rem;color:#64748b;width:130px;flex-shrink:0;line-height:1.4}
+.prob-box{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.25);border-radius:10px;padding:8px 12px;margin-top:8px}
+.prob-formula{font-size:.71rem;color:#94a3b8;flex:1;line-height:1.6}
+.prob-formula b{color:#e2e8f0}
+.prob-bar-outer{width:80px;height:9px;background:rgba(255,255,255,.1);border-radius:5px;overflow:hidden}
+.prob-bar-inner{height:100%;border-radius:5px;transition:width .5s,background .5s}
+.prob-pct{font-size:1.45rem;font-weight:800;min-width:58px;text-align:right}
+.arrow-row{text-align:center;padding:3px 0;color:#475569;font-size:.78rem}
+.chart-bars{display:flex;align-items:flex-end;gap:12px;height:110px;padding:0 4px;margin:8px 0 4px}
+.chart-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.chart-bar-wrap{flex:1;width:100%;display:flex;align-items:flex-end}
+.chart-bar{width:100%;border-radius:6px 6px 0 0;transition:height .5s,background .5s;min-height:3px}
+.chart-lbl{font-size:.69rem;color:#94a3b8;text-align:center}
+.chart-pct{font-size:.78rem;font-weight:700}
+.insight{font-size:.78rem;line-height:1.7;color:#94a3b8;background:rgba(0,0,0,.2);border-radius:9px;padding:9px 12px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h1>&#128260; 반복 검사의 신뢰도</h1>
+  <p>1차 검사 양성자만 골라 2차·3차를 반복하면<br>
+  왜 결과를 점점 더 신뢰할 수 있게 될까요?<br>
+  <span style="color:#fbbf24;font-size:.76rem">&#128161; 핵심: 양성 판정자 집단의 '실효 감염률'이 매 검사마다 높아집니다</span></p>
+</div>
+
+<div class="section">
+  <div class="sec-title">&#9881; 검사 조건 설정</div>
+  <div class="ctrl-row">
+    <div class="ctrl-item">
+      <label>감염률 <span id="lbRate" class="ctrl-val">1.0%</span></label>
+      <input type="range" id="slRate" min="1" max="50" value="10">
+    </div>
+    <div class="ctrl-item">
+      <label>민감도(진양성률) <span id="lbSens" class="ctrl-val">95%</span></label>
+      <input type="range" id="slSens" min="50" max="100" value="95">
+    </div>
+    <div class="ctrl-item">
+      <label>특이도(진음성률) <span id="lbSpec" class="ctrl-val">95%</span></label>
+      <input type="range" id="slSpec" min="50" max="100" value="95">
+    </div>
+  </div>
+  <div style="margin-top:8px;font-size:.73rem;color:#64748b">&#128101; 시작 인원: <b style="color:#38bdf8">10,000명</b> 기준으로 계산합니다</div>
+</div>
+
+<div class="section">
+  <div class="sec-title">&#128203; 반복 검사 시뮬레이션</div>
+  <div id="roundsArea"></div>
+</div>
+
+<div class="section">
+  <div class="sec-title">&#128202; 검사 횟수별 신뢰도 비교</div>
+  <div class="chart-bars">
+    <div class="chart-col">
+      <div class="chart-bar-wrap"><div class="chart-bar" id="cb0"></div></div>
+      <div class="chart-pct" id="cp0">—</div>
+      <div class="chart-lbl">1차 양성</div>
+    </div>
+    <div class="chart-col">
+      <div class="chart-bar-wrap"><div class="chart-bar" id="cb1"></div></div>
+      <div class="chart-pct" id="cp1">—</div>
+      <div class="chart-lbl">1·2차 양성</div>
+    </div>
+    <div class="chart-col">
+      <div class="chart-bar-wrap"><div class="chart-bar" id="cb2"></div></div>
+      <div class="chart-pct" id="cp2">—</div>
+      <div class="chart-lbl">1·2·3차 양성</div>
+    </div>
+  </div>
+  <div id="insightBox" class="insight"></div>
+</div>
+
+<script>
+var N0=10000;
+function fmt(n){
+  if(n<0.1)return n.toFixed(2);
+  if(n<10)return n.toFixed(1);
+  return Math.round(n).toLocaleString();
+}
+function fmtP(p){return(p*100).toFixed(1)+'%';}
+function pColor(p){
+  if(p<0.3)return'#ef4444';
+  if(p<0.6)return'#f59e0b';
+  if(p<0.85)return'#22c55e';
+  return'#10b981';
+}
+
+function calcRound(nInf,nNotInf,sens,spec){
+  var tp=nInf*sens, fn=nInf*(1-sens);
+  var fp=nNotInf*(1-spec), tn=nNotInf*spec;
+  var totalPos=tp+fp;
+  var pInfPos=totalPos>0?tp/totalPos:0;
+  return{nInf:nInf,nNotInf:nNotInf,nTotal:nInf+nNotInf,tp:tp,fn:fn,fp:fp,tn:tn,totalPos:totalPos,pInfPos:pInfPos};
+}
+
+function roundHTML(r,idx){
+  var titles=['1차 검사','2차 검사','3차 검사'];
+  var condLabels=[
+    'P(감염 | 1차 양성)',
+    'P(감염 | 1·2차 양성)',
+    'P(감염 | 1·2·3차 양성)'
+  ];
+  var cls=['r1','r2','r3'];
+  var effRate=r.nTotal>0?r.nInf/r.nTotal:0;
+  var posTPpct=r.totalPos>0?r.tp/r.totalPos*100:0;
+  var compInfPct=r.nTotal>0?r.nInf/r.nTotal*100:0;
+  var pc=pColor(r.pInfPos);
+  var effLabel=idx===0
+    ?'초기 감염률: <b>'+fmtP(effRate)+'</b>'
+    :'실효 감염률: <b>'+fmtP(effRate)+'</b> &#8593;&#8593;';
+  return '<div class="round-card '+cls[idx]+'">'
+    +'<div class="round-header">'
+    +'<span class="round-title">'+titles[idx]+'</span>'
+    +'<span class="eff-tag">'+effLabel+'<br>대상 '+fmt(r.nTotal)+'명</span>'
+    +'</div>'
+    +'<div class="bar-row">'
+    +'<span class="bar-lbl">구성<br>(감염/비감염)</span>'
+    +'<div class="bar-track">'
+    +'<div class="seg-inf" style="width:'+compInfPct+'%"></div>'
+    +'<div class="seg-notinf" style="width:'+(100-compInfPct)+'%"></div>'
+    +'</div>'
+    +'<span class="bar-annot" style="color:#10b981">&#9632; 감염 '+fmt(r.nInf)+'명<br>'
+    +'<span style="color:#475569">&#9632; 비감염 '+fmt(r.nNotInf)+'명</span></span>'
+    +'</div>'
+    +'<div class="bar-row">'
+    +'<span class="bar-lbl">양성 판정<br>'+fmt(r.totalPos)+'명</span>'
+    +'<div class="bar-track">'
+    +'<div class="seg-tp" style="width:'+posTPpct+'%"></div>'
+    +'<div class="seg-fp" style="width:'+(100-posTPpct)+'%"></div>'
+    +'</div>'
+    +'<span class="bar-annot" style="color:#22c55e">&#9632; 진양성 '+fmt(r.tp)+'명<br>'
+    +'<span style="color:#ef4444">&#9632; 위양성 '+fmt(r.fp)+'명</span></span>'
+    +'</div>'
+    +'<div class="prob-box">'
+    +'<div class="prob-formula">'+condLabels[idx]+'<br><b>= '+fmt(r.tp)+' / '+fmt(r.totalPos)+'</b></div>'
+    +'<div class="prob-bar-outer"><div class="prob-bar-inner" style="width:'+Math.min(r.pInfPos*100,100)+'%;background:'+pc+'"></div></div>'
+    +'<div class="prob-pct" style="color:'+pc+'">'+fmtP(r.pInfPos)+'</div>'
+    +'</div>'
+    +'</div>';
+}
+function update(){
+  var rate=parseInt(document.getElementById('slRate').value)/1000;
+  var sens=parseInt(document.getElementById('slSens').value)/100;
+  var spec=parseInt(document.getElementById('slSpec').value)/100;
+  document.getElementById('lbRate').textContent=(rate*100).toFixed(1)+'%';
+  document.getElementById('lbSens').textContent=(sens*100).toFixed(0)+'%';
+  document.getElementById('lbSpec').textContent=(spec*100).toFixed(0)+'%';
+
+  var inf0=N0*rate, notInf0=N0*(1-rate);
+  var r1=calcRound(inf0,notInf0,sens,spec);
+  var r2=calcRound(r1.tp,r1.fp,sens,spec);
+  var r3=calcRound(r2.tp,r2.fp,sens,spec);
+  var rounds=[r1,r2,r3];
+
+  var html='';
+  rounds.forEach(function(r,i){
+    if(i>0){
+      html+='<div class="arrow-row">&#8595; 양성 판정자 '
+        +fmt(rounds[i-1].totalPos)+'명만 '+(i+1)+'차 재검사</div>';
+    }
+    html+=roundHTML(r,i);
+  });
+  document.getElementById('roundsArea').innerHTML=html;
+
+  var probs=[r1.pInfPos,r2.pInfPos,r3.pInfPos];
+  probs.forEach(function(p,i){
+    var c=pColor(p);
+    document.getElementById('cb'+i).style.height=Math.max(p*100,2)+'%';
+    document.getElementById('cb'+i).style.background='linear-gradient(180deg,'+c+','+c+'88)';
+    document.getElementById('cp'+i).textContent=fmtP(p);
+    document.getElementById('cp'+i).style.color=c;
+  });
+
+  var p1=r1.pInfPos,p2=r2.pInfPos,p3=r3.pInfPos;
+  var effR2=r1.totalPos>0?fmtP(r1.tp/r1.totalPos):'—';
+  var ins='';
+  if(p3>0.9){
+    ins='<b style="color:#10b981">&#10003; 3차 검사까지 모두 양성이면 실제 감염 확률 '+fmtP(p3)+'!</b><br>'
+      +'1차만 보면 '+fmtP(p1)+'에 불과했지만, 양성자만 추려서 재검사를 반복하면 실제 감염자가 확연하게 걸러집니다.';
+  } else if(p3>0.5){
+    ins='<b style="color:#22c55e">&#128200; '+fmtP(p1)+' &#8594; '+fmtP(p2)+' &#8594; '+fmtP(p3)+'</b> — 반복할수록 신뢰도가 올라가요!<br>'
+      +'2차 검사 대상은 1차 양성자뿐이라, 그 집단의 실효 감염률이 '+effR2+'로 급상승합니다.';
+  } else {
+    ins='<b style="color:#f59e0b">&#9888; 감염률이 매우 낮거나 검사 성능이 부족하면</b> 3차 반복 후에도 신뢰도가 낮을 수 있어요.<br>'
+      +'감염률이나 민감도·특이도 슬라이더를 조정해보세요!';
+  }
+  ins+='<br><span style="font-size:.71rem;color:#475569">핵심 원리: 반복 검사를 거칠수록 한 집단의 위양성자(비감염자)가 계속 걸러집니다. 결국, 남아 있는 양성자 집단이 더 신뢰해집니다.</span>';
+  document.getElementById('insightBox').innerHTML=ins;
+}
+
+['slRate','slSens','slSpec'].forEach(function(id){
+  document.getElementById(id).addEventListener('input',update);
+});
+update();
+</script>
+</body></html>"""
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # render()
@@ -768,28 +1054,32 @@ calc();
 def render():
     st.subheader("🔮 베이즈 정리 탐구")
     st.caption(
-        "쿠키 상자 · 진단키트 · 스팸필터 · 도핑검사 4가지 상황으로 "
+        "쿠키 상자 · 진단키트 · 스팸필터 · 도핑검사 · 반복검사 5가지 상황으로 "
         "베이즈 정리의 핵심 — '새로운 증거로 확률을 합리적으로 업데이트하기'를 탐구해봐요!"
     )
 
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "🍪 쿠키 상자",
         "🧪 진단 키트",
         "📧 스팸 필터",
         "🏃 도핑 검사",
+        "🔄 반복 검사",
     ])
 
     with tab1:
         components.html(_HTML_TAB1, height=1400, scrolling=False)
 
     with tab2:
-        components.html(_HTML_TAB2, height=1200, scrolling=False)
+        components.html(_HTML_TAB2, height=1900, scrolling=False)
 
     with tab3:
         components.html(_HTML_TAB3, height=1400, scrolling=False)
 
     with tab4:
         components.html(_HTML_TAB4, height=1400, scrolling=False)
+
+    with tab5:
+        components.html(_HTML_TAB5, height=1400, scrolling=False)
 
     st.divider()
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)

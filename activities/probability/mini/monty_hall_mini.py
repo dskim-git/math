@@ -430,11 +430,11 @@ canvas{width:100%;border-radius:6px;display:block;background:#fafbff;}
   </div>
 </div>
 
-<!-- ── Part 2: 흔한 오해 퀴즈 ───────────────────────── -->
+<!-- ── Part 2: 흔한 오해 퀴즈 (주석처리됨) ─────────────────────────
 <div class="q-sec">
   <h3>Part 2. 자주 묻는 질문 — 맞는 것을 고르세요</h3>
 
-  <!-- MCQ 1 -->
+  [MCQ 1]
   <div class="step-card">
     <div class="step-head">QUIZ 1</div>
     <div class="step-title">몬티가 문을 연 후 남은 문이 2개입니다. 자동차가 있을 확률은 50%/50%인가요?</div>
@@ -447,7 +447,7 @@ canvas{width:100%;border-radius:6px;display:block;background:#fafbff;}
     <div class="fb" id="mfb1" style="margin-top:5px;font-size:12px;line-height:1.6;"></div>
   </div>
 
-  <!-- MCQ 2 -->
+  [MCQ 2]
   <div class="step-card">
     <div class="step-head">QUIZ 2</div>
     <div class="step-title">만약 몬티가 자동차 위치를 모르고 아무 문이나 열었는데 우연히 염소였다면?</div>
@@ -460,7 +460,7 @@ canvas{width:100%;border-radius:6px;display:block;background:#fafbff;}
     <div class="fb" id="mfb2" style="margin-top:5px;font-size:12px;line-height:1.6;"></div>
   </div>
 
-  <!-- MCQ 3 -->
+  [MCQ 3]
   <div class="step-card">
     <div class="step-head">QUIZ 3</div>
     <div class="step-title">문이 100개이고, 몬티가 98개의 염소 문을 열었습니다. 교체해야 할까요?</div>
@@ -473,10 +473,11 @@ canvas{width:100%;border-radius:6px;display:block;background:#fafbff;}
     <div class="fb" id="mfb3" style="margin-top:5px;font-size:12px;line-height:1.6;"></div>
   </div>
 </div>
+-->
 
-<!-- ── Part 3: 확장 공식 유도 ────────────────────────── -->
+<!-- ── Part 2: 확장 공식 유도 ────────────────────────── -->
 <div class="q-sec">
-  <h3>Part 3. 확장 몬티홀 — 일반 공식 유도</h3>
+  <h3>Part 2. 확장 몬티홀 — 일반 공식 유도</h3>
   <p style="font-size:12px;color:#868e96;margin-bottom:10px;">먼저 구체적인 예(5문, 2차)로 계산한 뒤, 일반 공식을 유도합니다.</p>
 
   <div class="step-card">
