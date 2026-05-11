@@ -763,10 +763,10 @@ function draw(){
 /* ════════════ TAB3: 경우 정리 ════════════ */
 function drawCases(){
   var CASES=[
-    {lbl:'경우 1',sys:'{x &lt; a,  x &gt; b}',op1:'lt',b1:2,op2:'gt',b2:5,rc:'cr-none'},
-    {lbl:'경우 2',sys:'{x &lt; a,  x ≥ b}', op1:'lt',b1:5,op2:'ge',b2:2,rc:'cr-ok'},
-    {lbl:'경우 3',sys:'{x ≤ a,  x &gt; b}', op1:'le',b1:5,op2:'gt',b2:2,rc:'cr-ok'},
-    {lbl:'경우 4',sys:'{x ≤ a,  x ≥ b}', op1:'le',b1:5,op2:'ge',b2:2,rc:'cr-ok'},
+    {lbl:'경우 1',sys:'{x &gt; a,  x &lt; b}',op1:'gt',b1:2,op2:'lt',b2:5,rc:'cr-ok'},
+    {lbl:'경우 2',sys:'{x ≥ a,  x &lt; b}', op1:'ge',b1:2,op2:'lt',b2:5,rc:'cr-ok'},
+    {lbl:'경우 3',sys:'{x &gt; a,  x ≤ b}', op1:'gt',b1:2,op2:'le',b2:5,rc:'cr-ok'},
+    {lbl:'경우 4',sys:'{x ≥ a,  x ≤ b}', op1:'ge',b1:2,op2:'le',b2:5,rc:'cr-ok'},
     {lbl:'특수 — 해 없음',sys:'예: x &lt; 3, x ≥ 5',op1:'lt',b1:3,op2:'ge',b2:5,rc:'cr-none'},
     {lbl:'특수 — 한 점', sys:'예: x ≤ 3, x ≥ 3', op1:'le',b1:3,op2:'ge',b2:3,rc:'cr-pt'},
   ];
