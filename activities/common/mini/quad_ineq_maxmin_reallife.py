@@ -140,7 +140,7 @@ input[type=range]{flex:1;accent-color:#27ae60;cursor:pointer}
 }
 
 /* ── 수식 풀이 (방법 B) ── */
-.step-list{display:flex;flex-direction:column;gap:1px}
+.step-list{display:flex;flex-direction:column;gap:1px;max-height:2000px;overflow-y:auto}
 .step-item{background:#06101e;border-bottom:1px solid #0d1828;cursor:pointer;transition:background .15s;border-radius:0}
 .step-item:first-child{border-radius:8px 8px 0 0}
 .step-item:last-child{border-radius:0 0 8px 8px;border-bottom:none}
@@ -291,14 +291,14 @@ input[type=range]{flex:1;accent-color:#27ae60;cursor:pointer}
         </div>
 
         <div class="step-item s4" onclick="toggleStep(this)">
-          <div class="step-hdr"><span class="step-num">④</span><span class="step-htxt">y의 값이 최대가 되는 x의 값 구하기</span><span class="step-arr">▼</span></div>
-          <div class="step-body">
+            <div class="step-hdr"><span class="step-num">④</span><span class="step-htxt">y의 값이 최대가 되는 x의 값 구하기</span><span class="step-arr">▼</span></div>
+            <div class="step-body">
             <p>y = −30x²+2800x+96000 = −30(x−□)²+□</p>
             <p>꼭짓점 x = 2800÷(2×30) = 2800÷60 ≈ 46.67</p>
             <div class="q-box" onclick="event.stopPropagation()">
               <span class="q-label">✏️ y가 최대가 되는 x의 값으로 알맞은 것은? (자연수)</span>
               <div class="mc-opts">
-                <button class="mc-btn" onclick="checkMC('p1_s4',this,false,'rv_p1_s4','x=40이면 자연수이지만 최댓값이 아닙니다.')">① x=40</button>
+                <button class="mc-btn" onclick="checkMC('p1_s4',this,false,'rv_p1_s4','x=46은 자연수이지만 최댓값이 아닙니다.')">① x=46</button>
                 <button class="mc-btn" onclick="checkMC('p1_s4',this,true,'rv_p1_s4','')">② x=47</button>
                 <button class="mc-btn" onclick="checkMC('p1_s4',this,false,'rv_p1_s4','x=50이면 자연수이지만 최댓값이 아닙니다.')">③ x=50</button>
                 <button class="mc-btn" onclick="checkMC('p1_s4',this,false,'rv_p1_s4','x=60이면 판매가가 600원이 됩니다.')">④ x=60</button>
@@ -307,8 +307,8 @@ input[type=range]{flex:1;accent-color:#27ae60;cursor:pointer}
               <div class="reveal" id="rv_p1_s4">
                 <span class="formula">46.67은 자연수가 아님 → x=46, x=47 비교</span>
                 <span class="formula">x=46: y=−30(2116)+2800(46)+96000=162,120</span>
-                <span class="formula">x=47: y=−30(2209)+2800(47)+96000=162,030</span>
-                <span class="formula">→ x=46일 때 최대 (y=162,120원)</span>
+                <span class="formula">x=47: y=−30(2209)+2800(47)+96000=161,330</span>
+                <span class="formula">→ x=47일 때 최대 (y=161,330원, 판매가=730원)</span>
               </div>
             </div>
           </div>
@@ -317,17 +317,17 @@ input[type=range]{flex:1;accent-color:#27ae60;cursor:pointer}
         <div class="step-item s5" onclick="toggleStep(this)">
           <div class="step-hdr"><span class="step-num">⑤</span><span class="step-htxt">하루 매출액이 최대가 되는 판매가 정하기</span><span class="step-arr">▼</span></div>
           <div class="step-body">
-            <p>x=46일 때 판매가 = 1200−10×46 = ?</p>
+            <p>x=47일 때 판매가 = 1200−10×47 = ?</p>
             <div class="q-box" onclick="event.stopPropagation()">
               <span class="q-label">✏️ 매출액이 최대가 되는 볼펜의 판매가는?</span>
               <div class="q-row">
                 <span class="q-text">판매가 =</span>
                 <input class="q-input" id="i_p1_s5" type="number" placeholder="?">
                 <span class="q-text">원</span>
-                <button class="q-btn" onclick="checkFill('p1_s5',740,1,'rv_p1_s5')">확인</button>
+                <button class="q-btn" onclick="checkFill('p1_s5',730,1,'rv_p1_s5')">확인</button>
               </div>
               <div class="q-fb" id="fb_p1_s5"></div>
-              <div class="reveal" id="rv_p1_s5"><span class="formula">판매가 = 1200−460 = 740원, 최대 매출액 = 162,120원</span></div>
+              <div class="reveal" id="rv_p1_s5"><span class="formula">판매가 = 1200−470 = 730원, 최대 매출액 = 161,330원</span></div>
             </div>
           </div>
         </div>
