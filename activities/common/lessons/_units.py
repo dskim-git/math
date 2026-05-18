@@ -916,6 +916,12 @@ CURRICULUM = [
                                 "subject": "common",
                                 "slug": "mini/matrix_cipher_explorer"
                             },
+                            {
+                                "type": "activity",
+                                "title": "🏙️ 행렬로 보는 두 도시 인구 이동",
+                                "subject": "common",
+                                "slug": "mini/matrix_population_migration"
+                            },
                         ],
                     },
                     {
