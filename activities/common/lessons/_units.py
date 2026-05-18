@@ -893,11 +893,29 @@ CURRICULUM = [
                                 "height": 800
                             },
                             {
+                                "type": "activity",
+                                "title": "🛒 행렬 곱셈 실생활 탐구",
+                                "subject": "common",
+                                "slug": "mini/matrix_mul_reallife"
+                            },
+                            {
                                 "type": "canva",
                                 "title": "행렬 관련 활동",
                                 "src": "https://www.canva.com/design/DAHHb7ei_6w/HMyIdZzwGqvG__ryj5Wr3w/view?embed",
                                 "height": 800
-                            }
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🎲 행렬 카드 주사위 게임",
+                                "subject": "common",
+                                "slug": "mini/matrix_card_dice_game"
+                            },
+                            {
+                                "type": "activity",
+                                "title": "🔐 행렬 암호 탐구",
+                                "subject": "common",
+                                "slug": "mini/matrix_cipher_explorer"
+                            },
                         ],
                     },
                     {
