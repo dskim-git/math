@@ -711,6 +711,12 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "🧐 전수조사 vs 표본조사 퀴즈",
+                    "subject": "probability_new",
+                    "slug": "mini/census_or_sample_quiz",
+                },
+                {
                     "type": "canva",
                     "title": "임의추출",
                     "src": "https://www.canva.com/design/DAHHuXg-Lcs/k5ZtC2VJ-xpslK3ffT4Hiw/view?embed",
@@ -718,10 +724,22 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
-                    "title": "카드 추출하기", 
-                    "subject": "probability",
-                    "slug": "mini/sampling_cards",
-                }
+                    "title": "🎲 임의추출 방법 시뮬레이션 (제비뽑기·주사위·난수표·엑셀)",
+                    "subject": "probability_new",
+                    "slug": "mini/random_sampling_lab",
+                },
+                {
+                    "type": "activity",
+                    "title": "🎁 복원·비복원·동시추출 실험실",
+                    "subject": "probability_new",
+                    "slug": "mini/sampling_methods_lab",
+                },
+                #{
+                #    "type": "activity",
+                #    "title": "카드 추출하기",
+                #    "subject": "probability",
+                #    "slug": "mini/sampling_cards",
+                #}
           ]},
           {"key": "3-2-2", "label": "모평균의 추정", "items": [
                 {
