@@ -750,9 +750,15 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
-                    "title": "표본분산을 n-1로 나누는 이유", 
-                    "subject": "probability",
-                    "slug": "mini/sample_variance_unbiased",
+                    "title": "미니: 모평균 vs 표본평균 — 비밀 모집단 추적",
+                    "subject": "probability_new",
+                    "slug": "mini/pop_sample_mean_lab",
+                },
+                {
+                    "type": "activity",
+                    "title": "✨ 미니: 표본분산을 n-1로 나누는 이유 (베셀 보정)",
+                    "subject": "probability_new",
+                    "slug": "mini/sample_variance_n1_lab",
                 },
                 {
                     "type": "canva",
