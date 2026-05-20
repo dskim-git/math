@@ -767,23 +767,41 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "🎲 미니: 표본평균의 평균·분산·표준편차 시뮬레이터",
+                    "subject": "probability_new",
+                    "slug": "mini/sample_mean_dist_lab",
+                },
+                {
                     "type": "canva",
                     "title": "표본평균의 분포",
                     "src": "https://www.canva.com/design/DAHHubQNSZ0/s9MAmaWQRfhqnf_uQn5gAQ/view?embed",
                     "height": 800
                 },
+                #{
+                #    "type": "activity",
+                #    "title": "📊 미니: 표본평균 X̄의 분포 탐험",
+                #    "subject": "probability_new",
+                #    "slug": "mini/sample_mean_dist_viz",
+                #},
                 {
                     "type": "activity",
-                    "title": "표본평균의 분포 확인하기", 
-                    "subject": "probability",
-                    "slug": "mini/sample_mean_dist",
+                    "title": "🌟 미니: 모평균 ↔ 표본평균 — 두 정규곡선 비교 실험실",
+                    "subject": "probability_new",
+                    "slug": "mini/sampling_mean_relation_lab",
                 },
-                {
-                    "type": "activity",
-                    "title": "표본평균의 분포", 
-                    "subject": "probability",
-                    "slug": "sampling_mean_demo_p5",
-                },
+                #{
+                #    "type": "activity",
+                #    "title": "표본평균의 분포 확인하기",
+                #    "subject": "probability",
+                #    "slug": "mini/sample_mean_dist",
+                #},
+                #{
+                #    "type": "activity",
+                #    "title": "표본평균의 분포",
+                #    "subject": "probability",
+                #    "slug": "sampling_mean_demo_p5",
+                #},
                 {
                     "type": "canva",
                     "title": "모평균의 추정",
@@ -792,21 +810,21 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
-                    "title": "신뢰도 vs 정확도", 
-                    "subject": "probability",
-                    "slug": "mini/confidence_tradeoff",
+                    "title": "🎯 미니: 신뢰도 ↔ 신뢰구간 길이 트레이드오프",
+                    "subject": "probability_new",
+                    "slug": "mini/ci_confidence_tradeoff_lab",
                 },
                 {
                     "type": "activity",
-                    "title": "신뢰도의 의미", 
-                    "subject": "probability",
-                    "slug": "ci_mean_demo_p5",
+                    "title": "🌐 미니: 신뢰도의 의미 — 100개의 신뢰구간",
+                    "subject": "probability_new",
+                    "slug": "mini/ci_meaning_lab",
                 },
                 {
                     "type": "activity",
-                    "title": "신뢰구간의 길이에 영향을 주는 요인", 
-                    "subject": "probability",
-                    "slug": "ci_length_lab",
+                    "title": "📏 미니: 신뢰구간 길이를 결정하는 3가지 요인",
+                    "subject": "probability_new",
+                    "slug": "mini/ci_length_factors_lab",
                 }
           ]},
           {"key": "3-2-3", "label": "모비율의 추정", "items": [
