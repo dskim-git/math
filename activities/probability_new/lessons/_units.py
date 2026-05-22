@@ -841,10 +841,28 @@ CURRICULUM = [
                     "height": 800
                 },
                 {
+                    "type": "activity",
+                    "title": "🎯 미니: 표본비율 p̂의 분포 — 실생활 시뮬레이션",
+                    "subject": "probability_new",
+                    "slug": "mini/sample_proportion_dist_lab",
+                },
+                {
                     "type": "canva",
                     "title": "모비율의 추정",
                     "src": "https://www.canva.com/design/DAHHuZyUjs4/3nw4kr83Dw90dK7kvv5eUA/view?embed",
                     "height": 800
+                },
+                {
+                    "type": "activity",
+                    "title": "🏺 미니: 모비율 신뢰구간 챌린지 — 미스터리 항아리 속 p 잡기",
+                    "subject": "probability_new",
+                    "slug": "mini/ci_proportion_lab",
+                },
+                {
+                    "type": "activity",
+                    "title": "📰 미니: 뉴스로 배우는 모비율 신뢰구간 — 실제 여론조사 해석",
+                    "subject": "probability_new",
+                    "slug": "mini/ci_proportion_news_lab",
                 },
           ]},
           {"key": "3-2-4", "label": "중단원 마무리 문제", "items": [
