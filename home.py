@@ -2235,6 +2235,25 @@ def lessons_view(subject_key: str):
         def ch(node): return node.get("children", []) if isinstance(node, dict) else []
         majors = curriculum
 
+        # ── URL의 unit을 '진실의 근원'으로 삼아 선택 인덱스를 복원 ──────────────
+        # 모바일에서 드로어(사이드바)를 닫으면 sidebar_navigation()이 호출되지 않아
+        # 단원 selectbox 위젯이 렌더되지 않고, Streamlit이 그 위젯 세션값을 폐기한다.
+        # 그 결과 아래 setdefault가 0으로 되돌아가 항상 첫 단원으로 리셋되던 버그를
+        # 막기 위해, URL에 unit이 있으면 거기서 인덱스를 복구한다.
+        if unit_qp:
+            _path = _find_curriculum_path(majors, unit_qp)
+            if _path:
+                _u_maj, _u_mid, _u_min = _path
+                st.session_state[maj_key] = _u_maj
+                if _u_mid is not None:
+                    st.session_state[mid_key] = _u_mid
+                else:
+                    st.session_state.pop(mid_key, None)
+                if _u_min is not None:
+                    st.session_state[min_key] = _u_min
+                else:
+                    st.session_state.pop(min_key, None)
+
         st.session_state.setdefault(maj_key, 0)
         if st.session_state[maj_key] >= len(majors):
             st.session_state[maj_key] = 0
@@ -2351,11 +2370,16 @@ def lessons_view(subject_key: str):
 
         unit_keys = list(units.keys())
         default_idx = unit_keys.index(unit_qp) if (unit_qp in unit_keys) else 0
-        # 단원 선택은 sidebar_navigation()에서 처리 — 세션 state에서 읽기
-        if "_lesson_sel_idx" not in st.session_state:
+        # URL의 unit을 진실의 근원으로 삼는다(드로어 닫힘 시 위젯 세션 폐기 대비).
+        # URL에 유효한 unit이 있으면 그 인덱스로 고정한다.
+        if unit_qp in unit_keys:
+            st.session_state["_lesson_sel_idx"] = default_idx
+        elif "_lesson_sel_idx" not in st.session_state:
             st.session_state["_lesson_sel_idx"] = default_idx
 
         cur_idx = st.session_state.get("_lesson_sel_idx", default_idx)
+        if cur_idx >= len(unit_keys):
+            cur_idx = 0
         cur_key = unit_keys[cur_idx]
         data = units[cur_key]
 
