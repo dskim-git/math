@@ -3682,6 +3682,14 @@ def main():
         color: rgba(255,255,255,0.85) !important;
         font-size: 1.1rem !important;
     }
+    /* 셀렉트박스/드롭다운 팝오버(BaseWeb popover)를 모바일 드로어(z-index:9999) 위로 띄움.
+       드로어가 fixed·불투명이라, 기본 z-index의 드롭다운이 드로어 뒤에 가려져
+       단원 선택이 안 되던 문제를 해결한다. (단원 선택은 사이드바 selectbox로만 가능) */
+    [data-baseweb="popover"],
+    [data-baseweb="layer"],
+    [data-baseweb="tooltip"] {
+        z-index: 2147483600 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
