@@ -63,6 +63,8 @@ _HTML = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+/* 칠판/빔프로젝터 투사용: 전체 글자·숫자 크기 확대 (기본 16px → 21px, 모든 rem 값이 함께 커집니다) */
+html{font-size:21px}
 body{
   font-family:'Malgun Gothic','Apple SD Gothic Neo',system-ui,sans-serif;
   background:linear-gradient(145deg,#060c1a,#0a1428,#050912);
@@ -199,6 +201,19 @@ input[type=range]{accent-color:#ffd700}
 @keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.1)}100%{transform:scale(1)}}
 @keyframes flash{0%,100%{opacity:1}50%{opacity:.4}}
 .flash{animation:flash .4s ease}
+/* 모든 경우 보기 버튼 */
+.btn.all{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.4);color:#93c5fd}
+.btn.all:hover{background:rgba(59,130,246,.22)}
+/* 모든 경우 나열 박스 */
+.allbox{margin-top:10px;max-height:320px;overflow-y:auto;padding-right:4px}
+.allbox:empty{display:none}
+.all-head{font-size:.85rem;color:#93c5fd;text-align:center;margin-bottom:8px}
+.all-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.all-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:5px 10px;
+  font-size:.9rem;color:#dde8ff;white-space:nowrap}
+.all-idx{font-size:.66rem;color:#7788aa;background:rgba(255,255,255,.07);
+  border-radius:5px;padding:1px 6px;min-width:22px;text-align:center}
 </style>
 </head>
 <body>
@@ -248,11 +263,13 @@ input[type=range]{accent-color:#ffd700}
   <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
     <button class="btn gold" onclick="s1Back()">⌫ 하나 되돌리기</button>
     <button class="btn" onclick="s1Init()">↩ 초기화</button>
+    <button class="btn all" onclick="s1All()">🔢 모든 경우 보기</button>
   </div>
   <div class="notice">
     💡 <strong>n명 줄 세우기</strong>: 첫 자리 n가지, 두 번째 (n−1)가지, … 마지막 1가지<br>
     → <strong>P(n,n) = n!</strong> — 사람이 1명만 늘어도 경우의 수가 엄청나게 커집니다!
   </div>
+  <div id="s1all" class="allbox"></div>
 </div>
 
 <!-- ══ PANEL 1: 임원 선출 ══ -->
@@ -276,13 +293,15 @@ input[type=range]{accent-color:#ffd700}
     <span class="frm-lbl">배치 방법:</span>
     <span class="frm-val">P(5,3) = 5×4×3 = 60가지</span>
   </div>
-  <div style="display:flex;gap:7px;margin-bottom:8px">
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
     <button class="btn" onclick="s2Reset()">↩ 다시하기</button>
+    <button class="btn all" onclick="s2All()">🔢 모든 경우 보기</button>
   </div>
   <div class="notice">
     💡 회장 선택 <strong>5가지</strong> × 부회장 <strong>4가지</strong> × 총무 <strong>3가지</strong> = <strong>P(5,3) = 60가지</strong><br>
     같은 사람이 뽑혀도 역할이 다르면 다른 경우입니다. 순서(역할)가 중요해요!
   </div>
+  <div id="s2all" class="allbox"></div>
 </div>
 
 <!-- ══ PANEL 2: 자연수 만들기 ══ -->
@@ -302,14 +321,16 @@ input[type=range]{accent-color:#ffd700}
     <span class="frm-lbl">만들 수 있는 세 자리 수:</span>
     <span class="frm-val">P(5,3) = 5×4×3 = 60가지</span>
   </div>
-  <div style="display:flex;gap:7px;margin-bottom:8px">
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
     <button class="btn" onclick="s3Reset()">↩ 다시하기</button>
     <button class="btn gold" onclick="s3Back()">⌫ 하나 지우기</button>
+    <button class="btn all" onclick="s3All()">🔢 모든 경우 보기</button>
   </div>
   <div class="notice">
     💡 백의 자리 <strong>5가지</strong> × 십의 자리 <strong>4가지</strong> × 일의 자리 <strong>3가지</strong> = <strong>P(5,3) = 60가지</strong><br>
     자리마다 선택지가 하나씩 줄어드는 이유는? 이미 쓴 카드는 재사용할 수 없기 때문!
   </div>
+  <div id="s3all" class="allbox"></div>
 </div>
 
 <!-- ══ PANEL 3: 시상식 ══ -->
@@ -328,13 +349,15 @@ input[type=range]{accent-color:#ffd700}
     <span class="frm-lbl">수상자 선정 방법:</span>
     <span class="frm-val">P(6,3) = 6×5×4 = 120가지</span>
   </div>
-  <div style="display:flex;gap:7px;margin-bottom:8px">
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
     <button class="btn" onclick="s4Reset()">↩ 다시하기</button>
+    <button class="btn all" onclick="s4All()">🔢 모든 경우 보기</button>
   </div>
   <div class="notice">
     💡 1등 선택 <strong>6가지</strong> × 2등 선택 <strong>5가지</strong> × 3등 선택 <strong>4가지</strong> = <strong>P(6,3) = 120가지</strong><br>
     1등과 2등이 바뀌면 완전히 다른 결과! 등수(순서)가 다르면 다른 경우입니다.
   </div>
+  <div id="s4all" class="allbox"></div>
 </div>
 
 <!-- ══ PANEL 4: 승부차기 ══ -->
@@ -354,13 +377,15 @@ input[type=range]{accent-color:#ffd700}
     <span class="frm-lbl">킥 순서 배정 방법:</span>
     <span class="frm-val">P(11,5) = 11×10×9×8×7 = 55,440가지</span>
   </div>
-  <div style="display:flex;gap:7px;margin-bottom:8px">
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
     <button class="btn" onclick="s5Reset()">↩ 다시하기</button>
+    <button class="btn all" onclick="s5All()">🔢 모든 경우 보기</button>
   </div>
   <div class="notice">
     💡 1번 키커 <strong>11</strong> × 2번 <strong>10</strong> × 3번 <strong>9</strong> × 4번 <strong>8</strong> × 5번 <strong>7</strong> = <strong>P(11,5) = 55,440가지</strong><br>
     킥 순서 전략이 이렇게나 다양합니다! 순서가 달라지면 심리전도 달라집니다.
   </div>
+  <div id="s5all" class="allbox"></div>
 </div>
 
 <!-- ══ PANEL 5: 비밀번호 ══ -->
@@ -380,14 +405,16 @@ input[type=range]{accent-color:#ffd700}
     <span class="frm-lbl">만들 수 있는 비밀번호:</span>
     <span class="frm-val">P(10,4) = 10×9×8×7 = 5,040가지</span>
   </div>
-  <div style="display:flex;gap:7px;margin-bottom:8px">
+  <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
     <button class="btn" onclick="s6Reset()">↩ 다시하기</button>
     <button class="btn gold" onclick="s6Back()">⌫ 하나 지우기</button>
+    <button class="btn all" onclick="s6All()">🔢 모든 경우 보기</button>
   </div>
   <div class="notice">
     💡 첫째 자리 <strong>10</strong> × 둘째 <strong>9</strong> × 셋째 <strong>8</strong> × 넷째 <strong>7</strong> = <strong>P(10,4) = 5,040가지</strong><br>
     숫자 4자리만으로도 5,040가지! 비밀번호가 왜 안전한지 이해되나요?
   </div>
+  <div id="s6all" class="allbox"></div>
 </div>
 
 <!-- ══ SUMMARY TABLE ══ -->
@@ -447,6 +474,64 @@ function fyShuffle(a) {
 }
 function pnr(n,r) { let v=1; for(let i=n;i>n-r;i--) v*=i; return v; }
 
+// ─── 모든 경우 나열 (공통) ────────────────────────────────
+const ALL_CAP = 120;   // 경우가 너무 많으면 앞에서부터 이 개수까지만 표시
+
+// items에서 r개를 뽑아 나열(순열). cap개를 채우면 즉시 중단(대용량 방지).
+function buildPerms(items, r, cap){
+  const res=[], used=new Array(items.length).fill(false), cur=[];
+  let stop=false;
+  (function bt(){
+    if(stop) return;
+    if(cur.length===r){ res.push(cur.slice()); if(res.length>=cap) stop=true; return; }
+    for(let i=0;i<items.length && !stop;i++){
+      if(used[i]) continue;
+      used[i]=true; cur.push(items[i]); bt(); cur.pop(); used[i]=false;
+    }
+  })();
+  return res;
+}
+
+// 토글 방식: 버튼을 다시 누르면 닫힙니다. fmt(perm)→HTML 문자열
+function renderAll(boxId, total, perms, fmt){
+  const box=document.getElementById(boxId);
+  if(box.dataset.open==='1'){ box.dataset.open='0'; box.innerHTML=''; return; }
+  box.dataset.open='1';
+  const shown=perms.length;
+  const head=`<div class="all-head">전체 <b>${total.toLocaleString()}</b>가지`
+    + (total>shown ? ` 중 앞 <b>${shown}</b>가지만 표시` : ` — 모두 표시`) + `</div>`;
+  const grid=`<div class="all-grid">`
+    + perms.map((p,idx)=>`<div class="all-chip"><span class="all-idx">${idx+1}</span>${fmt(p)}</div>`).join('')
+    + `</div>`;
+  box.innerHTML=head+grid;
+}
+
+function s1All(){
+  const items=Array.from({length:s1n},(_,i)=>i);
+  renderAll('s1all', factorial(s1n), buildPerms(items,s1n,ALL_CAP),
+            p=>p.map(i=>`${EMOJIS[i]}${NAMES6[i]}`).join(' → '));
+}
+function s2All(){
+  const roles=['👑','🥈','📋'];
+  renderAll('s2all', pnr(5,3), buildPerms(S2C.map((_,i)=>i),3,ALL_CAP),
+            p=>p.map((idx,pos)=>`${roles[pos]}${S2C[idx].name}`).join(' '));
+}
+function s3All(){
+  renderAll('s3all', pnr(5,3), buildPerms([1,2,3,4,5],3,ALL_CAP), p=>p.join(''));
+}
+function s4All(){
+  const medals=['🥇','🥈','🥉'];
+  renderAll('s4all', pnr(6,3), buildPerms(S4A.map((_,i)=>i),3,ALL_CAP),
+            p=>p.map((idx,pos)=>`${medals[pos]}${S4A[idx].name}`).join(' '));
+}
+function s5All(){
+  const items=Array.from({length:11},(_,i)=>i+1);
+  renderAll('s5all', pnr(11,5), buildPerms(items,5,ALL_CAP), p=>p.join(' → '));
+}
+function s6All(){
+  renderAll('s6all', pnr(10,4), buildPerms([0,1,2,3,4,5,6,7,8,9],4,ALL_CAP), p=>p.join(''));
+}
+
 const EMOJIS = ['👦','👧','🧑','👱','🧒','👩'];
 const COLORS6 = ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#06b6d4'];
 const NAMES6  = ['민준','서연','지우','예린','준혁','수아'];
@@ -463,6 +548,7 @@ function s1Init() {
   document.getElementById('s1frm').textContent =
     'P('+s1n+','+s1n+') = '+s1n+'! = '+parts.join('×')+' = '+f.toLocaleString()+'가지';
   document.getElementById('s1msg').innerHTML = '';
+  const ab=document.getElementById('s1all'); if(ab){ ab.dataset.open='0'; ab.innerHTML=''; }  // n 변경 시 모든 경우 박스 닫기
   s1Render();
 }
 
@@ -752,5 +838,5 @@ def render():
     st.markdown(
         "실생활 속 **6가지 순열 사례**를 직접 조작하며 **P(n, r)** 의 의미를 탐구해보세요!"
     )
-    components.html(_HTML, height=1250, scrolling=True)
+    components.html(_HTML, height=1480, scrolling=True)
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)
