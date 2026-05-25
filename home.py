@@ -2240,7 +2240,13 @@ def lessons_view(subject_key: str):
         # 단원 selectbox 위젯이 렌더되지 않고, Streamlit이 그 위젯 세션값을 폐기한다.
         # 그 결과 아래 setdefault가 0으로 되돌아가 항상 첫 단원으로 리셋되던 버그를
         # 막기 위해, URL에 unit이 있으면 거기서 인덱스를 복구한다.
-        if unit_qp:
+        #
+        # ⚠️ 단, 사이드바가 열려 있으면 sidebar_navigation()이 동일 키(_maj_key 등)로
+        # selectbox 위젯을 '먼저' 생성하므로, 여기서 그 키를 수정하면
+        # StreamlitAPIException(위젯 생성 후 session_state 수정 불가)이 발생한다.
+        # 이때는 sidebar_navigation()이 위젯 생성 전에 이미 URL→세션 동기화를 마쳤으니
+        # 복원이 불필요하다. → 사이드바가 '닫혀 있을 때'(위젯 미생성)만 복원한다.
+        if unit_qp and not st.session_state.get("_sidebar_open", True):
             _path = _find_curriculum_path(majors, unit_qp)
             if _path:
                 _u_maj, _u_mid, _u_min = _path
@@ -2371,8 +2377,10 @@ def lessons_view(subject_key: str):
         unit_keys = list(units.keys())
         default_idx = unit_keys.index(unit_qp) if (unit_qp in unit_keys) else 0
         # URL의 unit을 진실의 근원으로 삼는다(드로어 닫힘 시 위젯 세션 폐기 대비).
-        # URL에 유효한 unit이 있으면 그 인덱스로 고정한다.
-        if unit_qp in unit_keys:
+        # 단, "_lesson_sel_idx"는 사이드바 selectbox의 위젯 키라 사이드바가 열려 있으면
+        # 위젯 생성 후 수정 시 StreamlitAPIException이 난다. 사이드바가 열려 있을 땐
+        # 그쪽 selectbox가 이미 URL과 동기화하므로, '닫혀 있을 때'만 여기서 고정한다.
+        if (unit_qp in unit_keys) and not st.session_state.get("_sidebar_open", True):
             st.session_state["_lesson_sel_idx"] = default_idx
         elif "_lesson_sel_idx" not in st.session_state:
             st.session_state["_lesson_sel_idx"] = default_idx
