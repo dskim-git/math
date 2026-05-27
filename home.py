@@ -1590,6 +1590,9 @@ def sidebar_navigation(registry: Dict[str, List[Activity]]):
             if st.button("👥 회원 관리", use_container_width=True,
                          key="_admin_member_btn"):
                 st.switch_page("pages/97_회원관리.py")
+            if st.button("✍️ 세특 작성", use_container_width=True,
+                         key="_admin_sebteuk_btn"):
+                st.switch_page("pages/96_세특작성.py")
             if st.button("📋 진도표 관리", use_container_width=True,
                          key="_admin_schedule_btn"):
                 st.switch_page("pages/98_진도표.py")
