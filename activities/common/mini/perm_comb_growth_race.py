@@ -475,4 +475,4 @@ def render():
         "같은 **n** 에서 **r 을 0 → n** 까지 늘릴 때 "
         "**순열 ₙPᵣ** 과 **조합 ₙCᵣ** 가 어떻게 달라지는지 막대그래프로 함께 비교해 보세요!"
     )
-    components.html(_HTML, height=1450, scrolling=True)
+    components.html(_HTML, height=1650, scrolling=False)
