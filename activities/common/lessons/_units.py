@@ -730,6 +730,12 @@ CURRICULUM = [
                             },
                             {
                                 "type": "activity",
+                                "title": "🏁 순열 vs 조합 — r 증가 레이스",
+                                "subject": "common",
+                                "slug": "mini/perm_comb_growth_race"
+                            },
+                            {
+                                "type": "activity",
                                 "title": "🎲 조합 실생활 탐구",
                                 "subject": "common",
                                 "slug": "mini/combination_reallife_explorer"
