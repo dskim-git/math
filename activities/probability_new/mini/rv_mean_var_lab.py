@@ -34,73 +34,77 @@ _HTML = r"""
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#0f2027 50%,#0a1628 100%);padding:14px 12px;color:#e2e8f0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:linear-gradient(135deg,#0a1628 0%,#0f2027 50%,#0a1628 100%);padding:14px 12px;color:#e2e8f0;font-size:18px}
 
 .hero{text-align:center;background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(245,101,101,.07));border:1px solid rgba(251,191,36,.22);border-radius:20px;padding:18px 16px;margin-bottom:14px}
-.hero h1{font-size:19px;font-weight:900;color:#fbbf24;text-shadow:0 0 24px rgba(251,191,36,.45)}
-.hero p{font-size:11px;color:#94a3b8;margin-top:5px}
+.hero h1{font-size:29px;font-weight:900;color:#fbbf24;text-shadow:0 0 24px rgba(251,191,36,.45)}
+.hero p{font-size:17px;color:#94a3b8;margin-top:5px}
 
 .card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:16px 18px;margin:11px 0;backdrop-filter:blur(8px)}
-.card-title{font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.card-title{font-size:20px;font-weight:700;color:#fbbf24;margin-bottom:11px;display:flex;align-items:center;gap:7px}
 
 /* Scenario selector */
 .sc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:10px}
 .sc-btn{background:rgba(255,255,255,.04);border:2px solid rgba(255,255,255,.1);border-radius:15px;padding:13px 7px;cursor:pointer;text-align:center;transition:all .22s;color:#e2e8f0;user-select:none}
 .sc-btn:hover{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.35);transform:translateY(-2px)}
 .sc-btn.active{background:rgba(251,191,36,.14);border-color:#fbbf24;box-shadow:0 0 16px rgba(251,191,36,.2)}
-.sc-icon{font-size:28px;margin-bottom:5px}
-.sc-name{font-size:12px;font-weight:700;color:#fbbf24}
-.sc-desc{font-size:10px;color:#94a3b8;margin-top:2px}
+.sc-icon{font-size:38px;margin-bottom:5px}
+.sc-name{font-size:18px;font-weight:700;color:#fbbf24}
+.sc-desc{font-size:15px;color:#94a3b8;margin-top:2px}
 
-.ctx-box{font-size:12px;color:#cbd5e1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:9px 13px;margin:8px 0;line-height:1.5}
+.ctx-box{font-size:18px;color:#cbd5e1;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:9px 13px;margin:8px 0;line-height:1.55}
 
 /* Probability table */
-table{width:100%;border-collapse:collapse;margin:9px 0;font-size:12px}
-th{background:rgba(251,191,36,.14);color:#fbbf24;padding:7px 5px;text-align:center;border:1px solid rgba(255,255,255,.08);font-weight:700}
-td{background:rgba(255,255,255,.03);color:#e2e8f0;padding:7px 5px;text-align:center;border:1px solid rgba(255,255,255,.06);font-family:monospace;font-size:12px}
+table{width:100%;border-collapse:collapse;margin:9px 0;font-size:18px}
+th{background:rgba(251,191,36,.14);color:#fbbf24;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,255,.08);font-weight:700}
+td{background:rgba(255,255,255,.03);color:#e2e8f0;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,255,.06);font-family:monospace;font-size:18px}
 
 /* Stats row */
 .stats-row{display:flex;gap:9px;flex-wrap:wrap;margin:11px 0}
-.stat-card{flex:1;min-width:95px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:13px 9px;text-align:center;transition:all .4s}
+.stat-card{flex:1;min-width:130px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:13px;padding:13px 9px;text-align:center;transition:all .4s}
 .stat-card.pop{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.4);transform:scale(1.04)}
-.stat-lbl{font-size:10px;color:#94a3b8;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
-.stat-val{font-size:23px;font-weight:900;color:#fbbf24;font-family:monospace}
-.stat-fml{font-size:9px;color:#475569;margin-top:4px}
+.stat-lbl{font-size:15px;color:#94a3b8;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
+.stat-val{font-size:35px;font-weight:900;color:#fbbf24;font-family:monospace}
+.stat-fml{font-size:14px;color:#475569;margin-top:4px}
 
 /* Tabs */
 .tab-bar{display:flex;gap:7px;margin-bottom:11px}
-.tab-btn{padding:6px 14px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);cursor:pointer;font-size:12px;font-weight:600;color:#94a3b8;transition:.2s}
+.tab-btn{padding:7px 16px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);cursor:pointer;font-size:18px;font-weight:600;color:#94a3b8;transition:.2s}
 .tab-btn.active{background:rgba(251,191,36,.2);color:#fbbf24;border-color:rgba(251,191,36,.4)}
 
 /* Steps */
 .step-wrap{display:flex;flex-direction:column;gap:5px}
-.step-item{display:flex;align-items:flex-start;gap:8px;padding:8px 12px;background:rgba(255,255,255,.03);border-radius:9px;border-left:3px solid rgba(99,102,241,.4);font-size:11px;font-family:monospace;color:#cbd5e1;opacity:0;transform:translateX(-7px);transition:all .32s}
+.step-item{display:flex;align-items:flex-start;gap:8px;padding:9px 13px;background:rgba(255,255,255,.03);border-radius:9px;border-left:3px solid rgba(99,102,241,.4);font-size:17px;font-family:monospace;color:#cbd5e1;opacity:0;transform:translateX(-7px);transition:all .32s}
 .step-item.vis{opacity:1;transform:translateX(0)}
-.step-num{background:rgba(99,102,241,.3);color:#a5b4fc;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;flex-shrink:0;min-width:48px;text-align:center}
+.step-num{background:rgba(99,102,241,.3);color:#a5b4fc;border-radius:5px;padding:3px 8px;font-size:15px;font-weight:700;flex-shrink:0;min-width:64px;text-align:center}
 
 /* Sliders */
 .slider-row{display:flex;align-items:center;gap:11px;margin:8px 0;flex-wrap:wrap}
-.slider-lbl{font-size:12px;font-weight:700;color:#e2e8f0;min-width:85px;display:flex;align-items:center;gap:6px}
+.slider-lbl{font-size:18px;font-weight:700;color:#e2e8f0;min-width:110px;display:flex;align-items:center;gap:6px}
 input[type=range]{flex:1;min-width:130px;-webkit-appearance:none;height:7px;border-radius:4px;background:linear-gradient(90deg,#6366f1,#a855f7);outline:none;cursor:pointer}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:19px;height:19px;border-radius:50%;background:#fff;border:3px solid #6366f1;cursor:pointer;box-shadow:0 0 8px rgba(99,102,241,.5)}
-.slider-val{min-width:42px;background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:8px;padding:2px 9px;font-weight:800;font-size:14px;text-align:center;color:#fff}
+.slider-val{min-width:54px;background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:8px;padding:3px 11px;font-weight:800;font-size:21px;text-align:center;color:#fff}
 
 /* Transform boxes */
 .tf-grid{display:grid;grid-template-columns:1fr 40px 1fr;gap:7px;align-items:center;margin-top:13px}
 .tf-box{border-radius:13px;padding:11px}
 .tf-box.orig{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.3)}
 .tf-box.trsf{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3)}
-.tf-box .lbl{font-size:10px;color:#94a3b8;margin-bottom:5px;text-align:center;font-weight:600}
-.tf-box .line{font-size:11px;font-family:monospace;line-height:1.75;text-align:center}
+.tf-box .lbl{font-size:15px;color:#94a3b8;margin-bottom:5px;text-align:center;font-weight:600}
+.tf-box .line{font-size:17px;font-family:monospace;line-height:1.75;text-align:center}
 .tf-box.orig .line{color:#a5b4fc}
 .tf-box.trsf .line{color:#d8b4fe}
-.tf-arrow{text-align:center;font-size:26px;color:#fbbf24}
+.tf-arrow{text-align:center;font-size:34px;color:#fbbf24}
 
 .fml-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
-.fml-chip{flex:1;min-width:120px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:9px;padding:7px;text-align:center;font-size:10px;color:#fde68a;font-family:monospace;line-height:1.5}
+.fml-chip{flex:1;min-width:140px;background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.2);border-radius:9px;padding:9px;text-align:center;font-size:15px;color:#fde68a;font-family:monospace;line-height:1.55}
 
 /* mean line badge */
-.mean-badge{display:inline-block;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:3px 10px;font-size:11px;color:#fde68a;margin:5px 0}
+.mean-badge{display:inline-block;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);border-radius:8px;padding:3px 10px;font-size:17px;color:#fde68a;margin:5px 0}
+
+/* Chart wrappers — 차트를 가운데로 좁히고 높이를 명시 */
+.chart-box{max-width:65%;margin:0 auto;position:relative;height:200px}
+.chart-box canvas{display:block}
 
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:rgba(0,0,0,.3);border-radius:3px}
@@ -141,7 +145,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:19px;heigh
 <!-- ② 확률분포 그래프 -->
 <div class="card">
   <div class="card-title">📈 확률분포 그래프</div>
-  <canvas id="distChart" height="140"></canvas>
+  <div class="chart-box"><canvas id="distChart" height="100"></canvas></div>
 </div>
 
 <!-- ③ 통계량 계산 -->
@@ -189,7 +193,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:19px;heigh
   </div>
   <div id="tfResult"></div>
   <div style="margin-top:12px">
-    <canvas id="tfChart" height="140"></canvas>
+    <div class="chart-box"><canvas id="tfChart" height="100"></canvas></div>
   </div>
 </div>
 
@@ -229,14 +233,14 @@ const meanLinePlugin = {
     ctx.setLineDash([6, 4]);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.font = 'bold 11px Segoe UI,sans-serif';
+    ctx.font = 'bold 17px Segoe UI,sans-serif';
     ctx.fillStyle = '#0f2027';
     ctx.textAlign = 'center';
     const lbl = 'E(X)=' + opts.label;
     const tw = ctx.measureText(lbl).width;
-    ctx.fillRect(px - tw/2 - 4, top - 1, tw + 8, 16);
+    ctx.fillRect(px - tw/2 - 6, top - 2, tw + 12, 24);
     ctx.fillStyle = '#fbbf24';
-    ctx.fillText(lbl, px, top + 12);
+    ctx.fillText(lbl, px, top + 16);
     ctx.restore();
   }
 };
@@ -328,19 +332,20 @@ function buildDistChart(sc){
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       animation: {duration: 600},
       plugins: {
-        legend: {labels: {color:'#e2e8f0', font:{size:12}}},
+        legend: {labels: {color:'#e2e8f0', font:{size:18}}},
         tooltip: {callbacks: {label: c => `확률: ${c.parsed.y}`}},
         meanLine: {x: E, vals: sc.values, label: fmt(E) + ' ' + sc.unit}
       },
       scales: {
-        x: {ticks:{color:'#94a3b8'}, grid:{color:'rgba(255,255,255,.05)'}},
+        x: {ticks:{color:'#94a3b8', font:{size:16}}, grid:{color:'rgba(255,255,255,.05)'}},
         y: {
           beginAtZero: true,
-          ticks: {color:'#94a3b8'},
+          ticks: {color:'#94a3b8', font:{size:16}},
           grid: {color:'rgba(255,255,255,.05)'},
-          title: {display:true, text:'확률 P', color:'#94a3b8'}
+          title: {display:true, text:'확률 P', color:'#94a3b8', font:{size:17}}
         }
       }
     }
@@ -377,14 +382,15 @@ function buildTfChart(sc, a, b){
     },
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       animation: {duration: 400},
       plugins: {
-        legend: {labels: {color:'#e2e8f0', font:{size:11}}},
+        legend: {labels: {color:'#e2e8f0', font:{size:17}}},
         tooltip: {callbacks: {label: c => `확률: ${c.parsed.y}`}}
       },
       scales: {
-        x: {ticks:{color:'#94a3b8', font:{size:10}}, grid:{color:'rgba(255,255,255,.05)'}},
-        y: {beginAtZero:true, ticks:{color:'#94a3b8'}, grid:{color:'rgba(255,255,255,.05)'}}
+        x: {ticks:{color:'#94a3b8', font:{size:15}}, grid:{color:'rgba(255,255,255,.05)'}},
+        y: {beginAtZero:true, ticks:{color:'#94a3b8', font:{size:16}}, grid:{color:'rgba(255,255,255,.05)'}}
       }
     }
   });
@@ -495,7 +501,7 @@ window.addEventListener('load', update);
 
 def render():
     st.header("📊 이산확률변수의 기댓값 · 분산 · 표준편차")
-    components.html(_HTML, height=2400, scrolling=False)
+    components.html(_HTML, height=2900, scrolling=False)
 
     # ── 성찰 기록 폼 ────────────────────────────────────────────────────────
     render_reflection_form(_SHEET_NAME, _GAS_URL, _QUESTIONS)

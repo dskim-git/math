@@ -523,20 +523,20 @@ function chkFormula(){
   if(norm(val)===norm(exp[step.cell])){
     fi.className='ok';
     if(step.cell==='B2'){
-      document.getElementById('d2b').textContent=p.B2formula;
+      document.getElementById('d2b').textContent=p.Y[0];
       document.getElementById('r2b').classList.add('filled');
       setFR('fr_r2b',p.B2formula,'formula');
       setFeedback('ok',`✓ 정확해요! B2 = ${p.Y[0]}  채우기 핸들로 E2까지 드래그하세요.`);
     }else if(step.cell==='B4'){
-      document.getElementById('d4b').textContent='=B2*B3';
+      document.getElementById('d4b').textContent=p.YP[0];
       document.getElementById('r4b').classList.add('filled');
       setFR('fr_r4b','=B2*B3','formula');
-      setFeedback('ok','✓ 정확해요! 채우기 핸들로 E4까지 드래그하세요.');
+      setFeedback('ok',`✓ 정확해요! B4 = ${p.YP[0]}  채우기 핸들로 E4까지 드래그하세요.`);
     }else if(step.cell==='B5'){
-      document.getElementById('d5b').textContent='=B2^2*B3';
+      document.getElementById('d5b').textContent=p.Y2P[0];
       document.getElementById('r5b').classList.add('filled');
       setFR('fr_r5b','=B2^2*B3','formula');
-      setFeedback('ok','✓ 정확해요! 채우기 핸들로 E5까지 드래그하세요.');
+      setFeedback('ok',`✓ 정확해요! B5 = ${p.Y2P[0]}  채우기 핸들로 E5까지 드래그하세요.`);
     }else if(step.cell==='F7'){
       document.getElementById('r7f').className='cres';
       document.getElementById('r7f').textContent=p.VY;
@@ -562,10 +562,11 @@ function doFill(){
   const rn=step.row,p=PROBS[curProb];
   const COLS=['C','D','E'],lc=['c','d','e'];
   const srcFmt=rn===2?p.B2formula:(rn===4?'=B2*B3':'=B2^2*B3');
+  const vals=rn===2?p.Y:(rn===4?p.YP:p.Y2P);
   COLS.forEach((C,i)=>{
     const formula=srcFmt.replace(/B/g,C);
     document.getElementById(`r${rn}${lc[i]}`).classList.add('filled');
-    document.getElementById(`d${rn}${lc[i]}`).textContent=formula;
+    document.getElementById(`d${rn}${lc[i]}`).textContent=vals[i+1];
     setFR(`fr_r${rn}${lc[i]}`,formula,'formula');
   });
   if(rn===2)setFeedback('ok',`✓ Y 값 채우기 완료! (${p.Y.join(', ')})  이제 B4 수식을 입력하세요.`);
