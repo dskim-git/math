@@ -571,6 +571,12 @@ CURRICULUM = [
                 },
                 {
                     "type": "activity",
+                    "title": "미니: aX+b 수직선 변환 실험실",
+                    "subject": "probability_new",
+                    "slug": "mini/axb_number_line_lab",
+                },
+                {
+                    "type": "activity",
                     "title": "미니: 기댓값·분산·표준편차 탐험",
                     "subject": "probability_new",
                     "slug": "mini/rv_mean_var_lab",
